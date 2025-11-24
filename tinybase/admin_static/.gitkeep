@@ -1,0 +1,4 @@
+# This directory will contain the built Vue admin UI.
+# Build with: cd app && npm run build
+# Then copy: cp -r app/dist/* tinybase/admin_static/
+

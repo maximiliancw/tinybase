@@ -1,0 +1,436 @@
+# TinyBase
+
+TinyBase is a lightweight, self-hosted Backend-as-a-Service (BaaS) framework for Python developers.
+
+It focuses on being:
+
+- Easy to deploy (single binary-like package, Docker-ready).
+- Easy to extend (Python-first, FastAPI-based).
+- Lightweight (SQLite, minimal dependencies).
+- Flexible (collections, typed functions, scheduling, admin UI).
+
+TinyBase is conceptually similar to PocketBase, but implemented in Python and designed for Python developers.
+
+---
+
+## Features
+
+- **SQLite-backed data storage**
+  - Dynamic collections with JSON schemas.
+  - Pydantic-based validation for records.
+- **Authentication**
+  - User registration and login.
+  - Opaque token-based auth (Bearer tokens).
+  - Basic role support (`is_admin`).
+- **Typed functions**
+  - Define server-side functions with Pydantic input/output models.
+  - Use a strongly-typed `Context` object (DB handle, user info, timestamps).
+  - Exposed via `/api/functions/{name}` with OpenAPI docs.
+- **Scheduling**
+  - Once, interval, and cron schedules.
+  - All backed by a single JSON schedule config and Pydantic models.
+- **Execution metadata**
+  - `FunctionCall` records for each function call (status, duration, errors).
+- **Admin UI**
+  - SPA built with Vue 3, Pinia, Vite, and PicoCSS.
+  - Manage collections, records, users, functions, schedules, and function calls.
+- **OpenAPI**
+  - Full OpenAPI spec available at `/openapi.json` for client generation.
+- **Simple configuration**
+  - Reasonable defaults.
+  - Configuration via `tinybase.toml` and environment variables.
+- **uv-friendly**
+  - Built for use with the `uv` tool (Astral) for dependency and script management.
+
+---
+
+## Installation
+
+Install from PyPI:
+
+```bash
+pip install tinybase
+```
+
+or using `uv`:
+
+```bash
+uv add tinybase
+```
+
+For development, use `uv` to manage Python dependencies and `yarn` for the admin UI in `/app`.
+
+---
+
+## Quickstart
+
+Initialize a new TinyBase instance in the current directory:
+
+```bash
+tinybase init
+```
+
+This will:
+
+- Create a `tinybase.toml` config file (if missing).
+- Initialize the SQLite database.
+- Optionally create an admin user.
+- Create a `functions.py` file with an example function, if not present.
+
+Start the server:
+
+```bash
+tinybase serve
+```
+
+By default, TinyBase listens on:
+
+- `http://0.0.0.0:8000`
+- OpenAPI docs at `http://0.0.0.0:8000/docs`
+- Admin UI at `http://0.0.0.0:8000/admin` (after building the SPA).
+
+---
+
+## Configuration
+
+TinyBase reads configuration from:
+
+1. Environment variables.
+2. `tinybase.toml` in the current directory.
+3. Internal defaults.
+
+Typical configuration options:
+
+```toml
+[server]
+host = "0.0.0.0"
+port = 8000
+debug = false
+log_level = "info"
+
+[database]
+url = "sqlite:///./tinybase.db"
+
+[auth]
+token_ttl_hours = 24
+
+[functions]
+path = "./functions"
+file = "./functions.py"
+
+[scheduler]
+enabled = true
+interval_seconds = 5
+
+[cors]
+allow_origins = ["*"]
+
+[admin]
+static_dir = "builtin"   # or path to custom admin static files
+
+[environments.production]
+url = "https://tinybase.example.com"
+api_token = "ADMIN_TOKEN"
+```
+
+Corresponding environment variables (examples):
+
+- `TINYBASE_SERVER_HOST`
+- `TINYBASE_SERVER_PORT`
+- `TINYBASE_DB_URL`
+- `TINYBASE_AUTH_TOKEN_TTL_HOURS`
+- `TINYBASE_FUNCTIONS_PATH`
+- `TINYBASE_FUNCTIONS_FILE`
+- `TINYBASE_SCHEDULER_ENABLED`
+- `TINYBASE_SCHEDULER_INTERVAL_SECONDS`
+- `TINYBASE_CORS_ALLOW_ORIGINS`
+- `TINYBASE_ADMIN_STATIC_DIR`
+
+Admin bootstrap (used by `tinybase init` if present):
+
+- `TINYBASE_ADMIN_EMAIL`
+- `TINYBASE_ADMIN_PASSWORD`
+
+---
+
+## Defining Functions
+
+Functions are regular Python callables registered with a decorator and exposed as HTTP endpoints and scheduled tasks.
+
+Example (`functions.py`):
+
+```python
+from pydantic import BaseModel
+from tinybase.functions.register import register
+from tinybase.functions import Context
+
+
+class AddInput(BaseModel):
+    x: int
+    y: int
+
+
+class AddOutput(BaseModel):
+    sum: int
+
+
+@register(
+    name="add_numbers",
+    description="Add two numbers",
+    auth="auth",  # "public" | "auth" | "admin"
+    input_model=AddInput,
+    output_model=AddOutput,
+    tags=["math"],
+)
+def add_numbers(ctx: Context, payload: AddInput) -> AddOutput:
+    return AddOutput(sum=payload.x + payload.y)
+```
+
+This function is automatically exposed at:
+
+- `POST /api/functions/add_numbers`
+
+Request body:
+
+```json
+{
+  "x": 1,
+  "y": 2
+}
+```
+
+Response:
+
+```json
+{
+  "call_id": "<uuid>",
+  "status": "succeeded",
+  "result": {
+    "sum": 3
+  }
+}
+```
+
+Function calls are also recorded as `FunctionCall` records for diagnostics (status, duration, errors).
+
+### Generating boilerplate
+
+Use the CLI to generate boilerplate for a new function:
+
+```bash
+tinybase functions new my_function -d "My example function"
+```
+
+This appends a typed function template to your `functions.py` file.
+
+---
+
+## Scheduling
+
+TinyBase supports scheduling functions using three methods:
+
+- `once` (single run at a particular date/time).
+- `interval` (every N seconds/minutes/hours/days).
+- `cron` (cron expressions, via `croniter`).
+
+Schedules are defined as JSON objects stored in the `schedule` field of `FunctionSchedule` and validated with Pydantic.
+
+Examples:
+
+Once:
+
+```json
+{
+  "method": "once",
+  "timezone": "Europe/Berlin",
+  "date": "2025-11-25",
+  "time": "08:00:00"
+}
+```
+
+Interval:
+
+```json
+{
+  "method": "interval",
+  "timezone": "UTC",
+  "unit": "hours",
+  "value": 1
+}
+```
+
+Cron:
+
+```json
+{
+  "method": "cron",
+  "timezone": "Europe/Berlin",
+  "cron": "0 8 * * *",
+  "description": "every day at 8am"
+}
+```
+
+Admin endpoints for schedules:
+
+- `GET /api/admin/schedules`
+- `POST /api/admin/schedules`
+- `GET /api/admin/schedules/{id}`
+- `PATCH /api/admin/schedules/{id}`
+- `DELETE /api/admin/schedules/{id}`
+
+The scheduler runs as a background loop in TinyBase and triggers functions according to their schedule, creating `FunctionCall` records for each invocation.
+
+---
+
+## Collections and Records
+
+TinyBase collections are dynamic, schema-driven tables stored in SQLite.
+
+- Collections are defined with a JSON schema describing their fields and constraints.
+- Pydantic models are generated at startup to validate records.
+- CRUD endpoints are provided for each collection.
+
+Example schema (`Collection.schema`):
+
+```json
+{
+  "fields": [
+    {
+      "name": "title",
+      "type": "string",
+      "required": true,
+      "max_length": 200
+    },
+    {
+      "name": "published",
+      "type": "boolean",
+      "required": false,
+      "default": false
+    }
+  ]
+}
+```
+
+Associated endpoints:
+
+- `GET /api/collections`
+- `POST /api/collections` (admin)
+- `GET /api/collections/{collection_name}`
+- `GET /api/collections/{collection_name}/records`
+- `POST /api/collections/{collection_name}/records`
+- `GET /api/collections/{collection_name}/records/{id}`
+- `PATCH /api/collections/{collection_name}/records/{id}`
+- `DELETE /api/collections/{collection_name}/records/{id}`
+
+---
+
+## Admin UI
+
+The admin UI is a single-page application built with:
+
+- Vue 3
+- Pinia
+- Vite
+- PicoCSS
+
+Source:
+
+- Located in the repository root under `/app`.
+
+Build:
+
+```bash
+cd app
+yarn install
+yarn build
+```
+
+This produces a `/app/dist` directory, which should be copied into the Python package (e.g. `tinybase/admin_static`) during the build process.
+
+At runtime, FastAPI serves the admin UI at:
+
+- `GET /admin`
+
+The admin UI allows administrators to:
+
+- Log in.
+- Manage collections and schemas.
+- Inspect and edit records.
+- View and manage users.
+- View and manage functions.
+- Configure schedules.
+- Inspect function call metadata.
+
+---
+
+## Development
+
+### Setup
+
+For the Python backend:
+
+```bash
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create virtual environment and install dependencies
+uv venv
+source .venv/bin/activate  # or `.venv\Scripts\activate` on Windows
+uv pip install -e ".[dev]"
+```
+
+For the admin UI:
+
+```bash
+cd app
+yarn install
+yarn dev  # Start development server with hot reload
+```
+
+### Running locally
+
+```bash
+# Initialize TinyBase
+tinybase init --admin-email admin@example.com --admin-password yourpassword
+
+# Start the server
+tinybase serve --reload
+```
+
+---
+
+## Deployment
+
+### Docker
+
+The included `Dockerfile` uses a multi-stage build that:
+1. Builds the Vue admin UI with yarn
+2. Creates a minimal Python runtime using uv
+
+Build and run:
+
+```bash
+docker build -t tinybase .
+docker run -p 8000:8000 tinybase
+```
+
+The Docker image handles building the admin UI automatically.
+
+---
+
+## Roadmap
+
+Planned improvements may include:
+
+- Optional JWT support.
+- More advanced querying and filtering for records.
+- Extended function tooling (e.g. dependency inspection utilities).
+- Additional configuration presets for production deployments.
+
+---
+
+## License
+
+TinyBase is released under a permissive open source license (to be defined, e.g. MIT or Apache-2.0).
+
+Please refer to the `LICENSE` file for details.
