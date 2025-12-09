@@ -10,6 +10,7 @@
 #app-root {
   display: flex;
   min-height: 100vh;
+  width: 100%;
   background: var(--tb-bg-base);
 }
 
@@ -40,28 +41,37 @@ main {
   min-height: 100vh;
   position: relative;
   z-index: 1;
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
+  min-width: 0; /* Prevent flex item from overflowing */
+  box-sizing: border-box;
 }
 
 /* Apply sidebar offset only when sidebar is present */
 .has-sidebar main {
   margin-left: var(--tb-sidebar-width);
   width: calc(100% - var(--tb-sidebar-width));
+  max-width: calc(100% - var(--tb-sidebar-width));
 }
 
 /* Main content stretches full width */
 main > div:not(.login-layout) {
   width: 100%;
+  max-width: 100%;
 }
 
-/* Ensure all content elements stretch full width (except grid children) */
-main > div:not(.login-layout) > article:not(.stat-card),
-main > div:not(.login-layout) > form,
-main > div:not(.login-layout) > form > article,
-main > div:not(.login-layout) > section,
-main > div:not(.login-layout) > table {
+/* Force all content elements to stretch full width */
+main article,
+main form,
+main section,
+main table {
   width: 100%;
+  max-width: 100%;
+}
+
+/* Exception for stat cards in grid */
+.stats-grid > article.stat-card {
+  width: auto;
+  max-width: none;
 }
 
 /* Page header */

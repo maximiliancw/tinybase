@@ -69,6 +69,26 @@ article > footer {
   border-top: 1px solid var(--tb-border-subtle);
 }
 
+/* Articles containing tables - no body padding for edge-to-edge tables */
+article:has(> table) {
+  padding: 0;
+}
+
+article:has(> table) > header {
+  margin: 0;
+  border-radius: var(--tb-radius-lg) var(--tb-radius-lg) 0 0;
+}
+
+article:has(> table) > table {
+  margin: 0;
+}
+
+/* Remove table header radius when inside a card with header */
+article:has(> header) > table th:first-child,
+article:has(> header) > table th:last-child {
+  border-radius: 0;
+}
+
 /* Stat card variant */
 article.stat-card {
   padding: var(--tb-spacing-lg);
@@ -214,6 +234,7 @@ button > svg,
 table {
   border-collapse: separate;
   border-spacing: 0;
+  width: 100%;
 }
 
 table th {

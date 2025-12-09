@@ -157,13 +157,11 @@ aside.sidebar nav a:hover .nav-icon {
 
 /* Section dividers */
 aside.sidebar section {
-  margin-top: var(--tb-spacing-lg);
-  padding-top: var(--tb-spacing-md);
+  margin-top: var(--tb-spacing-md);
 }
 
 aside.sidebar section:first-child {
   margin-top: 0;
-  padding-top: 0;
 }
 
 /* Section labels */

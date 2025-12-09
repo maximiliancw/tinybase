@@ -237,6 +237,14 @@
   --pico-container-max-width: 100%;
 }
 
+/* Override Pico's default max-width on block elements */
+article,
+section,
+table,
+form {
+  max-width: 100%;
+}
+
 /* Global styles */
 html {
   scroll-behavior: smooth;
