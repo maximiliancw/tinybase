@@ -20,7 +20,9 @@ def get_admin_token(client: TestClient) -> str:
     return response.json()["token"]
 
 
-def get_user_token(client: TestClient, email: str = "testuser@test.com", password: str = "testpassword123") -> str:
+def get_user_token(
+    client: TestClient, email: str = "testuser@test.com", password: str = "testpassword123"
+) -> str:
     """Helper to create and login as a regular user."""
     # Register user if not exists (try login first)
     login_response = client.post(
@@ -99,4 +101,3 @@ def create_record(
     )
     assert response.status_code == 201
     return response.json()
-

@@ -111,4 +111,3 @@ def test_get_presigned_url_expires_in_validation(client, admin_token):
     )
     # Should return 422 for validation error or 503 if storage disabled
     assert response.status_code in [422, 503, 500]
-

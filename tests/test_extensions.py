@@ -93,4 +93,3 @@ def test_list_extensions_pagination(client, admin_token):
     data = response.json()
     assert data["limit"] == 5
     assert data["offset"] == 0
-
