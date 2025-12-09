@@ -9,6 +9,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+from tests.utils import create_collection, create_record, get_admin_token, get_user_token
+
 
 @pytest.fixture(scope="function")
 def client():
@@ -72,3 +74,38 @@ def client():
     os.environ.pop("TINYBASE_DB_URL", None)
     os.environ.pop("TINYBASE_SCHEDULER_ENABLED", None)
     os.environ.pop("TINYBASE_RATE_LIMIT_ENABLED", None)
+
+
+@pytest.fixture
+def admin_token(client):
+    """Fixture providing admin authentication token."""
+    return get_admin_token(client)
+
+
+@pytest.fixture
+def user_token(client):
+    """Fixture providing regular user authentication token."""
+    return get_user_token(client)
+
+
+@pytest.fixture
+def test_collection(client, admin_token):
+    """Fixture providing a test collection."""
+    return create_collection(
+        client,
+        admin_token,
+        name="test_collection",
+        label="Test Collection",
+        schema={"fields": [{"name": "title", "type": "string"}]},
+    )
+
+
+@pytest.fixture
+def test_record(client, admin_token, test_collection):
+    """Fixture providing a test record in test_collection."""
+    return create_record(
+        client,
+        admin_token,
+        "test_collection",
+        {"title": "Test Record"},
+    )

@@ -29,11 +29,27 @@ jobs:
 
       - name: Run linting
         run: |
-          uv run ruff check .
-          uv run ruff format --check .
+          uv run ruff check --fix .
+          uv run ruff format --check --fix .
 
-      - name: Run tests
-        run: uv run pytest -v --tb=short
+      - name: Run tests with coverage
+        run: uv run pytest -v --tb=short --cov=tinybase --cov-report=xml --cov-report=html --cov-report=term
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report-${{ matrix.python-version }}
+          path: htmlcov/
+          retention-days: 30
 
   docs:
     runs-on: ubuntu-latest

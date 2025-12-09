@@ -2,19 +2,7 @@
 Tests for collections and records functionality.
 """
 
-from fastapi.testclient import TestClient
-
-
-def get_admin_token(client: TestClient) -> str:
-    """Helper to login as admin and get token."""
-    response = client.post(
-        "/api/auth/login",
-        json={
-            "email": "admin@test.com",
-            "password": "testpassword",
-        },
-    )
-    return response.json()["token"]
+from tests.utils import create_collection, create_record, get_admin_token
 
 
 def test_create_collection(client):
@@ -280,4 +268,153 @@ def test_delete_record(client):
         f"/api/collections/temp/records/{record_id}",
         headers={"Authorization": f"Bearer {token}"},
     )
+    assert get_response.status_code == 404
+
+
+def test_get_collection_not_found(client):
+    """Test getting a non-existent collection."""
+    response = client.get("/api/collections/nonexistent")
+    assert response.status_code == 404
+
+
+def test_get_record_not_found(client, admin_token):
+    """Test getting a non-existent record."""
+    # Create collection
+    create_collection(client, admin_token, name="test", schema={"fields": []})
+
+    response = client.get(
+        "/api/collections/test/records/00000000-0000-0000-0000-000000000000",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert response.status_code == 404
+
+
+def test_update_record_not_found(client, admin_token):
+    """Test updating a non-existent record."""
+    # Create collection
+    create_collection(client, admin_token, name="test", schema={"fields": []})
+
+    response = client.patch(
+        "/api/collections/test/records/00000000-0000-0000-0000-000000000000",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"data": {"title": "Updated"}},
+    )
+    assert response.status_code == 404
+
+
+def test_delete_record_not_found(client, admin_token):
+    """Test deleting a non-existent record."""
+    # Create collection
+    create_collection(client, admin_token, name="test", schema={"fields": []})
+
+    response = client.delete(
+        "/api/collections/test/records/00000000-0000-0000-0000-000000000000",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert response.status_code == 404
+
+
+def test_list_records_pagination(client, admin_token):
+    """Test pagination for records list."""
+    # Create collection
+    create_collection(
+        client,
+        admin_token,
+        name="pagination_test",
+        schema={"fields": [{"name": "value", "type": "integer"}]},
+    )
+
+    # Create multiple records
+    for i in range(10):
+        create_record(client, admin_token, "pagination_test", {"value": i})
+
+    # Test pagination
+    response = client.get(
+        "/api/collections/pagination_test/records",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        params={"limit": 3, "offset": 0},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["limit"] == 3
+    assert data["offset"] == 0
+    assert len(data["records"]) == 3
+    assert data["total"] == 10
+
+    # Test second page
+    response = client.get(
+        "/api/collections/pagination_test/records",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        params={"limit": 3, "offset": 3},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["offset"] == 3
+    assert len(data["records"]) == 3
+
+
+def test_create_collection_duplicate_name(client, admin_token):
+    """Test that creating collection with duplicate name fails."""
+    # Create first collection
+    create_collection(client, admin_token, name="duplicate", schema={"fields": []})
+
+    # Try to create again with same name
+    response = client.post(
+        "/api/collections",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={
+            "name": "duplicate",
+            "label": "Duplicate",
+            "schema": {"fields": []},
+        },
+    )
+    assert response.status_code == 400
+
+
+def test_create_record_in_nonexistent_collection(client, admin_token):
+    """Test creating record in non-existent collection."""
+    response = client.post(
+        "/api/collections/nonexistent/records",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"data": {"title": "Test"}},
+    )
+    assert response.status_code == 404
+
+
+def test_update_collection(client, admin_token):
+    """Test updating a collection."""
+    # Create collection
+    collection = create_collection(
+        client,
+        admin_token,
+        name="updatable",
+        label="Original Label",
+        schema={"fields": [{"name": "title", "type": "string"}]},
+    )
+
+    # Update collection
+    response = client.patch(
+        "/api/collections/updatable",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"label": "Updated Label"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["label"] == "Updated Label"
+
+
+def test_delete_collection(client, admin_token):
+    """Test deleting a collection."""
+    # Create collection
+    create_collection(client, admin_token, name="deletable", schema={"fields": []})
+
+    # Delete collection
+    response = client.delete(
+        "/api/collections/deletable",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert response.status_code == 204
+
+    # Verify deletion
+    get_response = client.get("/api/collections/deletable")
     assert get_response.status_code == 404

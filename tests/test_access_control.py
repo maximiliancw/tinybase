@@ -2,41 +2,7 @@
 Tests for access control functionality.
 """
 
-from fastapi.testclient import TestClient
-
-
-def get_admin_token(client: TestClient) -> str:
-    """Helper to login as admin and get token."""
-    response = client.post(
-        "/api/auth/login",
-        json={
-            "email": "admin@test.com",
-            "password": "testpassword",
-        },
-    )
-    return response.json()["token"]
-
-
-def get_user_token(client: TestClient, email: str = "testuser@test.com") -> str:
-    """Helper to create and login as a regular user."""
-    # Register user
-    client.post(
-        "/api/auth/register",
-        json={
-            "email": email,
-            "password": "testpassword123",
-        },
-    )
-
-    # Login
-    response = client.post(
-        "/api/auth/login",
-        json={
-            "email": email,
-            "password": "testpassword123",
-        },
-    )
-    return response.json()["token"]
+from tests.utils import create_collection, get_admin_token, get_user_token
 
 
 def test_public_access_collection(client):
@@ -44,20 +10,18 @@ def test_public_access_collection(client):
     admin_token = get_admin_token(client)
 
     # Create collection with public list access
-    client.post(
-        "/api/collections",
-        headers={"Authorization": f"Bearer {admin_token}"},
-        json={
-            "name": "public_items",
-            "label": "Public Items",
-            "schema": {"fields": [{"name": "title", "type": "string"}]},
-            "options": {
-                "access": {
-                    "list": "public",
-                    "read": "public",
-                    "create": "auth",
-                }
-            },
+    create_collection(
+        client,
+        admin_token,
+        name="public_items",
+        label="Public Items",
+        schema={"fields": [{"name": "title", "type": "string"}]},
+        options={
+            "access": {
+                "list": "public",
+                "read": "public",
+                "create": "auth",
+            }
         },
     )
 
@@ -71,20 +35,18 @@ def test_auth_required_collection(client):
     admin_token = get_admin_token(client)
 
     # Create collection with auth required for list
-    client.post(
-        "/api/collections",
-        headers={"Authorization": f"Bearer {admin_token}"},
-        json={
-            "name": "private_items",
-            "label": "Private Items",
-            "schema": {"fields": [{"name": "title", "type": "string"}]},
-            "options": {
-                "access": {
-                    "list": "auth",
-                    "read": "auth",
-                    "create": "auth",
-                }
-            },
+    create_collection(
+        client,
+        admin_token,
+        name="private_items",
+        label="Private Items",
+        schema={"fields": [{"name": "title", "type": "string"}]},
+        options={
+            "access": {
+                "list": "auth",
+                "read": "auth",
+                "create": "auth",
+            }
         },
     )
 
@@ -108,14 +70,12 @@ def test_owner_only_update(client):
     user2_token = get_user_token(client, "user2@test.com")
 
     # Create collection
-    client.post(
-        "/api/collections",
-        headers={"Authorization": f"Bearer {admin_token}"},
-        json={
-            "name": "owned_items",
-            "label": "Owned Items",
-            "schema": {"fields": [{"name": "title", "type": "string"}]},
-        },
+    create_collection(
+        client,
+        admin_token,
+        name="owned_items",
+        label="Owned Items",
+        schema={"fields": [{"name": "title", "type": "string"}]},
     )
 
     # User1 creates a record
@@ -149,14 +109,12 @@ def test_admin_bypasses_owner_check(client):
     user_token = get_user_token(client, "regular@test.com")
 
     # Create collection
-    client.post(
-        "/api/collections",
-        headers={"Authorization": f"Bearer {admin_token}"},
-        json={
-            "name": "user_items",
-            "label": "User Items",
-            "schema": {"fields": [{"name": "title", "type": "string"}]},
-        },
+    create_collection(
+        client,
+        admin_token,
+        name="user_items",
+        label="User Items",
+        schema={"fields": [{"name": "title", "type": "string"}]},
     )
 
     # User creates a record

@@ -97,7 +97,12 @@ class Scheduler:
             self._task = None
 
         # Shutdown thread pool
-        self._executor.shutdown(wait=True, timeout=30)
+        # Note: timeout parameter removed in Python 3.14
+        try:
+            self._executor.shutdown(wait=True, timeout=30)
+        except TypeError:
+            # Python 3.14+ doesn't support timeout parameter
+            self._executor.shutdown(wait=True)
 
         logger.info("Scheduler stopped")
 

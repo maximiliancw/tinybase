@@ -3,19 +3,8 @@ Tests for functions functionality.
 """
 
 import pytest
-from fastapi.testclient import TestClient
 
-
-def get_admin_token(client: TestClient) -> str:
-    """Helper to login as admin and get token."""
-    response = client.post(
-        "/api/auth/login",
-        json={
-            "email": "admin@test.com",
-            "password": "testpassword",
-        },
-    )
-    return response.json()["token"]
+from tests.utils import get_admin_token
 
 
 def test_list_functions(client):
