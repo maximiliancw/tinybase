@@ -6,14 +6,23 @@ Provides endpoints for:
 - Record CRUD with schema validation
 """
 
+import asyncio
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from pydantic import BaseModel, Field, ValidationError
 
 from tinybase.auth import CurrentAdminUser, CurrentUser, CurrentUserOptional, DbSession
 from tinybase.collections.service import CollectionService, check_access
+from tinybase.extensions.hooks import (
+    RecordCreateEvent,
+    RecordUpdateEvent,
+    RecordDeleteEvent,
+    run_record_create_hooks,
+    run_record_update_hooks,
+    run_record_delete_hooks,
+)
 
 router = APIRouter(prefix="/collections", tags=["Collections"])
 
@@ -343,6 +352,7 @@ def create_record(
     request: RecordCreate,
     session: DbSession,
     user: CurrentUser,
+    background_tasks: BackgroundTasks,
 ) -> RecordResponse:
     """Create a new record in a collection."""
     service = CollectionService(session)
@@ -377,6 +387,15 @@ def create_record(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Validation error: {e}",
         )
+    
+    # Run record create hooks in background
+    event = RecordCreateEvent(
+        collection=collection_name,
+        record_id=record.id,
+        data=record.data,
+        owner_id=record.owner_id,
+    )
+    background_tasks.add_task(asyncio.run, run_record_create_hooks(event))
     
     return record_to_response(record)
 
@@ -439,6 +458,7 @@ def update_record(
     request: RecordUpdate,
     session: DbSession,
     user: CurrentUser,
+    background_tasks: BackgroundTasks,
 ) -> RecordResponse:
     """Update a record (partial update)."""
     service = CollectionService(session)
@@ -471,6 +491,9 @@ def update_record(
             detail="You don't have permission to update this record",
         )
     
+    # Capture old data for the hook
+    old_data = dict(record.data)
+    
     try:
         updated = service.update_record(
             collection=collection,
@@ -483,6 +506,16 @@ def update_record(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Validation error: {e}",
         )
+    
+    # Run record update hooks in background
+    event = RecordUpdateEvent(
+        collection=collection_name,
+        record_id=updated.id,
+        old_data=old_data,
+        new_data=updated.data,
+        owner_id=updated.owner_id,
+    )
+    background_tasks.add_task(asyncio.run, run_record_update_hooks(event))
     
     return record_to_response(updated)
 
@@ -498,6 +531,7 @@ def delete_record(
     record_id: UUID,
     session: DbSession,
     user: CurrentUser,
+    background_tasks: BackgroundTasks,
 ) -> None:
     """Delete a record."""
     service = CollectionService(session)
@@ -530,5 +564,18 @@ def delete_record(
             detail="You don't have permission to delete this record",
         )
     
+    # Capture data for the hook before deletion
+    record_data = dict(record.data)
+    record_owner_id = record.owner_id
+    
     service.delete_record(record)
+    
+    # Run record delete hooks in background
+    event = RecordDeleteEvent(
+        collection=collection_name,
+        record_id=record_id,
+        data=record_data,
+        owner_id=record_owner_id,
+    )
+    background_tasks.add_task(asyncio.run, run_record_delete_hooks(event))
 

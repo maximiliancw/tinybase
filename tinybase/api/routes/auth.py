@@ -7,8 +7,9 @@ Provides endpoints for:
 - Current user info retrieval
 """
 
+import asyncio
 from pydantic import BaseModel, EmailStr, Field
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlmodel import select
@@ -21,6 +22,12 @@ from tinybase.auth import (
     verify_password,
 )
 from tinybase.db.models import InstanceSettings, User
+from tinybase.extensions.hooks import (
+    UserLoginEvent,
+    UserRegisterEvent,
+    run_user_login_hooks,
+    run_user_register_hooks,
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -140,7 +147,12 @@ def get_setup_status(session: DbSession) -> SetupStatusResponse:
     description="Create a new user account with email and password.",
 )
 @limiter.limit("5/minute")
-def register(request: Request, body: RegisterRequest, session: DbSession) -> RegisterResponse:
+def register(
+    request: Request,
+    body: RegisterRequest,
+    session: DbSession,
+    background_tasks: BackgroundTasks,
+) -> RegisterResponse:
     """
     Register a new user account.
     
@@ -177,6 +189,10 @@ def register(request: Request, body: RegisterRequest, session: DbSession) -> Reg
     session.commit()
     session.refresh(user)
     
+    # Run user register hooks in background
+    event = UserRegisterEvent(user_id=user.id, email=user.email)
+    background_tasks.add_task(asyncio.run, run_user_register_hooks(event))
+    
     return RegisterResponse(
         id=str(user.id),
         email=user.email,
@@ -190,7 +206,12 @@ def register(request: Request, body: RegisterRequest, session: DbSession) -> Reg
     description="Authenticate with email and password to receive a bearer token.",
 )
 @limiter.limit("10/minute")
-def login(request: Request, body: LoginRequest, session: DbSession) -> LoginResponse:
+def login(
+    request: Request,
+    body: LoginRequest,
+    session: DbSession,
+    background_tasks: BackgroundTasks,
+) -> LoginResponse:
     """
     Authenticate user and issue access token.
     
@@ -218,6 +239,10 @@ def login(request: Request, body: LoginRequest, session: DbSession) -> LoginResp
         session.commit()
         session.refresh(user)
         admin_created = True
+        
+        # Also run register hooks for auto-created admin
+        register_event = UserRegisterEvent(user_id=user.id, email=user.email)
+        background_tasks.add_task(asyncio.run, run_user_register_hooks(register_event))
     else:
         # Find user by email
         user = session.exec(
@@ -239,6 +264,10 @@ def login(request: Request, body: LoginRequest, session: DbSession) -> LoginResp
     
     # Create and return token
     auth_token = create_auth_token(session, user)
+    
+    # Run user login hooks in background
+    login_event = UserLoginEvent(user_id=user.id, email=user.email, is_admin=user.is_admin)
+    background_tasks.add_task(asyncio.run, run_user_login_hooks(login_event))
     
     return LoginResponse(
         token=auth_token.token,
