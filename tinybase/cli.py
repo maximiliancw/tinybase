@@ -6,6 +6,7 @@ Provides commands for:
 - serve: Start the TinyBase server
 - functions new: Create a new function boilerplate
 - functions deploy: Deploy functions to a remote server
+- admin add: Create or update an admin user
 """
 
 import re
@@ -37,6 +38,13 @@ db_app = typer.Typer(
     help="Database management commands",
 )
 app.add_typer(db_app, name="db")
+
+# Create admin subcommand group
+admin_app = typer.Typer(
+    name="admin",
+    help="Admin user management commands",
+)
+app.add_typer(admin_app, name="admin")
 
 
 # =============================================================================
@@ -301,7 +309,12 @@ def init(
             ).first()
             
             if existing:
-                typer.echo(f"  Admin user {admin_email} already exists")
+                # Update password and ensure admin flag is set
+                existing.password_hash = hash_password(admin_password)
+                existing.is_admin = True
+                session.add(existing)
+                session.commit()
+                typer.echo(f"  Updated admin user: {admin_email}")
             else:
                 user = User(
                     email=admin_email,
@@ -312,7 +325,7 @@ def init(
                 session.commit()
                 typer.echo(f"  Created admin user: {admin_email}")
     else:
-        typer.echo("  Tip: Use --admin-email and --admin-password to create an admin user")
+        typer.echo("  Tip: Run 'tinybase admin add <email> <password>' to create an admin user")
     
     typer.echo("")
     typer.echo("TinyBase initialized successfully!")
@@ -536,6 +549,60 @@ def db_current() -> None:
     
     alembic_cfg = Config("alembic.ini")
     command.current(alembic_cfg)
+
+
+# =============================================================================
+# Admin Commands
+# =============================================================================
+
+
+@admin_app.command("add")
+def admin_add(
+    email: Annotated[
+        str,
+        typer.Argument(help="Admin user email address")
+    ],
+    password: Annotated[
+        str,
+        typer.Argument(help="Admin user password")
+    ],
+) -> None:
+    """
+    Add or update an admin user.
+    
+    Creates a new admin user with the given email and password.
+    If the user already exists, updates their password and grants admin privileges.
+    """
+    from sqlmodel import Session, select
+    from tinybase.auth import hash_password
+    from tinybase.db.core import get_engine, create_db_and_tables
+    from tinybase.db.models import User
+    
+    # Ensure database exists
+    create_db_and_tables()
+    
+    engine = get_engine()
+    with Session(engine) as session:
+        # Check if user already exists
+        existing = session.exec(
+            select(User).where(User.email == email)
+        ).first()
+        
+        if existing:
+            existing.password_hash = hash_password(password)
+            existing.is_admin = True
+            session.add(existing)
+            session.commit()
+            typer.echo(f"Updated admin user: {email}")
+        else:
+            user = User(
+                email=email,
+                password_hash=hash_password(password),
+                is_admin=True,
+            )
+            session.add(user)
+            session.commit()
+            typer.echo(f"Created admin user: {email}")
 
 
 # =============================================================================
