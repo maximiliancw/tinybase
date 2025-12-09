@@ -14,16 +14,13 @@ from sqlmodel import Session, select
 from tinybase.auth import cleanup_expired_tokens
 from tinybase.config import settings
 from tinybase.db.core import get_engine
-from tinybase.db.models import FunctionSchedule
+from tinybase.db.models import FunctionSchedule, InstanceSettings
 from tinybase.functions.core import execute_function, get_global_registry
 from tinybase.utils import utcnow, TriggerType
 
 from .utils import parse_schedule_config
 
 logger = logging.getLogger(__name__)
-
-# How often to run token cleanup (every N scheduler intervals)
-TOKEN_CLEANUP_INTERVAL = 60  # e.g., every 60 * 5s = 5 minutes
 
 
 class Scheduler:
@@ -81,7 +78,9 @@ class Scheduler:
                 
                 # Periodic token cleanup
                 self._tick_count += 1
-                if self._tick_count >= TOKEN_CLEANUP_INTERVAL:
+                # Get token cleanup interval from instance settings
+                cleanup_interval = self._get_token_cleanup_interval()
+                if self._tick_count >= cleanup_interval:
                     self._tick_count = 0
                     await self._run_maintenance()
                     
@@ -89,6 +88,19 @@ class Scheduler:
                 logger.exception(f"Error in scheduler loop: {e}")
             
             await asyncio.sleep(interval)
+    
+    def _get_token_cleanup_interval(self) -> int:
+        """Get token cleanup interval from instance settings, with fallback to config."""
+        try:
+            engine = get_engine()
+            with Session(engine) as session:
+                instance_settings = session.get(InstanceSettings, 1)
+                if instance_settings and instance_settings.token_cleanup_interval:
+                    return instance_settings.token_cleanup_interval
+        except Exception as e:
+            logger.warning(f"Failed to get token cleanup interval from settings: {e}")
+        # Fallback to config setting, then hardcoded default
+        return getattr(settings(), "scheduler_token_cleanup_interval", 60)
     
     async def _run_maintenance(self) -> None:
         """Run periodic maintenance tasks."""

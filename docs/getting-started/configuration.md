@@ -34,6 +34,7 @@ file = "./functions.py"
 [scheduler]
 enabled = true
 interval_seconds = 5
+token_cleanup_interval = 60
 
 [cors]
 allow_origins = ["*"]
@@ -62,6 +63,7 @@ All settings can be overridden with environment variables using the `TINYBASE_` 
 | `TINYBASE_FUNCTIONS_FILE` | `functions.file` | `./functions.py` |
 | `TINYBASE_SCHEDULER_ENABLED` | `scheduler.enabled` | `true` |
 | `TINYBASE_SCHEDULER_INTERVAL_SECONDS` | `scheduler.interval_seconds` | `5` |
+| `TINYBASE_SCHEDULER_TOKEN_CLEANUP_INTERVAL` | `scheduler.token_cleanup_interval` | `60` |
 | `TINYBASE_CORS_ALLOW_ORIGINS` | `cors.allow_origins` | `["*"]` |
 | `TINYBASE_ADMIN_STATIC_DIR` | `admin.static_dir` | `builtin` |
 | `TINYBASE_EXTENSIONS_ENABLED` | `extensions.enabled` | `true` |
@@ -132,9 +134,12 @@ TinyBase loads functions from both:
 [scheduler]
 enabled = true          # Enable/disable the scheduler
 interval_seconds = 5    # How often to check for scheduled tasks
+token_cleanup_interval = 60  # Token cleanup interval in scheduler ticks
 ```
 
 The scheduler runs as a background task and checks for due schedules at the specified interval.
+
+**Token Cleanup Interval**: How often to run token cleanup (in scheduler ticks). For example, if `interval_seconds = 5` and `token_cleanup_interval = 60`, cleanup runs every 5 minutes (60 × 5s). This setting can also be configured via the Admin UI in the Settings page.
 
 ### CORS Settings
 

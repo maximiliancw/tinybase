@@ -205,6 +205,28 @@ Click a call to see:
 
 ## Settings
 
+The Settings page allows you to configure instance-wide settings.
+
+### General Settings
+
+- **Instance Name** - The name displayed in the admin UI and API responses
+
+### Authentication Settings
+
+- **Allow Public Registration** - Enable/disable public user registration
+
+### Timezone Settings
+
+- **Server Timezone** - Default timezone for scheduled functions
+
+### Scheduler Settings
+
+- **Token Cleanup Interval** - How often to run token cleanup (in scheduler ticks). For example, if the scheduler runs every 5 seconds and this is set to 60, cleanup runs every 5 minutes (60 × 5s).
+
+### Storage Settings
+
+- **File Storage** - Configure S3-compatible file storage settings
+
 ### Server Info
 
 View TinyBase configuration:
@@ -213,14 +235,6 @@ View TinyBase configuration:
 - Server host/port
 - Database path
 - Scheduler status
-
-### Configuration
-
-Some settings can be viewed (but not modified through UI):
-
-- Auth token TTL
-- CORS origins
-- Extensions status
 
 ## Keyboard Shortcuts
 

@@ -120,6 +120,7 @@ path = "./functions"
 [scheduler]
 enabled = true
 interval_seconds = 5
+token_cleanup_interval = 60
 
 [cors]
 allow_origins = ["*"]
@@ -141,6 +142,7 @@ Corresponding environment variables (examples):
 - `TINYBASE_FUNCTIONS_PATH`
 - `TINYBASE_SCHEDULER_ENABLED`
 - `TINYBASE_SCHEDULER_INTERVAL_SECONDS`
+- `TINYBASE_SCHEDULER_TOKEN_CLEANUP_INTERVAL`
 - `TINYBASE_CORS_ALLOW_ORIGINS`
 - `TINYBASE_ADMIN_STATIC_DIR`
 

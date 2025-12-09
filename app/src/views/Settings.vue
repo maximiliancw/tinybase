@@ -15,6 +15,7 @@ interface InstanceSettings {
   instance_name: string;
   allow_public_registration: boolean;
   server_timezone: string;
+  token_cleanup_interval: number;
   storage_enabled: boolean;
   storage_endpoint: string | null;
   storage_bucket: string | null;
@@ -31,6 +32,7 @@ const settings = reactive<InstanceSettings>({
   instance_name: "TinyBase",
   allow_public_registration: true,
   server_timezone: "UTC",
+  token_cleanup_interval: 60,
   storage_enabled: false,
   storage_endpoint: null,
   storage_bucket: null,
@@ -86,6 +88,7 @@ async function saveSettings() {
       instance_name: settings.instance_name,
       allow_public_registration: settings.allow_public_registration,
       server_timezone: settings.server_timezone,
+      token_cleanup_interval: settings.token_cleanup_interval,
       storage_enabled: settings.storage_enabled,
       storage_endpoint: settings.storage_endpoint,
       storage_bucket: settings.storage_bucket,
@@ -187,6 +190,29 @@ async function saveSettings() {
           <small
             >Default timezone for scheduled functions. Individual schedules can
             override this.</small
+          >
+        </label>
+      </article>
+
+      <!-- Scheduler Settings -->
+      <article>
+        <header>
+          <h3>Scheduler</h3>
+        </header>
+
+        <label for="token_cleanup_interval">
+          Token Cleanup Interval
+          <input
+            id="token_cleanup_interval"
+            v-model.number="settings.token_cleanup_interval"
+            type="number"
+            min="1"
+            step="1"
+          />
+          <small
+            >How often to run token cleanup (in scheduler ticks). For example, if
+            scheduler runs every 5 seconds and this is set to 60, cleanup runs
+            every 5 minutes (60 × 5s).</small
           >
         </label>
       </article>

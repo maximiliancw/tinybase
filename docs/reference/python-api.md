@@ -482,6 +482,7 @@ print(config.db_url)
 | `functions_path` | `str` | `"./functions"` |
 | `scheduler_enabled` | `bool` | `True` |
 | `scheduler_interval_seconds` | `int` | `5` |
+| `scheduler_token_cleanup_interval` | `int` | `60` |
 | `cors_allow_origins` | `list[str]` | `["*"]` |
 | `admin_static_dir` | `str` | `"builtin"` |
 | `extensions_enabled` | `bool` | `True` |

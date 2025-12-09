@@ -242,6 +242,11 @@ class InstanceSettings(SQLModel, table=True):
     # If empty, schedules use UTC by default
     server_timezone: str = Field(default="UTC", max_length=50)
     
+    # Scheduler settings
+    # How often to run token cleanup (every N scheduler intervals)
+    # Default: 60 intervals (e.g., 60 * 5s = 5 minutes if scheduler_interval_seconds=5)
+    token_cleanup_interval: int = Field(default=60, ge=1, description="Token cleanup interval in scheduler ticks")
+    
     # File storage settings (S3-compatible)
     storage_enabled: bool = Field(default=False)
     storage_endpoint: str | None = Field(default=None, max_length=500)

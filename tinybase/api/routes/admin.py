@@ -410,6 +410,7 @@ class InstanceSettingsResponse(BaseModel):
     instance_name: str = Field(description="Instance name")
     allow_public_registration: bool = Field(description="Allow public registration")
     server_timezone: str = Field(description="Server timezone")
+    token_cleanup_interval: int = Field(description="Token cleanup interval in scheduler ticks")
     storage_enabled: bool = Field(description="File storage enabled")
     storage_endpoint: str | None = Field(default=None, description="S3 endpoint")
     storage_bucket: str | None = Field(default=None, description="S3 bucket name")
@@ -424,6 +425,7 @@ class InstanceSettingsUpdate(BaseModel):
     instance_name: str | None = Field(default=None, max_length=100)
     allow_public_registration: bool | None = Field(default=None)
     server_timezone: str | None = Field(default=None, max_length=50)
+    token_cleanup_interval: int | None = Field(default=None, ge=1, description="Token cleanup interval in scheduler ticks")
     storage_enabled: bool | None = Field(default=None)
     storage_endpoint: str | None = Field(default=None, max_length=500)
     storage_bucket: str | None = Field(default=None, max_length=100)
@@ -438,6 +440,7 @@ def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse
         instance_name=settings.instance_name,
         allow_public_registration=settings.allow_public_registration,
         server_timezone=settings.server_timezone,
+        token_cleanup_interval=settings.token_cleanup_interval,
         storage_enabled=settings.storage_enabled,
         storage_endpoint=settings.storage_endpoint,
         storage_bucket=settings.storage_bucket,
@@ -448,9 +451,16 @@ def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse
 
 def get_or_create_settings(session: DbSession) -> InstanceSettings:
     """Get the singleton settings instance, creating it if it doesn't exist."""
+    from tinybase.config import settings as app_settings
+    
     settings = session.get(InstanceSettings, 1)
     if settings is None:
-        settings = InstanceSettings(id=1)
+        # Initialize with default from config if available
+        config = app_settings()
+        settings = InstanceSettings(
+            id=1,
+            token_cleanup_interval=getattr(config, "scheduler_token_cleanup_interval", 60),
+        )
         session.add(settings)
         session.commit()
         session.refresh(settings)
@@ -502,6 +512,13 @@ def update_settings(
                 detail=f"Invalid timezone: {request.server_timezone}",
             )
         settings.server_timezone = request.server_timezone
+    if request.token_cleanup_interval is not None:
+        if request.token_cleanup_interval < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="token_cleanup_interval must be at least 1",
+            )
+        settings.token_cleanup_interval = request.token_cleanup_interval
     if request.storage_enabled is not None:
         settings.storage_enabled = request.storage_enabled
     if request.storage_endpoint is not None:

@@ -107,6 +107,11 @@ class Settings(BaseSettings):
         default=5,
         description="Scheduler polling interval in seconds"
     )
+    scheduler_token_cleanup_interval: int = Field(
+        default=60,
+        ge=1,
+        description="Token cleanup interval in scheduler ticks (e.g., 60 = every 60 scheduler intervals)"
+    )
     
     # CORS settings
     cors_allow_origins: list[str] = Field(
