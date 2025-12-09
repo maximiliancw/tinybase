@@ -51,7 +51,7 @@ tinybase = "tinybase.cli:app"
 
 [project.urls]
 Homepage = "https://github.com/maximiliancw/tinybase"
-Documentation = "https://maximiliancw.github.io/tinybase/"
+Documentation = "https://maximiliancw.github.io/TinyBase/"
 Repository = "https://github.com/maximiliancw/tinybase"
 Changelog = "https://github.com/maximiliancw/tinybase/releases"
 
