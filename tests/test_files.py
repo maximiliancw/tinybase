@@ -4,8 +4,6 @@ Tests for file storage functionality.
 
 import io
 
-from tests.utils import get_admin_token, get_user_token
-
 
 def test_get_storage_status_requires_auth(client):
     """Test that checking storage status requires authentication."""

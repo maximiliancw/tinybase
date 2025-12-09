@@ -384,7 +384,7 @@ def test_create_record_in_nonexistent_collection(client, admin_token):
 def test_update_collection(client, admin_token):
     """Test updating a collection."""
     # Create collection
-    collection = create_collection(
+    create_collection(
         client,
         admin_token,
         name="updatable",

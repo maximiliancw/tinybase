@@ -2,7 +2,7 @@
 Tests for schedule management functionality.
 """
 
-from tests.utils import get_admin_token, get_user_token
+from tests.utils import get_user_token
 
 
 def test_list_schedules_requires_admin(client):
@@ -48,7 +48,7 @@ def test_create_schedule_invalid_config(client, admin_token):
     # Check if there are any functions available
     functions_response = client.get("/api/functions")
     functions = functions_response.json()
-    
+
     if not functions:
         # No functions available, so we can only test function not found
         response = client.post(

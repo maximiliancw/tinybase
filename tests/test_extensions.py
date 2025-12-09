@@ -2,7 +2,7 @@
 Tests for extension management functionality.
 """
 
-from tests.utils import get_admin_token, get_user_token
+from tests.utils import get_user_token
 
 
 def test_list_extensions_requires_admin(client):

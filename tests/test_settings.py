@@ -2,7 +2,7 @@
 Tests for instance settings functionality.
 """
 
-from tests.utils import get_admin_token, get_user_token
+from tests.utils import get_admin_token
 
 
 def test_get_settings_requires_admin(client):
