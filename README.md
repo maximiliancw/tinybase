@@ -9,13 +9,13 @@
     <img src="https://github.com/maximiliancw/TinyBase/actions/workflows/ci.yml/badge.svg" alt="CI">
   </a>
   <a href="https://github.com/maximiliancw/TinyBase/blob/main/LICENSE" target="_blank">
-    <img src="https://img.shields.io/github/license/maximiliancw/TinyBase.svg?color=informational" alt="License">
+    <img alt="License" src="https://img.shields.io/github/license/maximiliancw/TinyBase">
   </a>
   <a href="https://codecov.io/gh/maximiliancw/TinyBase" target="_blank">
     <img src="https://codecov.io/gh/maximiliancw/TinyBase/branch/main/graph/badge.svg" alt="codecov">
   </a>
-  <a href="https://tinybase.dev/" target="_blank">
-    <img src="https://img.shields.io/website?down_color=red&down_message=offline&up_color=green&up_message=online&url=https%3A%2F%2Ftinybase.dev" alt="Website">
+  <a href="https://maximiliancw.github.io/tinybase" target="_blank">
+    <img src="https://img.shields.io/website?down_color=red&down_message=offline&up_color=green&up_message=online&url=https%3A%2F%2Fmaximiliancw.github.io%2Ftinybase" alt="Website">
   </a>
 </p>
 
