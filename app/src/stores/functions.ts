@@ -49,12 +49,77 @@ export interface Schedule {
     cron?: string
     description?: string
   }
+  input_data: Record<string, any>
   is_active: boolean
   last_run_at: string | null
   next_run_at: string | null
   created_by_user_id: string | null
   created_at: string
   updated_at: string
+}
+
+export interface FunctionSchema {
+  name: string
+  has_input_model: boolean
+  has_output_model: boolean
+  input_schema: Record<string, any> | null
+  output_schema: Record<string, any> | null
+}
+
+/**
+ * Generate a template object from a JSON schema.
+ * Creates an object with all properties set to appropriate default values.
+ */
+export function generateTemplateFromSchema(schema: Record<string, any> | null): Record<string, any> {
+  if (!schema) return {}
+  
+  const properties = schema.properties
+  if (!properties) return {}
+  
+  const template: Record<string, any> = {}
+  const required = schema.required || []
+  
+  for (const [key, prop] of Object.entries(properties) as [string, any][]) {
+    // Use default if available
+    if ('default' in prop) {
+      template[key] = prop.default
+      continue
+    }
+    
+    // Generate appropriate placeholder based on type
+    const type = prop.type
+    if (type === 'string') {
+      template[key] = ''
+    } else if (type === 'integer' || type === 'number') {
+      template[key] = 0
+    } else if (type === 'boolean') {
+      template[key] = false
+    } else if (type === 'array') {
+      template[key] = []
+    } else if (type === 'object') {
+      template[key] = {}
+    } else if (prop.anyOf || prop.oneOf) {
+      // Union type - use null if nullable, otherwise use first type's default
+      const types = prop.anyOf || prop.oneOf
+      const hasNull = types.some((t: any) => t.type === 'null')
+      if (hasNull) {
+        template[key] = null
+      } else if (types[0]?.type === 'string') {
+        template[key] = ''
+      } else if (types[0]?.type === 'integer' || types[0]?.type === 'number') {
+        template[key] = 0
+      } else {
+        template[key] = null
+      }
+    } else {
+      // For required fields without defaults, use null as placeholder
+      if (required.includes(key)) {
+        template[key] = null
+      }
+    }
+  }
+  
+  return template
 }
 
 export const useFunctionsStore = defineStore('functions', () => {
@@ -157,6 +222,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     name: string
     function_name: string
     schedule: any
+    input_data?: Record<string, any>
     is_active?: boolean
   }): Promise<Schedule | null> {
     loading.value = true
@@ -209,6 +275,18 @@ export const useFunctionsStore = defineStore('functions', () => {
     }
   }
 
+  async function fetchFunctionSchema(name: string): Promise<FunctionSchema | null> {
+    error.value = null
+
+    try {
+      const response = await api.get(`/api/functions/${name}/schema`)
+      return response.data
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Failed to fetch function schema'
+      return null
+    }
+  }
+
   return {
     // State
     functions,
@@ -226,6 +304,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     createSchedule,
     updateSchedule,
     deleteSchedule,
+    fetchFunctionSchema,
   }
 })
 

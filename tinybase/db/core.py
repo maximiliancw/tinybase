@@ -96,6 +96,32 @@ def create_db_and_tables() -> None:
     
     engine = get_engine()
     SQLModel.metadata.create_all(engine)
+    
+    # Run schema migrations for adding new columns to existing tables
+    _run_migrations(engine)
+
+
+def _run_migrations(engine: Engine) -> None:
+    """
+    Run schema migrations for existing databases.
+    
+    SQLModel.metadata.create_all() only creates new tables, it doesn't
+    add new columns to existing tables. This function handles adding
+    new columns introduced in schema updates.
+    """
+    from sqlalchemy import inspect, text
+    
+    inspector = inspect(engine)
+    
+    # Migration: Add input_data column to function_schedule table
+    if "function_schedule" in inspector.get_table_names():
+        columns = [col["name"] for col in inspector.get_columns("function_schedule")]
+        if "input_data" not in columns:
+            with engine.connect() as conn:
+                conn.execute(text(
+                    "ALTER TABLE function_schedule ADD COLUMN input_data JSON DEFAULT '{}'"
+                ))
+                conn.commit()
 
 
 def reset_engine() -> None:

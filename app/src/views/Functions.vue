@@ -6,7 +6,7 @@
  * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref } from 'vue'
-import { useFunctionsStore, type FunctionInfo } from '../stores/functions'
+import { useFunctionsStore, generateTemplateFromSchema, type FunctionInfo } from '../stores/functions'
 import { useAuthStore } from '../stores/auth'
 
 const functionsStore = useFunctionsStore()
@@ -17,6 +17,7 @@ const selectedFunction = ref<FunctionInfo | null>(null)
 const callPayload = ref('{}')
 const callResult = ref<any>(null)
 const callError = ref<string | null>(null)
+const loadingSchema = ref(false)
 
 onMounted(async () => {
   if (authStore.isAdmin) {
@@ -26,12 +27,27 @@ onMounted(async () => {
   }
 })
 
-function openCallModal(fn: FunctionInfo) {
+async function openCallModal(fn: FunctionInfo) {
   selectedFunction.value = fn
-  callPayload.value = '{}'
   callResult.value = null
   callError.value = null
   showCallModal.value = true
+  
+  // Fetch schema and generate template
+  loadingSchema.value = true
+  try {
+    const schema = await functionsStore.fetchFunctionSchema(fn.name)
+    if (schema?.input_schema) {
+      const template = generateTemplateFromSchema(schema.input_schema)
+      callPayload.value = JSON.stringify(template, null, 2)
+    } else {
+      callPayload.value = '{}'
+    }
+  } catch {
+    callPayload.value = '{}'
+  } finally {
+    loadingSchema.value = false
+  }
 }
 
 async function handleCall() {
@@ -145,14 +161,24 @@ const displayFunctions = () => {
           <label for="payload">
             Payload (JSON)
             <textarea
+              v-if="loadingSchema"
+              id="payload"
+              rows="8"
+              disabled
+              aria-busy="true"
+              class="code-editor"
+            >Loading schema...</textarea>
+            <textarea
+              v-else
               id="payload"
               v-model="callPayload"
-              rows="6"
-              style="font-family: monospace; font-size: 0.875rem;"
+              rows="8"
+              class="code-editor"
+              spellcheck="false"
             ></textarea>
           </label>
           
-          <button type="submit" :aria-busy="functionsStore.loading" :disabled="functionsStore.loading">
+          <button type="submit" :aria-busy="functionsStore.loading" :disabled="functionsStore.loading || loadingSchema">
             {{ functionsStore.loading ? '' : 'Execute' }}
           </button>
         </form>
@@ -187,5 +213,13 @@ pre {
   font-size: 0.875rem;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.code-editor {
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  tab-size: 2;
+  resize: vertical;
 }
 </style>

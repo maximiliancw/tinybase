@@ -5,14 +5,15 @@
  * Manage function schedules (admin only).
  * Uses semantic HTML elements following PicoCSS conventions.
  */
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useFunctionsStore } from '../stores/functions'
+import { useFunctionsStore, generateTemplateFromSchema } from '../stores/functions'
 
 const route = useRoute()
 const functionsStore = useFunctionsStore()
 
 const showCreateModal = ref(false)
+const loadingSchema = ref(false)
 const newSchedule = ref({
   name: '',
   function_name: '',
@@ -26,6 +27,31 @@ const newSchedule = ref({
   // Once fields
   date: '',
   time: '',
+  // Input data for the function
+  input_data: '{}',
+})
+
+// Watch for function selection changes to fetch schema
+watch(() => newSchedule.value.function_name, async (functionName) => {
+  if (!functionName) {
+    newSchedule.value.input_data = '{}'
+    return
+  }
+  
+  loadingSchema.value = true
+  try {
+    const schema = await functionsStore.fetchFunctionSchema(functionName)
+    if (schema?.input_schema) {
+      const template = generateTemplateFromSchema(schema.input_schema)
+      newSchedule.value.input_data = JSON.stringify(template, null, 2)
+    } else {
+      newSchedule.value.input_data = '{}'
+    }
+  } catch {
+    newSchedule.value.input_data = '{}'
+  } finally {
+    loadingSchema.value = false
+  }
 })
 
 onMounted(async () => {
@@ -66,10 +92,19 @@ function buildSchedulePayload() {
 }
 
 async function handleCreate() {
+  let inputData = {}
+  try {
+    inputData = JSON.parse(newSchedule.value.input_data)
+  } catch {
+    functionsStore.error = 'Invalid JSON in input data'
+    return
+  }
+  
   const result = await functionsStore.createSchedule({
     name: newSchedule.value.name,
     function_name: newSchedule.value.function_name,
     schedule: buildSchedulePayload(),
+    input_data: inputData,
   })
   
   if (result) {
@@ -84,6 +119,7 @@ async function handleCreate() {
       cron: '0 * * * *',
       date: '',
       time: '',
+      input_data: '{}',
     }
   }
 }
@@ -282,6 +318,29 @@ function formatSchedule(schedule: any): string {
             />
           </label>
           
+          <!-- Input Data -->
+          <label for="input_data">
+            Input Data (JSON)
+            <textarea
+              v-if="loadingSchema"
+              id="input_data"
+              rows="6"
+              disabled
+              aria-busy="true"
+              class="code-editor"
+            >Loading schema...</textarea>
+            <textarea
+              v-else
+              id="input_data"
+              v-model="newSchedule.input_data"
+              rows="6"
+              class="code-editor"
+              spellcheck="false"
+              placeholder="{}"
+            ></textarea>
+            <small>Data to pass to the function when executed</small>
+          </label>
+          
           <small v-if="functionsStore.error" class="text-error">
             {{ functionsStore.error }}
           </small>
@@ -326,5 +385,14 @@ dialog article footer {
   display: flex;
   justify-content: flex-end;
   gap: var(--tb-spacing-sm);
+}
+
+/* Code editor textarea */
+.code-editor {
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  tab-size: 2;
+  resize: vertical;
 }
 </style>

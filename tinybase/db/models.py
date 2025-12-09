@@ -198,6 +198,9 @@ class FunctionSchedule(SQLModel, table=True):
     # Validated via Pydantic schedule models (OnceScheduleConfig, IntervalScheduleConfig, CronScheduleConfig)
     schedule: dict = Field(default_factory=dict, sa_column=Column(JSON))
     
+    # Input data to pass to the function when executed
+    input_data: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    
     # Whether this schedule is currently active
     is_active: bool = Field(default=True)
     

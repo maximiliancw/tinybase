@@ -150,7 +150,7 @@ class Scheduler:
         try:
             execute_function(
                 meta=meta,
-                payload={},  # Scheduled functions don't receive payloads
+                payload=schedule.input_data or {},
                 session=session,
                 trigger_type=TriggerType.SCHEDULE,
                 trigger_id=schedule.id,

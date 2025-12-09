@@ -30,6 +30,7 @@ class ScheduleCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200, description="Schedule name")
     function_name: str = Field(description="Function to execute")
     schedule: dict[str, Any] = Field(description="Schedule configuration")
+    input_data: dict[str, Any] = Field(default_factory=dict, description="Input data for the function")
     is_active: bool = Field(default=True, description="Whether schedule is active")
 
 
@@ -38,6 +39,7 @@ class ScheduleUpdate(BaseModel):
     
     name: str | None = Field(default=None, description="New name")
     schedule: dict[str, Any] | None = Field(default=None, description="New schedule config")
+    input_data: dict[str, Any] | None = Field(default=None, description="New input data")
     is_active: bool | None = Field(default=None, description="New active status")
 
 
@@ -48,6 +50,7 @@ class ScheduleResponse(BaseModel):
     name: str = Field(description="Schedule name")
     function_name: str = Field(description="Function name")
     schedule: dict[str, Any] = Field(description="Schedule configuration")
+    input_data: dict[str, Any] = Field(default_factory=dict, description="Input data for the function")
     is_active: bool = Field(description="Whether schedule is active")
     last_run_at: str | None = Field(default=None, description="Last execution time")
     next_run_at: str | None = Field(default=None, description="Next scheduled run")
@@ -77,6 +80,7 @@ def schedule_to_response(schedule: FunctionSchedule) -> ScheduleResponse:
         name=schedule.name,
         function_name=schedule.function_name,
         schedule=schedule.schedule,
+        input_data=schedule.input_data,
         is_active=schedule.is_active,
         last_run_at=schedule.last_run_at.isoformat() if schedule.last_run_at else None,
         next_run_at=schedule.next_run_at.isoformat() if schedule.next_run_at else None,
@@ -169,6 +173,7 @@ def create_schedule(
         name=request.name,
         function_name=request.function_name,
         schedule=request.schedule,
+        input_data=request.input_data,
         is_active=request.is_active,
         next_run_at=next_run_at,
         created_by_user_id=admin.id,
@@ -226,6 +231,9 @@ def update_schedule(
     
     if request.name is not None:
         schedule.name = request.name
+    
+    if request.input_data is not None:
+        schedule.input_data = request.input_data
     
     if request.schedule is not None:
         # Validate new schedule configuration
