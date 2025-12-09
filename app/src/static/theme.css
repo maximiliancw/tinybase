@@ -94,7 +94,7 @@
 :root:not([data-theme="light"]) {
   /* Typography */
   --pico-font-family: var(--tb-font-sans);
-  --pico-font-size: 0.9375rem;
+  --pico-font-size: 1rem;
   --pico-line-height: 1.6;
   
   /* Primary color */
@@ -140,6 +140,9 @@
   --pico-spacing: var(--tb-spacing-lg);
   --pico-block-spacing-vertical: var(--tb-spacing-lg);
   --pico-block-spacing-horizontal: var(--tb-spacing-lg);
+  
+  /* Remove Pico's container max-width */
+  --pico-container-max-width: 100%;
 }
 
 /* Global styles */

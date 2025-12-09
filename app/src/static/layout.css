@@ -40,16 +40,29 @@ main {
   min-height: 100vh;
   position: relative;
   z-index: 1;
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Apply sidebar offset only when sidebar is present */
 .has-sidebar main {
   margin-left: var(--tb-sidebar-width);
+  width: calc(100% - var(--tb-sidebar-width));
 }
 
-/* Constrain content width for readability */
+/* Main content stretches full width */
 main > div:not(.login-layout) {
-  max-width: 1200px;
+  width: 100%;
+}
+
+/* Ensure all content elements stretch full width (except grid children) */
+main > div:not(.login-layout) > article:not(.stat-card),
+main > div:not(.login-layout) > form,
+main > div:not(.login-layout) > form > article,
+main > div:not(.login-layout) > section,
+main > div:not(.login-layout) > table {
+  width: 100%;
 }
 
 /* Page header */
@@ -171,9 +184,14 @@ header.page-header hgroup p {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--tb-spacing-lg);
   margin-bottom: var(--tb-spacing-xl);
+  width: 100%;
+}
+
+.stats-grid > article {
+  width: auto;
 }
 
 

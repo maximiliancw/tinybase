@@ -8,16 +8,18 @@
 import { onMounted, ref } from 'vue'
 import { useCollectionsStore } from '../stores/collections'
 import { useFunctionsStore } from '../stores/functions'
+import { useUsersStore } from '../stores/users'
 import { useAuthStore } from '../stores/auth'
 
 const collectionsStore = useCollectionsStore()
 const functionsStore = useFunctionsStore()
+const usersStore = useUsersStore()
 const authStore = useAuthStore()
 
 const stats = ref({
+  users: 0,
   collections: 0,
   functions: 0,
-  recentCalls: 0,
   activeSchedules: 0,
 })
 
@@ -36,8 +38,8 @@ onMounted(async () => {
   stats.value.functions = functionsStore.functions.length
   
   if (authStore.isAdmin) {
-    const callsResult = await functionsStore.fetchFunctionCalls({ limit: 1 })
-    stats.value.recentCalls = callsResult.total
+    const usersResult = await usersStore.fetchUsers(1, 0)
+    stats.value.users = usersResult.total
     
     await functionsStore.fetchSchedules()
     stats.value.activeSchedules = functionsStore.schedules.filter(s => s.is_active).length
@@ -63,12 +65,16 @@ function dismissNotice() {
     <header class="page-header">
       <hgroup>
         <h1>Dashboard</h1>
-        <p>Welcome to TinyBase Admin</p>
+        <p>Welcome to your TinyBase instance's admin dashboard</p>
       </hgroup>
     </header>
     
     <!-- Stats Grid with stagger animation -->
     <div class="stats-grid" data-animate="stagger">
+      <article v-if="authStore.isAdmin" class="stat-card">
+        <p>{{ stats.users }}</p>
+        <p>Users</p>
+      </article>
       <article class="stat-card">
         <p>{{ stats.collections }}</p>
         <p>Collections</p>
@@ -80,10 +86,6 @@ function dismissNotice() {
       <article v-if="authStore.isAdmin" class="stat-card">
         <p>{{ stats.activeSchedules }}</p>
         <p>Active Schedules</p>
-      </article>
-      <article v-if="authStore.isAdmin" class="stat-card">
-        <p>{{ stats.recentCalls }}</p>
-        <p>Function Calls</p>
       </article>
     </div>
     
