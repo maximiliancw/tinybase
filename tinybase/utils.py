@@ -15,7 +15,7 @@ def utcnow() -> datetime:
 
 class FunctionCallStatus(str, Enum):
     """Status of a function call execution."""
-    
+
     RUNNING = "running"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
@@ -23,14 +23,14 @@ class FunctionCallStatus(str, Enum):
 
 class TriggerType(str, Enum):
     """How a function was triggered."""
-    
+
     MANUAL = "manual"
     SCHEDULE = "schedule"
 
 
 class AuthLevel(str, Enum):
     """Authentication level required for a resource."""
-    
+
     PUBLIC = "public"
     AUTH = "auth"
     ADMIN = "admin"
@@ -38,16 +38,16 @@ class AuthLevel(str, Enum):
 
 class AccessRule(str, Enum):
     """Access control rules for collections."""
-    
-    PUBLIC = "public"      # Anyone can access
-    AUTH = "auth"          # Any authenticated user
-    OWNER = "owner"        # Only the record owner
-    ADMIN = "admin"        # Only admins
+
+    PUBLIC = "public"  # Anyone can access
+    AUTH = "auth"  # Any authenticated user
+    OWNER = "owner"  # Only the record owner
+    ADMIN = "admin"  # Only admins
 
 
 class ScheduleMethod(str, Enum):
     """Schedule timing method."""
-    
+
     ONCE = "once"
     INTERVAL = "interval"
     CRON = "cron"
@@ -55,9 +55,8 @@ class ScheduleMethod(str, Enum):
 
 class IntervalUnit(str, Enum):
     """Time unit for interval schedules."""
-    
+
     SECONDS = "seconds"
     MINUTES = "minutes"
     HOURS = "hours"
     DAYS = "days"
-

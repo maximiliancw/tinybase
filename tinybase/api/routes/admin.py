@@ -28,7 +28,7 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 
 class FunctionCallInfo(BaseModel):
     """Function call metadata."""
-    
+
     id: str = Field(description="Call ID")
     function_name: str = Field(description="Function name")
     status: str = Field(description="Execution status")
@@ -45,7 +45,7 @@ class FunctionCallInfo(BaseModel):
 
 class FunctionCallListResponse(BaseModel):
     """Paginated function call list."""
-    
+
     calls: list[FunctionCallInfo] = Field(description="Function calls")
     total: int = Field(description="Total count")
     limit: int = Field(description="Page size")
@@ -54,7 +54,7 @@ class FunctionCallListResponse(BaseModel):
 
 class UserInfo(BaseModel):
     """User information for admin."""
-    
+
     id: str = Field(description="User ID")
     email: str = Field(description="Email address")
     is_admin: bool = Field(description="Admin status")
@@ -64,7 +64,7 @@ class UserInfo(BaseModel):
 
 class UserListResponse(BaseModel):
     """Paginated user list."""
-    
+
     users: list[UserInfo] = Field(description="Users")
     total: int = Field(description="Total count")
     limit: int = Field(description="Page size")
@@ -73,7 +73,7 @@ class UserListResponse(BaseModel):
 
 class UserCreate(BaseModel):
     """Create user request."""
-    
+
     email: str = Field(description="Email address")
     password: str = Field(min_length=8, description="Password")
     is_admin: bool = Field(default=False, description="Admin status")
@@ -81,7 +81,7 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     """Update user request."""
-    
+
     email: str | None = Field(default=None, description="New email")
     password: str | None = Field(default=None, min_length=8, description="New password")
     is_admin: bool | None = Field(default=None, description="New admin status")
@@ -137,14 +137,10 @@ def list_function_calls(
     _admin: CurrentAdminUser,
     function_name: str | None = Query(default=None, description="Filter by function name"),
     status_filter: FunctionCallStatus | None = Query(
-        default=None,
-        alias="status",
-        description="Filter by status"
+        default=None, alias="status", description="Filter by status"
     ),
     trigger_type_filter: TriggerType | None = Query(
-        default=None,
-        alias="trigger_type",
-        description="Filter by trigger type"
+        default=None, alias="trigger_type", description="Filter by trigger type"
     ),
     limit: int = Query(default=100, ge=1, le=1000, description="Page size"),
     offset: int = Query(default=0, ge=0, description="Page offset"),
@@ -152,32 +148,32 @@ def list_function_calls(
     """List function calls with filtering and pagination."""
     # Build count query with filters
     count_stmt = select(func.count(FunctionCall.id))
-    
+
     if function_name:
         count_stmt = count_stmt.where(FunctionCall.function_name == function_name)
     if status_filter:
         count_stmt = count_stmt.where(FunctionCall.status == status_filter)
     if trigger_type_filter:
         count_stmt = count_stmt.where(FunctionCall.trigger_type == trigger_type_filter)
-    
+
     total = session.exec(count_stmt).one()
-    
+
     # Build data query with filters
     query = select(FunctionCall)
-    
+
     if function_name:
         query = query.where(FunctionCall.function_name == function_name)
     if status_filter:
         query = query.where(FunctionCall.status == status_filter)
     if trigger_type_filter:
         query = query.where(FunctionCall.trigger_type == trigger_type_filter)
-    
+
     # Apply pagination and ordering
     query = query.order_by(FunctionCall.created_at.desc())  # type: ignore
     query = query.offset(offset).limit(limit)
-    
+
     calls = list(session.exec(query).all())
-    
+
     return FunctionCallListResponse(
         calls=[call_to_response(c) for c in calls],
         total=total,
@@ -199,13 +195,13 @@ def get_function_call(
 ) -> FunctionCallInfo:
     """Get a specific function call by ID."""
     call = session.get(FunctionCall, call_id)
-    
+
     if call is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Function call '{call_id}' not found",
         )
-    
+
     return call_to_response(call)
 
 
@@ -229,11 +225,11 @@ def list_users(
     """List all users with pagination."""
     # Get total count efficiently
     total = session.exec(select(func.count(User.id))).one()
-    
+
     # Get paginated results
     query = select(User).offset(offset).limit(limit)
     users = list(session.exec(query).all())
-    
+
     return UserListResponse(
         users=[user_to_response(u) for u in users],
         total=total,
@@ -256,16 +252,14 @@ def create_user(
 ) -> UserInfo:
     """Create a new user."""
     # Check if email exists
-    existing = session.exec(
-        select(User).where(User.email == request.email)
-    ).first()
-    
+    existing = session.exec(select(User).where(User.email == request.email)).first()
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-    
+
     user = User(
         email=request.email,
         password_hash=hash_password(request.password),
@@ -274,7 +268,7 @@ def create_user(
     session.add(user)
     session.commit()
     session.refresh(user)
-    
+
     return user_to_response(user)
 
 
@@ -291,13 +285,13 @@ def get_user(
 ) -> UserInfo:
     """Get a specific user by ID."""
     user = session.get(User, user_id)
-    
+
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User '{user_id}' not found",
         )
-    
+
     return user_to_response(user)
 
 
@@ -315,13 +309,13 @@ def update_user(
 ) -> UserInfo:
     """Update a user's details."""
     user = session.get(User, user_id)
-    
+
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User '{user_id}' not found",
         )
-    
+
     if request.email is not None:
         # Check if new email is already taken
         existing = session.exec(
@@ -333,27 +327,25 @@ def update_user(
                 detail="Email already registered",
             )
         user.email = request.email
-    
+
     if request.password is not None:
         user.password_hash = hash_password(request.password)
-    
+
     if request.is_admin is not None:
         # Prevent demoting the last admin
         if user.is_admin and not request.is_admin:
-            admin_count = session.exec(
-                select(func.count(User.id)).where(User.is_admin == True)
-            ).one()
+            admin_count = session.exec(select(func.count(User.id)).where(User.is_admin)).one()
             if admin_count <= 1:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Cannot demote the last admin user",
                 )
         user.is_admin = request.is_admin
-    
+
     session.add(user)
     session.commit()
     session.refresh(user)
-    
+
     return user_to_response(user)
 
 
@@ -375,26 +367,24 @@ def delete_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot delete your own account",
         )
-    
+
     user = session.get(User, user_id)
-    
+
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User '{user_id}' not found",
         )
-    
+
     # Prevent deleting the last admin
     if user.is_admin:
-        admin_count = session.exec(
-            select(func.count(User.id)).where(User.is_admin == True)
-        ).one()
+        admin_count = session.exec(select(func.count(User.id)).where(User.is_admin)).one()
         if admin_count <= 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot delete the last admin user",
             )
-    
+
     session.delete(user)
     session.commit()
 
@@ -406,14 +396,20 @@ def delete_user(
 
 class InstanceSettingsResponse(BaseModel):
     """Instance settings response."""
-    
+
     instance_name: str = Field(description="Instance name")
     allow_public_registration: bool = Field(description="Allow public registration")
     server_timezone: str = Field(description="Server timezone")
     token_cleanup_interval: int = Field(description="Token cleanup interval in scheduler ticks")
-    scheduler_function_timeout_seconds: int | None = Field(default=None, description="Function execution timeout in seconds")
-    scheduler_max_schedules_per_tick: int | None = Field(default=None, description="Max schedules per tick")
-    scheduler_max_concurrent_executions: int | None = Field(default=None, description="Max concurrent executions")
+    scheduler_function_timeout_seconds: int | None = Field(
+        default=None, description="Function execution timeout in seconds"
+    )
+    scheduler_max_schedules_per_tick: int | None = Field(
+        default=None, description="Max schedules per tick"
+    )
+    scheduler_max_concurrent_executions: int | None = Field(
+        default=None, description="Max concurrent executions"
+    )
     storage_enabled: bool = Field(description="File storage enabled")
     storage_endpoint: str | None = Field(default=None, description="S3 endpoint")
     storage_bucket: str | None = Field(default=None, description="S3 bucket name")
@@ -424,14 +420,22 @@ class InstanceSettingsResponse(BaseModel):
 
 class InstanceSettingsUpdate(BaseModel):
     """Instance settings update request."""
-    
+
     instance_name: str | None = Field(default=None, max_length=100)
     allow_public_registration: bool | None = Field(default=None)
     server_timezone: str | None = Field(default=None, max_length=50)
-    token_cleanup_interval: int | None = Field(default=None, ge=1, description="Token cleanup interval in scheduler ticks")
-    scheduler_function_timeout_seconds: int | None = Field(default=None, ge=1, description="Function execution timeout in seconds")
-    scheduler_max_schedules_per_tick: int | None = Field(default=None, ge=1, description="Max schedules per tick")
-    scheduler_max_concurrent_executions: int | None = Field(default=None, ge=1, description="Max concurrent executions")
+    token_cleanup_interval: int | None = Field(
+        default=None, ge=1, description="Token cleanup interval in scheduler ticks"
+    )
+    scheduler_function_timeout_seconds: int | None = Field(
+        default=None, ge=1, description="Function execution timeout in seconds"
+    )
+    scheduler_max_schedules_per_tick: int | None = Field(
+        default=None, ge=1, description="Max schedules per tick"
+    )
+    scheduler_max_concurrent_executions: int | None = Field(
+        default=None, ge=1, description="Max concurrent executions"
+    )
     storage_enabled: bool | None = Field(default=None)
     storage_endpoint: str | None = Field(default=None, max_length=500)
     storage_bucket: str | None = Field(default=None, max_length=100)
@@ -461,7 +465,7 @@ def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse
 def get_or_create_settings(session: DbSession) -> InstanceSettings:
     """Get the singleton settings instance, creating it if it doesn't exist."""
     from tinybase.config import settings as app_settings
-    
+
     settings = session.get(InstanceSettings, 1)
     if settings is None:
         # Initialize with defaults from config if available
@@ -513,7 +517,7 @@ def update_settings(
 ) -> InstanceSettingsResponse:
     """Update instance settings."""
     settings = get_or_create_settings(session)
-    
+
     # Update only provided fields
     if request.instance_name is not None:
         settings.instance_name = request.instance_name
@@ -522,6 +526,7 @@ def update_settings(
     if request.server_timezone is not None:
         # Validate timezone
         import zoneinfo
+
         try:
             zoneinfo.ZoneInfo(request.server_timezone)
         except Exception:
@@ -570,11 +575,10 @@ def update_settings(
         settings.storage_secret_key = request.storage_secret_key
     if request.storage_region is not None:
         settings.storage_region = request.storage_region
-    
+
     settings.updated_at = utcnow()
     session.add(settings)
     session.commit()
     session.refresh(settings)
-    
-    return settings_to_response(settings)
 
+    return settings_to_response(settings)

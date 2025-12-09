@@ -25,7 +25,7 @@ router = APIRouter(prefix="/files", tags=["Files"])
 
 class FileUploadResponse(BaseModel):
     """Response after successful file upload."""
-    
+
     key: str = Field(description="Storage key (path) of the uploaded file")
     filename: str = Field(description="Original filename")
     content_type: str = Field(description="MIME type")
@@ -34,14 +34,14 @@ class FileUploadResponse(BaseModel):
 
 class PresignedUrlResponse(BaseModel):
     """Response with presigned URL."""
-    
+
     url: str = Field(description="Presigned URL for file access")
     expires_in: int = Field(description="URL expiration time in seconds")
 
 
 class StorageStatusResponse(BaseModel):
     """Storage status response."""
-    
+
     enabled: bool = Field(description="Whether storage is enabled and configured")
 
 
@@ -79,16 +79,16 @@ async def upload_file(
 ) -> FileUploadResponse:
     """Upload a file to storage."""
     service = StorageService(session)
-    
+
     if not service.is_enabled():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="File storage is not enabled",
         )
-    
+
     # Read file content
     content = await file.read()
-    
+
     try:
         key = service.upload_file(
             file_data=content,
@@ -96,14 +96,14 @@ async def upload_file(
             content_type=file.content_type or "application/octet-stream",
             path_prefix=path_prefix,
         )
-        
+
         return FileUploadResponse(
             key=key,
             filename=file.filename or "unknown",
             content_type=file.content_type or "application/octet-stream",
             size=len(content),
         )
-        
+
     except StorageError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -123,16 +123,16 @@ def download_file(
 ) -> Response:
     """Download a file from storage."""
     service = StorageService(session)
-    
+
     if not service.is_enabled():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="File storage is not enabled",
         )
-    
+
     try:
         content = service.download_file(key)
-        
+
         # Try to determine content type from extension
         content_type = "application/octet-stream"
         if "." in key:
@@ -152,7 +152,7 @@ def download_file(
                 "js": "application/javascript",
             }
             content_type = ext_map.get(ext, content_type)
-        
+
         return Response(
             content=content,
             media_type=content_type,
@@ -160,7 +160,7 @@ def download_file(
                 "Content-Disposition": f'inline; filename="{key.split("/")[-1]}"',
             },
         )
-        
+
     except StorageError as e:
         if "not found" in str(e).lower():
             raise HTTPException(
@@ -186,13 +186,13 @@ def delete_file(
 ) -> None:
     """Delete a file from storage."""
     service = StorageService(session)
-    
+
     if not service.is_enabled():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="File storage is not enabled",
         )
-    
+
     try:
         service.delete_file(key)
     except StorageError as e:
@@ -216,13 +216,13 @@ def get_presigned_url(
 ) -> PresignedUrlResponse:
     """Generate a presigned URL for a file."""
     service = StorageService(session)
-    
+
     if not service.is_enabled():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="File storage is not enabled",
         )
-    
+
     try:
         url = service.get_presigned_url(key, expires_in)
         return PresignedUrlResponse(url=url, expires_in=expires_in)
@@ -231,4 +231,3 @@ def get_presigned_url(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
-

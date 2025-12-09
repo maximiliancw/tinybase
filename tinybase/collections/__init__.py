@@ -19,4 +19,3 @@ __all__ = [
     "build_pydantic_model_from_schema",
     "get_registry",
 ]
-

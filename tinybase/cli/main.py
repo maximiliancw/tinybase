@@ -28,21 +28,18 @@ def version() -> None:
 @app.command()
 def init(
     directory: Annotated[
-        Path,
-        typer.Argument(help="Directory to initialize (default: current directory)")
+        Path, typer.Argument(help="Directory to initialize (default: current directory)")
     ] = Path("."),
     admin_email: Annotated[
-        Optional[str],
-        typer.Option("--admin-email", "-e", help="Admin user email")
+        Optional[str], typer.Option("--admin-email", "-e", help="Admin user email")
     ] = None,
     admin_password: Annotated[
-        Optional[str],
-        typer.Option("--admin-password", "-p", help="Admin user password")
+        Optional[str], typer.Option("--admin-password", "-p", help="Admin user password")
     ] = None,
 ) -> None:
     """
     Initialize a new TinyBase instance.
-    
+
     Creates configuration files, initializes the database, and optionally
     creates an admin user.
     """
@@ -50,9 +47,9 @@ def init(
     directory = directory.resolve()
     directory.mkdir(parents=True, exist_ok=True)
     os.chdir(directory)
-    
+
     typer.echo(f"Initializing TinyBase in {directory}")
-    
+
     # Create tinybase.toml if missing
     toml_path = directory / "tinybase.toml"
     if not toml_path.exists():
@@ -60,13 +57,13 @@ def init(
         typer.echo("  Created tinybase.toml")
     else:
         typer.echo("  tinybase.toml already exists")
-    
+
     # Create functions directory and example functions if missing
     functions_dir = directory / "functions"
     if not functions_dir.exists():
         functions_dir.mkdir()
         typer.echo("  Created functions/ directory")
-    
+
     # Create __init__.py if missing
     init_file = functions_dir / "__init__.py"
     if not init_file.exists():
@@ -79,41 +76,41 @@ def init(
             '"""\n'
         )
         typer.echo("  Created functions/__init__.py")
-    
+
     # Create example functions if they don't exist
     example_functions = get_example_functions()
-    
+
     for filename, content in example_functions:
         func_file = functions_dir / filename
         if not func_file.exists():
             func_file.write_text(content)
-    
+
     if any(not (functions_dir / name).exists() for name, _ in example_functions):
         typer.echo("  Created example functions in functions/ directory")
-    
+
     # Initialize database
     typer.echo("  Initializing database...")
     from tinybase.db.core import create_db_and_tables
+
     create_db_and_tables()
     typer.echo("  Database initialized")
-    
+
     # Create admin user if credentials provided
     admin_email = admin_email or os.environ.get("TINYBASE_ADMIN_EMAIL")
     admin_password = admin_password or os.environ.get("TINYBASE_ADMIN_PASSWORD")
-    
+
     if admin_email and admin_password:
         from sqlmodel import Session, select
+
         from tinybase.auth import hash_password
         from tinybase.db.core import get_engine
         from tinybase.db.models import User
-        
+
         engine = get_engine()
         with Session(engine) as session:
             # Check if admin already exists
-            existing = session.exec(
-                select(User).where(User.email == admin_email)
-            ).first()
-            
+            existing = session.exec(select(User).where(User.email == admin_email)).first()
+
             if existing:
                 # Update password and ensure admin flag is set
                 existing.password_hash = hash_password(admin_password)
@@ -132,7 +129,7 @@ def init(
                 typer.echo(f"  Created admin user: {admin_email}")
     else:
         typer.echo("  Tip: Run 'tinybase admin add <email> <password>' to create an admin user")
-    
+
     typer.echo("")
     typer.echo("TinyBase initialized successfully!")
     typer.echo("Run 'tinybase serve' to start the server.")
@@ -140,37 +137,30 @@ def init(
 
 @app.command()
 def serve(
-    host: Annotated[
-        Optional[str],
-        typer.Option("--host", "-h", help="Host to bind to")
-    ] = None,
-    port: Annotated[
-        Optional[int],
-        typer.Option("--port", "-p", help="Port to bind to")
-    ] = None,
+    host: Annotated[Optional[str], typer.Option("--host", "-h", help="Host to bind to")] = None,
+    port: Annotated[Optional[int], typer.Option("--port", "-p", help="Port to bind to")] = None,
     reload: Annotated[
-        bool,
-        typer.Option("--reload", "-r", help="Enable auto-reload for development")
+        bool, typer.Option("--reload", "-r", help="Enable auto-reload for development")
     ] = False,
 ) -> None:
     """
     Start the TinyBase server.
-    
+
     Runs the FastAPI application with Uvicorn.
     """
     import uvicorn
-    
+
     config = settings()
-    
+
     # Use CLI options or fall back to config
     bind_host = host or config.server_host
     bind_port = port or config.server_port
-    
+
     typer.echo(f"Starting TinyBase server on {bind_host}:{bind_port}")
     typer.echo(f"  API docs: http://{bind_host}:{bind_port}/docs")
     typer.echo(f"  Admin UI: http://{bind_host}:{bind_port}/admin")
     typer.echo("")
-    
+
     uvicorn.run(
         "tinybase.api.app:create_app",
         host=bind_host,
@@ -179,4 +169,3 @@ def serve(
         factory=True,
         log_level=config.log_level,
     )
-

@@ -14,32 +14,32 @@ Usage for extension developers:
         on_function_call, on_function_complete,
         UserLoginEvent, RecordCreateEvent, FunctionCompleteEvent,
     )
-    
+
     # Lifecycle hooks
     @on_startup
     def initialize():
         print("Extension loaded!")
-    
+
     @on_shutdown
     def cleanup():
         print("Extension unloading!")
-    
+
     # Authentication hooks
     @on_user_login
     def notify_login(event: UserLoginEvent):
         if event.is_admin:
             send_alert(f"Admin {event.email} logged in")
-    
+
     # Data hooks
     @on_record_create(collection="orders")
     def handle_new_order(event: RecordCreateEvent):
         send_notification(f"New order: {event.record_id}")
-    
+
     # Function hooks
     @on_function_complete()
     def track_metrics(event: FunctionCompleteEvent):
         log_metric(event.function_name, event.duration_ms)
-    
+
     # Register custom functions
     @register(name="my_function", description="My extension function", auth="auth")
     def my_function(ctx: Context, payload: MyInput) -> MyOutput:
@@ -47,53 +47,53 @@ Usage for extension developers:
 """
 
 from tinybase.extensions.hooks import (
-    # Lifecycle hooks
-    on_startup,
-    on_shutdown,
-    run_startup_hooks,
-    run_shutdown_hooks,
-    # Authentication hooks
-    on_user_login,
-    on_user_register,
-    run_user_login_hooks,
-    run_user_register_hooks,
-    # Data hooks
-    on_record_create,
-    on_record_update,
-    on_record_delete,
-    run_record_create_hooks,
-    run_record_update_hooks,
-    run_record_delete_hooks,
-    # Function hooks
-    on_function_call,
-    on_function_complete,
-    run_function_call_hooks,
-    run_function_complete_hooks,
+    FunctionCallEvent,
+    FunctionCompleteEvent,
+    RecordCreateEvent,
+    RecordDeleteEvent,
+    RecordUpdateEvent,
     # Event data classes
     UserLoginEvent,
     UserRegisterEvent,
-    RecordCreateEvent,
-    RecordUpdateEvent,
-    RecordDeleteEvent,
-    FunctionCallEvent,
-    FunctionCompleteEvent,
     # Utilities
     clear_hooks,
+    # Function hooks
+    on_function_call,
+    on_function_complete,
+    # Data hooks
+    on_record_create,
+    on_record_delete,
+    on_record_update,
+    on_shutdown,
+    # Lifecycle hooks
+    on_startup,
+    # Authentication hooks
+    on_user_login,
+    on_user_register,
+    run_function_call_hooks,
+    run_function_complete_hooks,
+    run_record_create_hooks,
+    run_record_delete_hooks,
+    run_record_update_hooks,
+    run_shutdown_hooks,
+    run_startup_hooks,
+    run_user_login_hooks,
+    run_user_register_hooks,
+)
+from tinybase.extensions.installer import (
+    ExtensionManifest,
+    InstallError,
+    check_for_updates,
+    install_extension,
+    parse_github_url,
+    uninstall_extension,
+    validate_manifest,
 )
 from tinybase.extensions.loader import (
+    get_extensions_directory,
     load_enabled_extensions,
     load_extension_module,
     unload_extension,
-    get_extensions_directory,
-)
-from tinybase.extensions.installer import (
-    install_extension,
-    uninstall_extension,
-    check_for_updates,
-    validate_manifest,
-    parse_github_url,
-    InstallError,
-    ExtensionManifest,
 )
 
 __all__ = [

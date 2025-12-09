@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class UserLoginEvent:
     """Data passed to on_user_login hooks."""
+
     user_id: UUID
     email: str
     is_admin: bool
@@ -44,6 +45,7 @@ class UserLoginEvent:
 @dataclass
 class UserRegisterEvent:
     """Data passed to on_user_register hooks."""
+
     user_id: UUID
     email: str
 
@@ -51,6 +53,7 @@ class UserRegisterEvent:
 @dataclass
 class RecordCreateEvent:
     """Data passed to on_record_create hooks."""
+
     collection: str
     record_id: UUID
     data: dict
@@ -60,6 +63,7 @@ class RecordCreateEvent:
 @dataclass
 class RecordUpdateEvent:
     """Data passed to on_record_update hooks."""
+
     collection: str
     record_id: UUID
     old_data: dict
@@ -70,6 +74,7 @@ class RecordUpdateEvent:
 @dataclass
 class RecordDeleteEvent:
     """Data passed to on_record_delete hooks."""
+
     collection: str
     record_id: UUID
     data: dict
@@ -79,6 +84,7 @@ class RecordDeleteEvent:
 @dataclass
 class FunctionCallEvent:
     """Data passed to on_function_call hooks (before execution)."""
+
     function_name: str
     user_id: UUID | None
     payload: dict
@@ -87,6 +93,7 @@ class FunctionCallEvent:
 @dataclass
 class FunctionCompleteEvent:
     """Data passed to on_function_complete hooks (after execution)."""
+
     function_name: str
     user_id: UUID | None
     status: str  # "succeeded" or "failed"
@@ -103,12 +110,13 @@ class FunctionCompleteEvent:
 @dataclass
 class HookRegistry:
     """Registry for a specific hook type with optional filtering."""
+
     hooks: list[tuple[Callable, str | None]] = field(default_factory=list)
-    
+
     def register(self, func: Callable, filter_value: str | None = None) -> None:
         """Register a hook function with optional filter."""
         self.hooks.append((func, filter_value))
-    
+
     def get_hooks(self, filter_value: str | None = None) -> list[Callable]:
         """Get all hooks matching the filter (None matches all)."""
         result = []
@@ -117,7 +125,7 @@ class HookRegistry:
             if hook_filter is None or hook_filter == filter_value or hook_filter == "*":
                 result.append(func)
         return result
-    
+
     def clear(self) -> None:
         """Clear all registered hooks."""
         self.hooks = []
@@ -143,13 +151,13 @@ _function_complete_hooks = HookRegistry()
 def on_startup(func: Callable[[], None]) -> Callable[[], None]:
     """
     Decorator to register a function to run on TinyBase startup.
-    
+
     The decorated function will be called after all extensions are loaded,
     before the server starts accepting requests.
-    
+
     Example:
         from tinybase.extensions import on_startup
-        
+
         @on_startup
         def initialize_my_extension():
             print("Extension initialized!")
@@ -161,13 +169,13 @@ def on_startup(func: Callable[[], None]) -> Callable[[], None]:
 def on_shutdown(func: Callable[[], None]) -> Callable[[], None]:
     """
     Decorator to register a function to run on TinyBase shutdown.
-    
+
     The decorated function will be called when the server is shutting down,
     before the process exits.
-    
+
     Example:
         from tinybase.extensions import on_shutdown
-        
+
         @on_shutdown
         def cleanup_my_extension():
             print("Extension shutting down!")
@@ -184,10 +192,10 @@ def on_shutdown(func: Callable[[], None]) -> Callable[[], None]:
 def on_user_login(func: Callable[[UserLoginEvent], None]) -> Callable[[UserLoginEvent], None]:
     """
     Decorator to register a function to run when a user logs in.
-    
+
     Example:
         from tinybase.extensions import on_user_login, UserLoginEvent
-        
+
         @on_user_login
         def notify_login(event: UserLoginEvent):
             print(f"User {event.email} logged in!")
@@ -198,13 +206,15 @@ def on_user_login(func: Callable[[UserLoginEvent], None]) -> Callable[[UserLogin
     return func
 
 
-def on_user_register(func: Callable[[UserRegisterEvent], None]) -> Callable[[UserRegisterEvent], None]:
+def on_user_register(
+    func: Callable[[UserRegisterEvent], None],
+) -> Callable[[UserRegisterEvent], None]:
     """
     Decorator to register a function to run when a new user registers.
-    
+
     Example:
         from tinybase.extensions import on_user_register, UserRegisterEvent
-        
+
         @on_user_register
         def welcome_user(event: UserRegisterEvent):
             print(f"Welcome {event.email}!")
@@ -224,26 +234,28 @@ def on_record_create(
 ) -> Callable[[Callable[[RecordCreateEvent], None]], Callable[[RecordCreateEvent], None]]:
     """
     Decorator to register a function to run when a record is created.
-    
+
     Args:
         collection: Optional collection name to filter. Use "*" for all collections.
                    If None, matches all collections.
-    
+
     Example:
         from tinybase.extensions import on_record_create, RecordCreateEvent
-        
+
         @on_record_create(collection="orders")
         def handle_new_order(event: RecordCreateEvent):
             print(f"New order {event.record_id} created!")
             send_notification(event.data)
-        
+
         @on_record_create()  # All collections
         def audit_creates(event: RecordCreateEvent):
             log_audit("create", event.collection, event.record_id)
     """
+
     def decorator(func: Callable[[RecordCreateEvent], None]) -> Callable[[RecordCreateEvent], None]:
         _record_create_hooks.register(func, collection)
         return func
+
     return decorator
 
 
@@ -252,22 +264,24 @@ def on_record_update(
 ) -> Callable[[Callable[[RecordUpdateEvent], None]], Callable[[RecordUpdateEvent], None]]:
     """
     Decorator to register a function to run when a record is updated.
-    
+
     Args:
         collection: Optional collection name to filter. Use "*" for all collections.
                    If None, matches all collections.
-    
+
     Example:
         from tinybase.extensions import on_record_update, RecordUpdateEvent
-        
+
         @on_record_update(collection="users")
         def handle_user_update(event: RecordUpdateEvent):
             if event.old_data.get("status") != event.new_data.get("status"):
                 notify_status_change(event.record_id, event.new_data["status"])
     """
+
     def decorator(func: Callable[[RecordUpdateEvent], None]) -> Callable[[RecordUpdateEvent], None]:
         _record_update_hooks.register(func, collection)
         return func
+
     return decorator
 
 
@@ -276,21 +290,23 @@ def on_record_delete(
 ) -> Callable[[Callable[[RecordDeleteEvent], None]], Callable[[RecordDeleteEvent], None]]:
     """
     Decorator to register a function to run when a record is deleted.
-    
+
     Args:
         collection: Optional collection name to filter. Use "*" for all collections.
                    If None, matches all collections.
-    
+
     Example:
         from tinybase.extensions import on_record_delete, RecordDeleteEvent
-        
+
         @on_record_delete(collection="files")
         def cleanup_file(event: RecordDeleteEvent):
             delete_from_storage(event.data["file_path"])
     """
+
     def decorator(func: Callable[[RecordDeleteEvent], None]) -> Callable[[RecordDeleteEvent], None]:
         _record_delete_hooks.register(func, collection)
         return func
+
     return decorator
 
 
@@ -304,26 +320,28 @@ def on_function_call(
 ) -> Callable[[Callable[[FunctionCallEvent], None]], Callable[[FunctionCallEvent], None]]:
     """
     Decorator to register a function to run before a function executes.
-    
+
     Args:
         name: Optional function name to filter. Use "*" for all functions.
               If None, matches all functions.
-    
+
     Example:
         from tinybase.extensions import on_function_call, FunctionCallEvent
-        
+
         @on_function_call(name="process_payment")
         def log_payment_attempt(event: FunctionCallEvent):
             print(f"Payment attempt by user {event.user_id}")
             audit_log("payment_attempt", event.payload)
-        
+
         @on_function_call()  # All functions
         def log_all_calls(event: FunctionCallEvent):
             print(f"Function {event.function_name} called")
     """
+
     def decorator(func: Callable[[FunctionCallEvent], None]) -> Callable[[FunctionCallEvent], None]:
         _function_call_hooks.register(func, name)
         return func
+
     return decorator
 
 
@@ -332,14 +350,14 @@ def on_function_complete(
 ) -> Callable[[Callable[[FunctionCompleteEvent], None]], Callable[[FunctionCompleteEvent], None]]:
     """
     Decorator to register a function to run after a function completes.
-    
+
     Args:
         name: Optional function name to filter. Use "*" for all functions.
               If None, matches all functions.
-    
+
     Example:
         from tinybase.extensions import on_function_complete, FunctionCompleteEvent
-        
+
         @on_function_complete()
         def track_function_metrics(event: FunctionCompleteEvent):
             metrics.record(
@@ -347,15 +365,19 @@ def on_function_complete(
                 duration=event.duration_ms,
                 success=event.status == "succeeded"
             )
-        
+
         @on_function_complete(name="critical_task")
         def alert_on_failure(event: FunctionCompleteEvent):
             if event.status == "failed":
                 send_alert(f"Critical task failed: {event.error_message}")
     """
-    def decorator(func: Callable[[FunctionCompleteEvent], None]) -> Callable[[FunctionCompleteEvent], None]:
+
+    def decorator(
+        func: Callable[[FunctionCompleteEvent], None],
+    ) -> Callable[[FunctionCompleteEvent], None]:
         _function_complete_hooks.register(func, name)
         return func
+
     return decorator
 
 

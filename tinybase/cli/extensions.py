@@ -14,24 +14,21 @@ extensions_app = typer.Typer(
 @extensions_app.command("install")
 def extensions_install(
     url: Annotated[
-        str,
-        typer.Argument(help="GitHub repository URL (e.g., https://github.com/user/repo)")
+        str, typer.Argument(help="GitHub repository URL (e.g., https://github.com/user/repo)")
     ],
-    yes: Annotated[
-        bool,
-        typer.Option("--yes", "-y", help="Skip confirmation prompt")
-    ] = False,
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation prompt")] = False,
 ) -> None:
     """
     Install an extension from a GitHub repository.
-    
+
     Extensions can execute arbitrary Python code. Only install extensions
     from trusted sources.
     """
     from sqlmodel import Session
+
     from tinybase.db.core import create_db_and_tables, get_engine
-    from tinybase.extensions import install_extension, InstallError
-    
+    from tinybase.extensions import InstallError, install_extension
+
     # Security warning
     if not yes:
         typer.echo("")
@@ -42,10 +39,10 @@ def extensions_install(
         if not confirm:
             typer.echo("Installation cancelled.")
             raise typer.Exit(0)
-    
+
     # Ensure database exists
     create_db_and_tables()
-    
+
     engine = get_engine()
     with Session(engine) as session:
         try:
@@ -64,32 +61,27 @@ def extensions_install(
 
 @extensions_app.command("uninstall")
 def extensions_uninstall(
-    name: Annotated[
-        str,
-        typer.Argument(help="Extension name to uninstall")
-    ],
-    yes: Annotated[
-        bool,
-        typer.Option("--yes", "-y", help="Skip confirmation prompt")
-    ] = False,
+    name: Annotated[str, typer.Argument(help="Extension name to uninstall")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation prompt")] = False,
 ) -> None:
     """
     Uninstall an extension.
-    
+
     Removes the extension files and database record.
     """
     from sqlmodel import Session
+
     from tinybase.db.core import create_db_and_tables, get_engine
     from tinybase.extensions import uninstall_extension
-    
+
     if not yes:
         confirm = typer.confirm(f"Uninstall extension '{name}'?")
         if not confirm:
             typer.echo("Uninstallation cancelled.")
             raise typer.Exit(0)
-    
+
     create_db_and_tables()
-    
+
     engine = get_engine()
     with Session(engine) as session:
         if uninstall_extension(session, name):
@@ -105,30 +97,31 @@ def extensions_uninstall(
 def extensions_list() -> None:
     """
     List installed extensions.
-    
+
     Shows all extensions with their status, version, and description.
     """
     from sqlmodel import Session, select
+
     from tinybase.db.core import create_db_and_tables, get_engine
     from tinybase.db.models import Extension
-    
+
     create_db_and_tables()
-    
+
     engine = get_engine()
     with Session(engine) as session:
         extensions = session.exec(select(Extension)).all()
-        
+
         if not extensions:
             typer.echo("No extensions installed.")
             typer.echo("")
             typer.echo("Install an extension with:")
             typer.echo("  tinybase extensions install <github-url>")
             return
-        
+
         typer.echo("")
         typer.echo("Installed Extensions:")
         typer.echo("-" * 60)
-        
+
         for ext in extensions:
             status = "✓ enabled" if ext.is_enabled else "○ disabled"
             typer.echo(f"\n  {ext.name} v{ext.version}  [{status}]")
@@ -137,48 +130,44 @@ def extensions_list() -> None:
             if ext.author:
                 typer.echo(f"    Author: {ext.author}")
             typer.echo(f"    Source: {ext.repo_url}")
-        
+
         typer.echo("")
 
 
 @extensions_app.command("enable")
 def extensions_enable(
-    name: Annotated[
-        str,
-        typer.Argument(help="Extension name to enable")
-    ],
+    name: Annotated[str, typer.Argument(help="Extension name to enable")],
 ) -> None:
     """
     Enable an extension.
-    
+
     The extension will be loaded on the next server restart.
     """
     from sqlmodel import Session, select
+
     from tinybase.db.core import create_db_and_tables, get_engine
     from tinybase.db.models import Extension
     from tinybase.utils import utcnow
-    
+
     create_db_and_tables()
-    
+
     engine = get_engine()
     with Session(engine) as session:
-        extension = session.exec(
-            select(Extension).where(Extension.name == name)
-        ).first()
-        
+        extension = session.exec(select(Extension).where(Extension.name == name)).first()
+
         if not extension:
             typer.echo(f"Error: Extension '{name}' not found.", err=True)
             raise typer.Exit(1)
-        
+
         if extension.is_enabled:
             typer.echo(f"Extension '{name}' is already enabled.")
             return
-        
+
         extension.is_enabled = True
         extension.updated_at = utcnow()
         session.add(extension)
         session.commit()
-        
+
         typer.echo(f"✓ Enabled extension: {name}")
         typer.echo("")
         typer.echo("Note: Restart the server to load the extension.")
@@ -186,42 +175,38 @@ def extensions_enable(
 
 @extensions_app.command("disable")
 def extensions_disable(
-    name: Annotated[
-        str,
-        typer.Argument(help="Extension name to disable")
-    ],
+    name: Annotated[str, typer.Argument(help="Extension name to disable")],
 ) -> None:
     """
     Disable an extension.
-    
+
     The extension will not be loaded on the next server restart.
     """
     from sqlmodel import Session, select
+
     from tinybase.db.core import create_db_and_tables, get_engine
     from tinybase.db.models import Extension
     from tinybase.utils import utcnow
-    
+
     create_db_and_tables()
-    
+
     engine = get_engine()
     with Session(engine) as session:
-        extension = session.exec(
-            select(Extension).where(Extension.name == name)
-        ).first()
-        
+        extension = session.exec(select(Extension).where(Extension.name == name)).first()
+
         if not extension:
             typer.echo(f"Error: Extension '{name}' not found.", err=True)
             raise typer.Exit(1)
-        
+
         if not extension.is_enabled:
             typer.echo(f"Extension '{name}' is already disabled.")
             return
-        
+
         extension.is_enabled = False
         extension.updated_at = utcnow()
         session.add(extension)
         session.commit()
-        
+
         typer.echo(f"✓ Disabled extension: {name}")
         typer.echo("")
         typer.echo("Note: Restart the server to fully unload the extension.")
@@ -230,41 +215,39 @@ def extensions_disable(
 @extensions_app.command("check-updates")
 def extensions_check_updates(
     name: Annotated[
-        Optional[str],
-        typer.Argument(help="Extension name (omit to check all)")
+        Optional[str], typer.Argument(help="Extension name (omit to check all)")
     ] = None,
 ) -> None:
     """
     Check for extension updates.
-    
+
     Compares installed versions with the latest versions from GitHub.
     """
     from sqlmodel import Session, select
+
     from tinybase.db.core import create_db_and_tables, get_engine
     from tinybase.db.models import Extension
     from tinybase.extensions import check_for_updates
-    
+
     create_db_and_tables()
-    
+
     engine = get_engine()
     with Session(engine) as session:
         if name:
-            extensions = [session.exec(
-                select(Extension).where(Extension.name == name)
-            ).first()]
+            extensions = [session.exec(select(Extension).where(Extension.name == name)).first()]
             if not extensions[0]:
                 typer.echo(f"Error: Extension '{name}' not found.", err=True)
                 raise typer.Exit(1)
         else:
             extensions = list(session.exec(select(Extension)).all())
-        
+
         if not extensions:
             typer.echo("No extensions installed.")
             return
-        
+
         typer.echo("Checking for updates...")
         typer.echo("")
-        
+
         updates_available = False
         for ext in extensions:
             if not ext:
@@ -276,10 +259,9 @@ def extensions_check_updates(
                 updates_available = True
             else:
                 typer.echo(f"  {ext.name}: {ext.version} (up to date)")
-        
+
         if updates_available:
             typer.echo("")
             typer.echo("To update an extension, uninstall and reinstall it:")
             typer.echo("  tinybase extensions uninstall <name>")
             typer.echo("  tinybase extensions install <github-url>")
-

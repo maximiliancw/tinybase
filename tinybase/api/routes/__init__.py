@@ -9,4 +9,3 @@ Contains all route definitions organized by domain:
 - schedules: Schedule management endpoints
 - extensions: Extension management endpoints
 """
-

@@ -17,11 +17,11 @@ from tinybase.auth import CurrentAdminUser, CurrentUser, CurrentUserOptional, Db
 from tinybase.collections.service import CollectionService, check_access
 from tinybase.extensions.hooks import (
     RecordCreateEvent,
-    RecordUpdateEvent,
     RecordDeleteEvent,
+    RecordUpdateEvent,
     run_record_create_hooks,
-    run_record_update_hooks,
     run_record_delete_hooks,
+    run_record_update_hooks,
 )
 
 router = APIRouter(prefix="/collections", tags=["Collections"])
@@ -34,43 +34,33 @@ router = APIRouter(prefix="/collections", tags=["Collections"])
 
 class CollectionCreate(BaseModel):
     """Request to create a new collection."""
-    
+
     name: str = Field(
         min_length=1,
         max_length=100,
         pattern=r"^[a-z][a-z0-9_]*$",
-        description="Collection name (lowercase, underscores allowed)"
+        description="Collection name (lowercase, underscores allowed)",
     )
-    label: str = Field(
-        min_length=1,
-        max_length=200,
-        description="Human-readable label"
-    )
+    label: str = Field(min_length=1, max_length=200, description="Human-readable label")
     schema_: dict[str, Any] = Field(
-        alias="schema",
-        description="Collection schema with fields definition"
+        alias="schema", description="Collection schema with fields definition"
     )
     options: dict[str, Any] | None = Field(
-        default=None,
-        description="Additional options (access rules, etc.)"
+        default=None, description="Additional options (access rules, etc.)"
     )
 
 
 class CollectionUpdate(BaseModel):
     """Request to update a collection."""
-    
+
     label: str | None = Field(default=None, description="New label")
-    schema_: dict[str, Any] | None = Field(
-        default=None,
-        alias="schema",
-        description="New schema"
-    )
+    schema_: dict[str, Any] | None = Field(default=None, alias="schema", description="New schema")
     options: dict[str, Any] | None = Field(default=None, description="New options")
 
 
 class CollectionResponse(BaseModel):
     """Collection information response."""
-    
+
     id: str = Field(description="Collection ID")
     name: str = Field(description="Collection name")
     label: str = Field(description="Human-readable label")
@@ -78,25 +68,25 @@ class CollectionResponse(BaseModel):
     options: dict[str, Any] = Field(description="Collection options")
     created_at: str = Field(description="Creation timestamp")
     updated_at: str = Field(description="Last update timestamp")
-    
+
     model_config = {"populate_by_name": True}
 
 
 class RecordCreate(BaseModel):
     """Request to create a new record."""
-    
+
     data: dict[str, Any] = Field(description="Record data")
 
 
 class RecordUpdate(BaseModel):
     """Request to update a record."""
-    
+
     data: dict[str, Any] = Field(description="Record data (partial update)")
 
 
 class RecordResponse(BaseModel):
     """Record response."""
-    
+
     id: str = Field(description="Record ID")
     collection_id: str = Field(description="Collection ID")
     owner_id: str | None = Field(description="Owner user ID")
@@ -107,7 +97,7 @@ class RecordResponse(BaseModel):
 
 class RecordListResponse(BaseModel):
     """Paginated record list response."""
-    
+
     records: list[RecordResponse] = Field(description="List of records")
     total: int = Field(description="Total number of records")
     limit: int = Field(description="Page size")
@@ -179,7 +169,7 @@ def create_collection(
 ) -> CollectionResponse:
     """Create a new collection (admin only)."""
     service = CollectionService(session)
-    
+
     try:
         collection = service.create_collection(
             name=request.name,
@@ -192,7 +182,7 @@ def create_collection(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-    
+
     return collection_to_response(collection)
 
 
@@ -210,13 +200,13 @@ def get_collection(
     """Get collection details by name."""
     service = CollectionService(session)
     collection = service.get_collection_by_name(collection_name)
-    
+
     if collection is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Collection '{collection_name}' not found",
         )
-    
+
     return collection_to_response(collection)
 
 
@@ -235,13 +225,13 @@ def update_collection(
     """Update a collection (admin only)."""
     service = CollectionService(session)
     collection = service.get_collection_by_name(collection_name)
-    
+
     if collection is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Collection '{collection_name}' not found",
         )
-    
+
     try:
         updated = service.update_collection(
             collection=collection,
@@ -254,7 +244,7 @@ def update_collection(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-    
+
     return collection_to_response(updated)
 
 
@@ -272,13 +262,13 @@ def delete_collection(
     """Delete a collection (admin only)."""
     service = CollectionService(session)
     collection = service.get_collection_by_name(collection_name)
-    
+
     if collection is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Collection '{collection_name}' not found",
         )
-    
+
     service.delete_collection(collection)
 
 
@@ -305,13 +295,13 @@ def list_records(
     """List records in a collection with pagination."""
     service = CollectionService(session)
     collection = service.get_collection_by_name(collection_name)
-    
+
     if collection is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Collection '{collection_name}' not found",
         )
-    
+
     # Check access
     if not check_access(
         collection,
@@ -323,7 +313,7 @@ def list_records(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied",
         )
-    
+
     records, total = service.list_records(
         collection=collection,
         limit=limit,
@@ -331,7 +321,7 @@ def list_records(
         sort_by=sort_by,
         sort_order=sort_order,
     )
-    
+
     return RecordListResponse(
         records=[record_to_response(r) for r in records],
         total=total,
@@ -357,13 +347,13 @@ def create_record(
     """Create a new record in a collection."""
     service = CollectionService(session)
     collection = service.get_collection_by_name(collection_name)
-    
+
     if collection is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Collection '{collection_name}' not found",
         )
-    
+
     # Check access
     if not check_access(
         collection,
@@ -375,7 +365,7 @@ def create_record(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied",
         )
-    
+
     try:
         record = service.create_record(
             collection=collection,
@@ -387,7 +377,7 @@ def create_record(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Validation error: {e}",
         )
-    
+
     # Run record create hooks in background
     event = RecordCreateEvent(
         collection=collection_name,
@@ -396,7 +386,7 @@ def create_record(
         owner_id=record.owner_id,
     )
     background_tasks.add_task(asyncio.run, run_record_create_hooks(event))
-    
+
     return record_to_response(record)
 
 
@@ -415,21 +405,21 @@ def get_record(
     """Get a specific record by ID."""
     service = CollectionService(session)
     collection = service.get_collection_by_name(collection_name)
-    
+
     if collection is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Collection '{collection_name}' not found",
         )
-    
+
     record = service.get_record_in_collection(collection, record_id)
-    
+
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Record '{record_id}' not found",
         )
-    
+
     # Check access
     if not check_access(
         collection,
@@ -442,7 +432,7 @@ def get_record(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied",
         )
-    
+
     return record_to_response(record)
 
 
@@ -463,21 +453,21 @@ def update_record(
     """Update a record (partial update)."""
     service = CollectionService(session)
     collection = service.get_collection_by_name(collection_name)
-    
+
     if collection is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Collection '{collection_name}' not found",
         )
-    
+
     record = service.get_record_in_collection(collection, record_id)
-    
+
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Record '{record_id}' not found",
         )
-    
+
     # Check access using collection rules
     if not check_access(
         collection,
@@ -490,10 +480,10 @@ def update_record(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to update this record",
         )
-    
+
     # Capture old data for the hook
     old_data = dict(record.data)
-    
+
     try:
         updated = service.update_record(
             collection=collection,
@@ -506,7 +496,7 @@ def update_record(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Validation error: {e}",
         )
-    
+
     # Run record update hooks in background
     event = RecordUpdateEvent(
         collection=collection_name,
@@ -516,7 +506,7 @@ def update_record(
         owner_id=updated.owner_id,
     )
     background_tasks.add_task(asyncio.run, run_record_update_hooks(event))
-    
+
     return record_to_response(updated)
 
 
@@ -536,21 +526,21 @@ def delete_record(
     """Delete a record."""
     service = CollectionService(session)
     collection = service.get_collection_by_name(collection_name)
-    
+
     if collection is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Collection '{collection_name}' not found",
         )
-    
+
     record = service.get_record_in_collection(collection, record_id)
-    
+
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Record '{record_id}' not found",
         )
-    
+
     # Check access using collection rules
     if not check_access(
         collection,
@@ -563,13 +553,13 @@ def delete_record(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to delete this record",
         )
-    
+
     # Capture data for the hook before deletion
     record_data = dict(record.data)
     record_owner_id = record.owner_id
-    
+
     service.delete_record(record)
-    
+
     # Run record delete hooks in background
     event = RecordDeleteEvent(
         collection=collection_name,
@@ -578,4 +568,3 @@ def delete_record(
         owner_id=record_owner_id,
     )
     background_tasks.add_task(asyncio.run, run_record_delete_hooks(event))
-

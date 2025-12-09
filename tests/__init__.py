@@ -1,2 +1,1 @@
 """TinyBase test suite."""
-

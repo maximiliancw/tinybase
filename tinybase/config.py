@@ -24,27 +24,27 @@ else:
 def load_toml_config(toml_path: Path | None = None) -> dict[str, Any]:
     """
     Load configuration from tinybase.toml file.
-    
+
     Args:
         toml_path: Optional explicit path to TOML file.
                    If None, looks for tinybase.toml in current directory.
-    
+
     Returns:
         Dictionary of configuration values (flattened for Pydantic settings).
     """
     if toml_path is None:
         toml_path = Path.cwd() / "tinybase.toml"
-    
+
     if not toml_path.exists():
         return {}
-    
+
     with open(toml_path, "rb") as f:
         data = tomllib.load(f)
-    
+
     # Flatten nested config into environment-variable-style keys
     # e.g., {"server": {"host": "0.0.0.0"}} -> {"server_host": "0.0.0.0"}
     result: dict[str, Any] = {}
-    
+
     for section, values in data.items():
         if isinstance(values, dict):
             for key, value in values.items():
@@ -53,111 +53,86 @@ def load_toml_config(toml_path: Path | None = None) -> dict[str, Any]:
                 result[flat_key] = value
         else:
             result[section] = values
-    
+
     return result
 
 
 class Settings(BaseSettings):
     """
     TinyBase application settings.
-    
+
     Settings can be configured via:
     - Environment variables with TINYBASE_ prefix
     - tinybase.toml configuration file
     - Default values
     """
-    
+
     model_config = SettingsConfigDict(
         env_prefix="TINYBASE_",
         env_nested_delimiter="_",
         case_sensitive=False,
         extra="ignore",
     )
-    
+
     # Server settings
     server_host: str = Field(default="0.0.0.0", description="Server bind host")
     server_port: int = Field(default=8000, description="Server bind port")
     debug: bool = Field(default=False, description="Enable debug mode")
     log_level: str = Field(default="info", description="Logging level")
-    
+
     # Database settings
-    db_url: str = Field(
-        default="sqlite:///./tinybase.db",
-        description="Database connection URL"
-    )
-    
+    db_url: str = Field(default="sqlite:///./tinybase.db", description="Database connection URL")
+
     # Auth settings
-    auth_token_ttl_hours: int = Field(
-        default=24,
-        description="Auth token time-to-live in hours"
-    )
-    
+    auth_token_ttl_hours: int = Field(default=24, description="Auth token time-to-live in hours")
+
     # Functions settings
     functions_path: str = Field(
         default="./functions",
-        description="Directory path for function modules (must be a Python package)"
+        description="Directory path for function modules (must be a Python package)",
     )
-    
+
     # Scheduler settings
-    scheduler_enabled: bool = Field(
-        default=True,
-        description="Enable the background scheduler"
-    )
+    scheduler_enabled: bool = Field(default=True, description="Enable the background scheduler")
     scheduler_interval_seconds: int = Field(
-        default=5,
-        description="Scheduler polling interval in seconds"
+        default=5, description="Scheduler polling interval in seconds"
     )
     scheduler_token_cleanup_interval: int = Field(
         default=60,
         ge=1,
-        description="Token cleanup interval in scheduler ticks (e.g., 60 = every 60 scheduler intervals)"
+        description="Token cleanup interval in scheduler ticks (e.g., 60 = every 60 scheduler intervals)",
     )
     scheduler_function_timeout_seconds: int = Field(
         default=1800,
         ge=1,
-        description="Maximum execution time for scheduled functions in seconds (default: 30 minutes)"
+        description="Maximum execution time for scheduled functions in seconds (default: 30 minutes)",
     )
     scheduler_max_schedules_per_tick: int = Field(
-        default=100,
-        ge=1,
-        description="Maximum number of schedules to process per scheduler tick"
+        default=100, ge=1, description="Maximum number of schedules to process per scheduler tick"
     )
     scheduler_max_concurrent_executions: int = Field(
-        default=10,
-        ge=1,
-        description="Maximum number of schedules to execute concurrently"
+        default=10, ge=1, description="Maximum number of schedules to execute concurrently"
     )
-    
+
     # CORS settings
-    cors_allow_origins: list[str] = Field(
-        default=["*"],
-        description="CORS allowed origins"
-    )
-    
+    cors_allow_origins: list[str] = Field(default=["*"], description="CORS allowed origins")
+
     # Admin settings
     admin_static_dir: str = Field(
         default="builtin",
-        description="Path to admin UI static files, or 'builtin' for packaged assets"
+        description="Path to admin UI static files, or 'builtin' for packaged assets",
     )
-    admin_email: str | None = Field(
-        default=None,
-        description="Default admin email for bootstrap"
-    )
+    admin_email: str | None = Field(default=None, description="Default admin email for bootstrap")
     admin_password: str | None = Field(
-        default=None,
-        description="Default admin password for bootstrap"
+        default=None, description="Default admin password for bootstrap"
     )
-    
+
     # Extensions settings
-    extensions_enabled: bool = Field(
-        default=True,
-        description="Enable the extension system"
-    )
+    extensions_enabled: bool = Field(default=True, description="Enable the extension system")
     extensions_path: str = Field(
-        default="~/.tinybase/extensions",
-        description="Directory path for installed extensions"
+        default="~/.tinybase/extensions", description="Directory path for installed extensions"
     )
-    
+
     @field_validator("log_level")
     @classmethod
     def validate_log_level(cls, v: str) -> str:
@@ -166,7 +141,7 @@ class Settings(BaseSettings):
         if v.lower() not in valid_levels:
             raise ValueError(f"log_level must be one of {valid_levels}")
         return v.lower()
-    
+
     @field_validator("cors_allow_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: Any) -> list[str]:
@@ -180,19 +155,19 @@ class Settings(BaseSettings):
 def get_settings(toml_path: Path | None = None) -> Settings:
     """
     Load and return application settings.
-    
+
     This function loads settings from environment variables and
     optionally from a tinybase.toml file.
-    
+
     Args:
         toml_path: Optional path to TOML configuration file.
-    
+
     Returns:
         Configured Settings instance.
     """
     # Load TOML config first
     toml_config = load_toml_config(toml_path)
-    
+
     # Create settings with TOML values as defaults
     # Environment variables will override TOML values
     return Settings(**toml_config)
@@ -215,4 +190,3 @@ def reload_settings(toml_path: Path | None = None) -> Settings:
     global _settings
     _settings = get_settings(toml_path)
     return _settings
-

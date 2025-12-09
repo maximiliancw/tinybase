@@ -42,7 +42,7 @@ TYPE_MAPPING: dict[str, type] = {
 class FieldDefinition(BaseModel):
     """
     Definition of a single field in a collection schema.
-    
+
     Attributes:
         name: Field name (must be valid Python identifier)
         type: Field type (string, int, float, bool, list[string], etc.)
@@ -55,7 +55,7 @@ class FieldDefinition(BaseModel):
         pattern: Regex pattern for string validation
         description: Human-readable field description
     """
-    
+
     name: str = Field(description="Field name")
     type: str = Field(default="string", description="Field type")
     required: bool = Field(default=False, description="Whether field is required")
@@ -71,14 +71,13 @@ class FieldDefinition(BaseModel):
 class CollectionSchema(BaseModel):
     """
     Complete schema definition for a collection.
-    
+
     Attributes:
         fields: List of field definitions
     """
-    
+
     fields: list[FieldDefinition] = Field(
-        default_factory=list,
-        description="List of field definitions"
+        default_factory=list, description="List of field definitions"
     )
 
 
@@ -90,22 +89,22 @@ class CollectionSchema(BaseModel):
 def build_field_info(field_def: FieldDefinition) -> tuple[type, FieldInfo]:
     """
     Build a Pydantic field type and FieldInfo from a field definition.
-    
+
     Args:
         field_def: The field definition.
-    
+
     Returns:
         Tuple of (python_type, FieldInfo) for use with create_model.
     """
     # Get the Python type
     python_type = TYPE_MAPPING.get(field_def.type.lower(), str)
-    
+
     # Build field constraints
     field_kwargs: dict[str, Any] = {}
-    
+
     if field_def.description:
         field_kwargs["description"] = field_def.description
-    
+
     # Handle default value
     if not field_def.required:
         if field_def.default is not None:
@@ -120,7 +119,7 @@ def build_field_info(field_def: FieldDefinition) -> tuple[type, FieldInfo]:
                 field_kwargs["default"] = None
                 # Make the type optional
                 python_type = python_type | None  # type: ignore
-    
+
     # String constraints
     if field_def.min_length is not None:
         field_kwargs["min_length"] = field_def.min_length
@@ -128,13 +127,13 @@ def build_field_info(field_def: FieldDefinition) -> tuple[type, FieldInfo]:
         field_kwargs["max_length"] = field_def.max_length
     if field_def.pattern is not None:
         field_kwargs["pattern"] = field_def.pattern
-    
+
     # Numeric constraints
     if field_def.min is not None:
         field_kwargs["ge"] = field_def.min
     if field_def.max is not None:
         field_kwargs["le"] = field_def.max
-    
+
     return python_type, Field(**field_kwargs)
 
 
@@ -145,15 +144,15 @@ def build_pydantic_model_from_schema(
 ) -> type[BaseModel]:
     """
     Build a Pydantic model from a collection schema dictionary.
-    
+
     Args:
         collection_name: Name of the collection (used in model class name)
         schema_dict: Schema dictionary with "fields" key
         base_class: Base class for the generated model
-    
+
     Returns:
         A dynamically created Pydantic model class.
-    
+
     Example:
         schema = {
             "fields": [
@@ -166,17 +165,17 @@ def build_pydantic_model_from_schema(
     """
     # Parse schema
     collection_schema = CollectionSchema.model_validate(schema_dict)
-    
+
     # Build field definitions for create_model
     field_definitions: dict[str, tuple[type, FieldInfo]] = {}
-    
+
     for field_def in collection_schema.fields:
         python_type, field_info = build_field_info(field_def)
         field_definitions[field_def.name] = (python_type, field_info)
-    
+
     # Create model name from collection name (CamelCase)
     model_name = "".join(word.capitalize() for word in collection_name.split("_")) + "Data"
-    
+
     # Create the dynamic model
     return create_model(
         model_name,
@@ -193,55 +192,55 @@ def build_pydantic_model_from_schema(
 class CollectionModelRegistry:
     """
     Registry for collection Pydantic models.
-    
+
     Maintains a mapping from collection names to their dynamically generated
     Pydantic models for use in validation and OpenAPI documentation.
     """
-    
+
     def __init__(self) -> None:
         """Initialize an empty registry."""
         self._models: dict[str, type[BaseModel]] = {}
-    
+
     def register(self, name: str, model: type[BaseModel]) -> None:
         """
         Register a model for a collection.
-        
+
         Args:
             name: Collection name
             model: Pydantic model class
         """
         self._models[name] = model
-    
+
     def get(self, name: str) -> type[BaseModel] | None:
         """
         Get the model for a collection.
-        
+
         Args:
             name: Collection name
-        
+
         Returns:
             The registered Pydantic model, or None if not found.
         """
         return self._models.get(name)
-    
+
     def unregister(self, name: str) -> None:
         """
         Remove a collection's model from the registry.
-        
+
         Args:
             name: Collection name to remove
         """
         self._models.pop(name, None)
-    
+
     def all(self) -> dict[str, type[BaseModel]]:
         """
         Get all registered models.
-        
+
         Returns:
             Dictionary mapping collection names to models.
         """
         return self._models.copy()
-    
+
     def clear(self) -> None:
         """Clear all registered models."""
         self._models.clear()
@@ -265,4 +264,3 @@ def reset_registry() -> None:
     if _registry is not None:
         _registry.clear()
     _registry = None
-

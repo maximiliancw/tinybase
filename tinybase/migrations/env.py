@@ -7,15 +7,14 @@ and database configuration.
 
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from alembic import context
+from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
-from alembic import context
+from tinybase.config import settings
 
 # Import all models so they're registered with SQLModel
 from tinybase.db import models  # noqa: F401
-from tinybase.config import settings
 
 # This is the Alembic Config object
 config = context.config
@@ -36,11 +35,11 @@ def get_url() -> str:
 def run_migrations_offline() -> None:
     """
     Run migrations in 'offline' mode.
-    
+
     This configures the context with just a URL and not an Engine,
     though an Engine is acceptable here as well. By skipping the Engine
     creation we don't even need a DBAPI to be available.
-    
+
     Calls to context.execute() here emit the given string to the
     script output.
     """
@@ -60,14 +59,14 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     """
     Run migrations in 'online' mode.
-    
+
     In this scenario we need to create an Engine and associate a connection
     with the context.
     """
     # Build configuration with TinyBase's database URL
     configuration = config.get_section(config.config_ini_section) or {}
     configuration["sqlalchemy.url"] = get_url()
-    
+
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",
@@ -89,4 +88,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

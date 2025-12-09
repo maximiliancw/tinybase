@@ -9,8 +9,6 @@ Provides admin-only endpoints for:
 - Checking for updates
 """
 
-from uuid import UUID
-
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import func
@@ -19,10 +17,10 @@ from sqlmodel import select
 from tinybase.auth import CurrentAdminUser, DbSession
 from tinybase.db.models import Extension
 from tinybase.extensions import (
+    InstallError,
+    check_for_updates,
     install_extension,
     uninstall_extension,
-    check_for_updates,
-    InstallError,
 )
 from tinybase.utils import utcnow
 
@@ -36,7 +34,7 @@ router = APIRouter(prefix="/admin/extensions", tags=["Extensions"])
 
 class ExtensionInfo(BaseModel):
     """Extension information response."""
-    
+
     id: str = Field(description="Extension ID")
     name: str = Field(description="Extension name")
     version: str = Field(description="Extension version")
@@ -46,12 +44,14 @@ class ExtensionInfo(BaseModel):
     is_enabled: bool = Field(description="Whether extension is enabled")
     installed_at: str = Field(description="Installation timestamp")
     updated_at: str = Field(description="Last update timestamp")
-    update_available: str | None = Field(default=None, description="Latest version if update available")
+    update_available: str | None = Field(
+        default=None, description="Latest version if update available"
+    )
 
 
 class ExtensionListResponse(BaseModel):
     """Paginated extension list response."""
-    
+
     extensions: list[ExtensionInfo] = Field(description="Extensions")
     total: int = Field(description="Total count")
     limit: int = Field(description="Page size")
@@ -60,16 +60,15 @@ class ExtensionListResponse(BaseModel):
 
 class ExtensionInstallRequest(BaseModel):
     """Extension installation request."""
-    
+
     repo_url: str = Field(
-        description="GitHub repository URL",
-        examples=["https://github.com/user/tinybase-extension"]
+        description="GitHub repository URL", examples=["https://github.com/user/tinybase-extension"]
     )
 
 
 class ExtensionUpdateRequest(BaseModel):
     """Extension update request."""
-    
+
     is_enabled: bool | None = Field(default=None, description="Enable/disable extension")
 
 
@@ -117,17 +116,17 @@ def list_extensions(
     # Build count query
     count_stmt = select(func.count(Extension.id))
     if enabled_only:
-        count_stmt = count_stmt.where(Extension.is_enabled == True)
+        count_stmt = count_stmt.where(Extension.is_enabled)
     total = session.exec(count_stmt).one()
-    
+
     # Build data query
     query = select(Extension)
     if enabled_only:
-        query = query.where(Extension.is_enabled == True)
+        query = query.where(Extension.is_enabled)
     query = query.order_by(Extension.name).offset(offset).limit(limit)
-    
+
     extensions = list(session.exec(query).all())
-    
+
     # Optionally check for updates
     extension_infos = []
     for ext in extensions:
@@ -137,7 +136,7 @@ def list_extensions(
             if result:
                 _, update_version = result
         extension_infos.append(extension_to_response(ext, update_version))
-    
+
     return ExtensionListResponse(
         extensions=extension_infos,
         total=total,
@@ -186,22 +185,20 @@ def get_extension(
     check_updates: bool = Query(default=False, description="Check for available updates"),
 ) -> ExtensionInfo:
     """Get extension details by name."""
-    extension = session.exec(
-        select(Extension).where(Extension.name == extension_name)
-    ).first()
-    
+    extension = session.exec(select(Extension).where(Extension.name == extension_name)).first()
+
     if not extension:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Extension '{extension_name}' not found",
         )
-    
+
     update_version = None
     if check_updates:
         result = check_for_updates(session, extension.name)
         if result:
             _, update_version = result
-    
+
     return extension_to_response(extension, update_version)
 
 
@@ -218,24 +215,22 @@ def update_extension(
     _admin: CurrentAdminUser,
 ) -> ExtensionInfo:
     """Update extension settings (enable/disable)."""
-    extension = session.exec(
-        select(Extension).where(Extension.name == extension_name)
-    ).first()
-    
+    extension = session.exec(select(Extension).where(Extension.name == extension_name)).first()
+
     if not extension:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Extension '{extension_name}' not found",
         )
-    
+
     if request.is_enabled is not None:
         extension.is_enabled = request.is_enabled
-    
+
     extension.updated_at = utcnow()
     session.add(extension)
     session.commit()
     session.refresh(extension)
-    
+
     return extension_to_response(extension)
 
 
@@ -256,4 +251,3 @@ def uninstall_extension_route(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Extension '{extension_name}' not found",
         )
-

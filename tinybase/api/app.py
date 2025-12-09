@@ -9,9 +9,8 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -21,7 +20,7 @@ from tinybase.api.routes.static_admin import mount_admin_ui
 from tinybase.collections.service import load_collections_into_registry
 from tinybase.config import settings
 from tinybase.db.core import create_db_and_tables, get_engine
-from tinybase.extensions import load_enabled_extensions, run_startup_hooks, run_shutdown_hooks
+from tinybase.extensions import load_enabled_extensions, run_shutdown_hooks, run_startup_hooks
 from tinybase.functions.loader import load_functions_from_settings
 from tinybase.schedule import start_scheduler, stop_scheduler
 from tinybase.version import __version__
@@ -31,8 +30,7 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -41,55 +39,56 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     Application lifespan context manager.
-    
+
     Handles startup and shutdown events:
     - Startup: Initialize database, load collections, load functions, load extensions, start scheduler
     - Shutdown: Run extension shutdown hooks, stop scheduler
     """
     # Startup
     logger.info("Starting TinyBase server...")
-    
+
     # Initialize database tables
     logger.info("Initializing database...")
     create_db_and_tables()
-    
+
     # Load collections into registry
     logger.info("Loading collections...")
     from sqlmodel import Session
+
     engine = get_engine()
     with Session(engine) as session:
         load_collections_into_registry(session)
-    
+
     # Load user functions
     logger.info("Loading functions...")
     loaded = load_functions_from_settings()
     logger.info(f"Loaded {loaded} function file(s)")
-    
+
     # Load extensions
     logger.info("Loading extensions...")
     with Session(engine) as session:
         ext_loaded = load_enabled_extensions(session)
         logger.info(f"Loaded {ext_loaded} extension(s)")
-    
+
     # Run extension startup hooks
     logger.info("Running extension startup hooks...")
     await run_startup_hooks()
-    
+
     # Start scheduler
     logger.info("Starting scheduler...")
     await start_scheduler()
-    
+
     logger.info("TinyBase server started successfully")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down TinyBase server...")
-    
+
     # Run extension shutdown hooks
     logger.info("Running extension shutdown hooks...")
     await run_shutdown_hooks()
-    
+
     await stop_scheduler()
     logger.info("TinyBase server stopped")
 
@@ -97,18 +96,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 def create_app() -> FastAPI:
     """
     Create and configure the FastAPI application.
-    
+
     This factory function creates a new FastAPI app instance with:
     - All API routes mounted
     - CORS middleware configured
     - Admin UI static files mounted
     - Lifespan hooks for startup/shutdown
-    
+
     Returns:
         Configured FastAPI application instance.
     """
     config = settings()
-    
+
     # Create FastAPI app
     app = FastAPI(
         title="TinyBase",
@@ -119,11 +118,11 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
         openapi_url="/openapi.json",
     )
-    
+
     # Configure rate limiting
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-    
+
     # Configure CORS
     if config.cors_allow_origins:
         app.add_middleware(
@@ -133,7 +132,7 @@ def create_app() -> FastAPI:
             allow_methods=["*"],
             allow_headers=["*"],
         )
-    
+
     # Mount API routes
     app.include_router(auth.router, prefix="/api")
     app.include_router(collections.router, prefix="/api")
@@ -142,12 +141,12 @@ def create_app() -> FastAPI:
     app.include_router(schedules.router, prefix="/api")
     app.include_router(files.router, prefix="/api")
     app.include_router(extensions.router, prefix="/api")
-    
+
     # Mount admin UI
     admin_mounted = mount_admin_ui(app)
     if not admin_mounted:
         logger.warning("Admin UI static files not found - /admin will not be available")
-    
+
     # Root endpoint
     @app.get("/", tags=["Root"])
     def root() -> dict:
@@ -159,12 +158,11 @@ def create_app() -> FastAPI:
             "openapi": "/openapi.json",
             "admin": "/admin" if admin_mounted else None,
         }
-    
+
     # Health check endpoint
     @app.get("/health", tags=["Health"])
     def health() -> dict:
         """Health check endpoint."""
         return {"status": "healthy"}
-    
-    return app
 
+    return app

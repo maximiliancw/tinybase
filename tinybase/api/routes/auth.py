@@ -8,8 +8,10 @@ Provides endpoints for:
 """
 
 import asyncio
-from pydantic import BaseModel, EmailStr, Field
+import os
+
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
+from pydantic import BaseModel, EmailStr, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlmodel import select
@@ -33,7 +35,6 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # Rate limiter for auth routes
 # Uses environment variable TINYBASE_RATE_LIMIT_ENABLED to disable in tests
-import os
 _rate_limit_enabled = os.environ.get("TINYBASE_RATE_LIMIT_ENABLED", "true").lower() != "false"
 limiter = Limiter(key_func=get_remote_address, enabled=_rate_limit_enabled)
 
@@ -45,14 +46,14 @@ limiter = Limiter(key_func=get_remote_address, enabled=_rate_limit_enabled)
 
 class RegisterRequest(BaseModel):
     """User registration request."""
-    
+
     email: EmailStr = Field(description="User email address")
     password: str = Field(min_length=8, description="Password (min 8 characters)")
 
 
 class RegisterResponse(BaseModel):
     """User registration response."""
-    
+
     id: str = Field(description="User ID")
     email: str = Field(description="User email address")
     message: str = Field(default="User registered successfully")
@@ -60,14 +61,14 @@ class RegisterResponse(BaseModel):
 
 class LoginRequest(BaseModel):
     """User login request."""
-    
+
     email: EmailStr = Field(description="User email address")
     password: str = Field(description="User password")
 
 
 class LoginResponse(BaseModel):
     """User login response with token."""
-    
+
     token: str = Field(description="Bearer token for API authentication")
     token_type: str = Field(default="bearer")
     user_id: str = Field(description="Authenticated user ID")
@@ -78,7 +79,7 @@ class LoginResponse(BaseModel):
 
 class UserInfo(BaseModel):
     """Current user information."""
-    
+
     id: str = Field(description="User ID")
     email: str = Field(description="User email address")
     is_admin: bool = Field(description="Whether user has admin privileges")
@@ -87,13 +88,13 @@ class UserInfo(BaseModel):
 
 class SetupStatusResponse(BaseModel):
     """Setup status response."""
-    
+
     needs_setup: bool = Field(description="Whether initial setup is needed (no users exist)")
 
 
 class InstanceInfoResponse(BaseModel):
     """Public instance information."""
-    
+
     instance_name: str = Field(description="The name of this TinyBase instance")
 
 
@@ -111,7 +112,7 @@ class InstanceInfoResponse(BaseModel):
 def get_instance_info(session: DbSession) -> InstanceInfoResponse:
     """
     Get public instance information.
-    
+
     Returns the instance name configured in settings.
     This endpoint does not require authentication.
     """
@@ -129,12 +130,12 @@ def get_instance_info(session: DbSession) -> InstanceInfoResponse:
 def get_setup_status(session: DbSession) -> SetupStatusResponse:
     """
     Check if the system needs initial setup.
-    
+
     Returns needs_setup=True if no users exist in the database,
     indicating that the first login will create an admin user.
     """
     from sqlalchemy import func
-    
+
     user_count = session.exec(select(func.count(User.id))).one()
     return SetupStatusResponse(needs_setup=user_count == 0)
 
@@ -155,10 +156,10 @@ def register(
 ) -> RegisterResponse:
     """
     Register a new user account.
-    
+
     Creates a new user with the provided email and password. The password
     is hashed before storage using bcrypt.
-    
+
     Registration may be disabled via instance settings.
     """
     # Check if public registration is allowed
@@ -168,18 +169,16 @@ def register(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Public registration is disabled",
         )
-    
+
     # Check if email already exists
-    existing = session.exec(
-        select(User).where(User.email == body.email)
-    ).first()
-    
+    existing = session.exec(select(User).where(User.email == body.email)).first()
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-    
+
     # Create new user
     user = User(
         email=body.email,
@@ -188,11 +187,11 @@ def register(
     session.add(user)
     session.commit()
     session.refresh(user)
-    
+
     # Run user register hooks in background
     event = UserRegisterEvent(user_id=user.id, email=user.email)
     background_tasks.add_task(asyncio.run, run_user_register_hooks(event))
-    
+
     return RegisterResponse(
         id=str(user.id),
         email=user.email,
@@ -214,20 +213,20 @@ def login(
 ) -> LoginResponse:
     """
     Authenticate user and issue access token.
-    
+
     Verifies the provided email and password, then creates and returns
     a new bearer token for API authentication.
-    
+
     If no users exist in the system, automatically creates an admin user
     with the provided credentials.
     """
     from sqlalchemy import func
-    
+
     admin_created = False
-    
+
     # Check if any users exist
     user_count = session.exec(select(func.count(User.id))).one()
-    
+
     if user_count == 0:
         # No users exist - create admin user with provided credentials
         user = User(
@@ -239,36 +238,34 @@ def login(
         session.commit()
         session.refresh(user)
         admin_created = True
-        
+
         # Also run register hooks for auto-created admin
         register_event = UserRegisterEvent(user_id=user.id, email=user.email)
         background_tasks.add_task(asyncio.run, run_user_register_hooks(register_event))
     else:
         # Find user by email
-        user = session.exec(
-            select(User).where(User.email == body.email)
-        ).first()
-        
+        user = session.exec(select(User).where(User.email == body.email)).first()
+
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
             )
-        
+
         # Verify password
         if not verify_password(body.password, user.password_hash):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
             )
-    
+
     # Create and return token
     auth_token = create_auth_token(session, user)
-    
+
     # Run user login hooks in background
     login_event = UserLoginEvent(user_id=user.id, email=user.email, is_admin=user.is_admin)
     background_tasks.add_task(asyncio.run, run_user_login_hooks(login_event))
-    
+
     return LoginResponse(
         token=auth_token.token,
         user_id=str(user.id),
@@ -287,7 +284,7 @@ def login(
 def get_me(user: CurrentUser) -> UserInfo:
     """
     Get information about the current authenticated user.
-    
+
     Requires a valid bearer token in the Authorization header.
     """
     return UserInfo(
@@ -296,4 +293,3 @@ def get_me(user: CurrentUser) -> UserInfo:
         is_admin=user.is_admin,
         created_at=user.created_at.isoformat(),
     )
-

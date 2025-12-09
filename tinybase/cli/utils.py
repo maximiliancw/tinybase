@@ -1,8 +1,5 @@
 """Shared utility functions for CLI commands."""
 
-import re
-from pathlib import Path
-
 
 def snake_to_camel(name: str) -> str:
     """Convert snake_case to CamelCase."""
@@ -11,7 +8,7 @@ def snake_to_camel(name: str) -> str:
 
 def create_default_toml() -> str:
     """Generate default tinybase.toml content."""
-    return '''# TinyBase Configuration
+    return """# TinyBase Configuration
 # See documentation for all available options
 
 [server]
@@ -43,13 +40,13 @@ static_dir = "builtin"
 # [environments.production]
 # url = "https://tinybase.example.com"
 # api_token = "your-admin-token"
-'''
+"""
 
 
 def create_function_boilerplate(name: str, description: str) -> str:
     """Generate boilerplate code for a new function."""
     camel_name = snake_to_camel(name)
-    
+
     return f'''"""
 {description}
 """
@@ -81,7 +78,7 @@ class {camel_name}Output(BaseModel):
 def {name}(ctx: Context, payload: {camel_name}Input) -> {camel_name}Output:
     """
     {description}
-    
+
     TODO: Implement function logic
     """
     return {camel_name}Output()
@@ -91,7 +88,9 @@ def {name}(ctx: Context, payload: {camel_name}Input) -> {camel_name}Output:
 def get_example_functions() -> list[tuple[str, str]]:
     """Get list of example function files to create during init."""
     return [
-        ("add_numbers.py", '''"""
+        (
+            "add_numbers.py",
+            '''"""
 Add Numbers Function
 
 Example function demonstrating how to define a TinyBase function.
@@ -123,15 +122,18 @@ class AddOutput(BaseModel):
 def add_numbers(ctx: Context, payload: AddInput) -> AddOutput:
     """
     Add two numbers and return the sum.
-    
+
     This is an example function showing how to:
     - Define input/output models with Pydantic
     - Use the @register decorator
     - Access the Context object
     """
     return AddOutput(sum=payload.x + payload.y)
-'''),
-        ("hello.py", '''"""
+''',
+        ),
+        (
+            "hello.py",
+            '''"""
 Hello World Function
 
 Example function demonstrating user context access.
@@ -163,15 +165,18 @@ class HelloOutput(BaseModel):
 def hello(ctx: Context, payload: HelloInput) -> HelloOutput:
     """
     Return a greeting message.
-    
+
     Demonstrates accessing user information from the context.
     """
     return HelloOutput(
         message=f"Hello, {payload.name}!",
         user_id=str(ctx.user_id) if ctx.user_id else None,
     )
-'''),
-        ("fetch_url.py", '''# /// script
+''',
+        ),
+        (
+            "fetch_url.py",
+            '''# /// script
 # dependencies = [
 #   "requests>=2.32.0",
 # ]
@@ -215,20 +220,20 @@ class FetchUrlOutput(BaseModel):
 def fetch_url(ctx: Context, payload: FetchUrlInput) -> FetchUrlOutput:
     """
     Fetch a URL and return its HTTP status, page title, and response headers.
-    
+
     This function demonstrates:
     - Using uv's inline dependency feature (requests library)
     - Making HTTP requests
     - Parsing HTML to extract the title
     - Error handling
-    
+
     The requests library is automatically installed when this function is loaded
     thanks to the inline dependency declaration at the top of the file.
     """
     try:
         response = requests.get(payload.url, timeout=payload.timeout)
         response.raise_for_status()
-        
+
         # Try to extract title from HTML
         title = None
         if "text/html" in response.headers.get("content-type", ""):
@@ -240,10 +245,10 @@ def fetch_url(ctx: Context, payload: FetchUrlInput) -> FetchUrlOutput:
                     title = title_match.group(1).strip()
             except Exception:
                 pass
-        
+
         # Convert headers to dict (requests returns CaseInsensitiveDict)
         headers_dict = dict(response.headers)
-        
+
         return FetchUrlOutput(
             status_code=response.status_code,
             title=title,
@@ -259,6 +264,6 @@ def fetch_url(ctx: Context, payload: FetchUrlInput) -> FetchUrlOutput:
             success=False,
             error=str(e),
         )
-'''),
+''',
+        ),
     ]
-

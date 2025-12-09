@@ -13,4 +13,3 @@ TinyBase provides:
 from tinybase.version import __version__
 
 __all__ = ["__version__"]
-

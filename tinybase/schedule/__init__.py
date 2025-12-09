@@ -37,4 +37,3 @@ __all__ = [
     "validate_cron_expression",
     "validate_timezone",
 ]
-
