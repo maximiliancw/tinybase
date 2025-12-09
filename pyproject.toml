@@ -87,6 +87,17 @@ docs = [
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+exclude = [
+    ".venv",
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    "site",
+    "app",
+    "node_modules",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
