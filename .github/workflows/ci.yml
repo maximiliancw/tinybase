@@ -28,16 +28,8 @@ jobs:
       - name: Install dependencies and project
         run: uv sync --group dev
 
-      - name: Verify installation and debug
-        run: |
-          echo "Checking Python path:"
-          uv run python -c "import sys; print('\n'.join(sys.path))"
-          echo ""
-          echo "Checking tinybase installation:"
-          uv run python -c "import tinybase; import os; print('tinybase location:', tinybase.__file__); func_dir = os.path.join(os.path.dirname(tinybase.__file__), 'functions'); print('functions dir exists:', os.path.exists(func_dir)); print('functions/__init__.py exists:', os.path.exists(os.path.join(func_dir, '__init__.py')))"
-          echo ""
-          echo "Testing import:"
-          uv run python -c "import tinybase; import tinybase.functions; print('✓ Package installed successfully')"
+      - name: Verify installation
+        run: uv run python -c "import tinybase; import tinybase.functions; print('✓ Package installed successfully')"
 
       - name: Run linting
         run: |
