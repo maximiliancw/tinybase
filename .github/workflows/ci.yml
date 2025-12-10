@@ -7,11 +7,12 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  quality-assurance:
+    name: Testing and Linting
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.11', '3.12', '3.14']
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v4
@@ -24,27 +25,21 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Create virtual environment and install
-        run: |
-          uv venv
-          source .venv/bin/activate
-          uv pip install -e ".[dev]"
-      
+      - name: Install dependencies and project
+        run: uv sync --group dev
+
       - name: Verify installation
         run: |
-          source .venv/bin/activate
-          python -c "import tinybase; import tinybase.functions; print('Package installed successfully')"
+          uv run python -c "import tinybase; import sys; print('tinybase location:', tinybase.__file__)"
+          uv run python -c "import tinybase; import tinybase.functions; print('Package installed successfully')"
 
       - name: Run linting
         run: |
-          source .venv/bin/activate
-          ruff check --fix .
-          ruff format --check .
+          uv run ruff check --fix .
+          uv run ruff format --check .
 
       - name: Run tests with coverage
-        run: |
-          source .venv/bin/activate
-          pytest -v --tb=short --cov=tinybase --cov-report=xml --cov-report=html --cov-report=term
+        run: uv run pytest -v --tb=short --cov=tinybase --cov-report=xml --cov-report=term
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -54,14 +49,6 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
-      - name: Upload coverage HTML report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-report-${{ matrix.python-version }}
-          path: htmlcov/
-          retention-days: 30
-
   docs:
     runs-on: ubuntu-latest
     steps:
@@ -70,7 +57,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -80,4 +67,3 @@ jobs:
 
       - name: Build documentation
         run: uv run mkdocs build --strict
-
