@@ -16,6 +16,7 @@ interface InstanceSettings {
   allow_public_registration: boolean;
   server_timezone: string;
   token_cleanup_interval: number;
+  metrics_collection_interval: number;
   scheduler_function_timeout_seconds: number | null;
   scheduler_max_schedules_per_tick: number | null;
   scheduler_max_concurrent_executions: number | null;
@@ -36,6 +37,7 @@ const settings = reactive<InstanceSettings>({
   allow_public_registration: true,
   server_timezone: "UTC",
   token_cleanup_interval: 60,
+  metrics_collection_interval: 360,
   scheduler_function_timeout_seconds: null,
   scheduler_max_schedules_per_tick: null,
   scheduler_max_concurrent_executions: null,
@@ -95,6 +97,7 @@ async function saveSettings() {
       allow_public_registration: settings.allow_public_registration,
       server_timezone: settings.server_timezone,
       token_cleanup_interval: settings.token_cleanup_interval,
+      metrics_collection_interval: settings.metrics_collection_interval,
       scheduler_function_timeout_seconds:
         settings.scheduler_function_timeout_seconds,
       scheduler_max_schedules_per_tick:
@@ -227,6 +230,22 @@ async function saveSettings() {
             >How often to run token cleanup (in scheduler ticks). For example,
             if scheduler runs every 5 seconds and this is set to 60, cleanup
             runs every 5 minutes (60 × 5s).</small
+          >
+        </label>
+
+        <label for="metrics_collection_interval">
+          Metrics Collection Interval
+          <input
+            id="metrics_collection_interval"
+            v-model.number="settings.metrics_collection_interval"
+            type="number"
+            min="1"
+            step="1"
+          />
+          <small
+            >How often to collect metrics (in scheduler ticks). For example, if
+            scheduler runs every 5 seconds and this is set to 360, metrics are
+            collected every 30 minutes (360 × 5s).</small
           >
         </label>
 

@@ -15,7 +15,7 @@ from sqlalchemy import func
 from sqlmodel import select
 
 from tinybase.auth import CurrentAdminUser, DbSession, hash_password
-from tinybase.db.models import FunctionCall, InstanceSettings, User
+from tinybase.db.models import FunctionCall, InstanceSettings, Metrics, User
 from tinybase.utils import FunctionCallStatus, TriggerType, utcnow
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -401,6 +401,9 @@ class InstanceSettingsResponse(BaseModel):
     allow_public_registration: bool = Field(description="Allow public registration")
     server_timezone: str = Field(description="Server timezone")
     token_cleanup_interval: int = Field(description="Token cleanup interval in scheduler ticks")
+    metrics_collection_interval: int = Field(
+        description="Metrics collection interval in scheduler ticks"
+    )
     scheduler_function_timeout_seconds: int | None = Field(
         default=None, description="Function execution timeout in seconds"
     )
@@ -427,6 +430,9 @@ class InstanceSettingsUpdate(BaseModel):
     token_cleanup_interval: int | None = Field(
         default=None, ge=1, description="Token cleanup interval in scheduler ticks"
     )
+    metrics_collection_interval: int | None = Field(
+        default=None, ge=1, description="Metrics collection interval in scheduler ticks"
+    )
     scheduler_function_timeout_seconds: int | None = Field(
         default=None, ge=1, description="Function execution timeout in seconds"
     )
@@ -451,6 +457,7 @@ def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse
         allow_public_registration=settings.allow_public_registration,
         server_timezone=settings.server_timezone,
         token_cleanup_interval=settings.token_cleanup_interval,
+        metrics_collection_interval=settings.metrics_collection_interval,
         scheduler_function_timeout_seconds=settings.scheduler_function_timeout_seconds,
         scheduler_max_schedules_per_tick=settings.scheduler_max_schedules_per_tick,
         scheduler_max_concurrent_executions=settings.scheduler_max_concurrent_executions,
@@ -473,6 +480,9 @@ def get_or_create_settings(session: DbSession) -> InstanceSettings:
         settings = InstanceSettings(
             id=1,
             token_cleanup_interval=getattr(config, "scheduler_token_cleanup_interval", 60),
+            metrics_collection_interval=getattr(
+                config, "scheduler_metrics_collection_interval", 360
+            ),
             scheduler_function_timeout_seconds=getattr(
                 config, "scheduler_function_timeout_seconds", None
             ),
@@ -542,6 +552,13 @@ def update_settings(
                 detail="token_cleanup_interval must be at least 1",
             )
         settings.token_cleanup_interval = request.token_cleanup_interval
+    if request.metrics_collection_interval is not None:
+        if request.metrics_collection_interval < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="metrics_collection_interval must be at least 1",
+            )
+        settings.metrics_collection_interval = request.metrics_collection_interval
     if request.scheduler_function_timeout_seconds is not None:
         if request.scheduler_function_timeout_seconds < 1:
             raise HTTPException(
@@ -582,3 +599,92 @@ def update_settings(
     session.refresh(settings)
 
     return settings_to_response(settings)
+
+
+# =============================================================================
+# Metrics Routes
+# =============================================================================
+
+
+class CollectionSizesResponse(BaseModel):
+    """Collection sizes metrics response."""
+
+    collection_name: str = Field(description="Collection name")
+    record_count: int = Field(description="Number of records")
+
+
+class FunctionStatsResponse(BaseModel):
+    """Function statistics metrics response."""
+
+    function_name: str = Field(description="Function name")
+    avg_runtime_ms: float | None = Field(description="Average runtime in milliseconds")
+    error_rate: float = Field(description="Error rate as percentage")
+    total_calls: int = Field(description="Total number of calls")
+
+
+class MetricsResponse(BaseModel):
+    """Metrics response."""
+
+    collection_sizes: list[CollectionSizesResponse] = Field(description="Collection sizes")
+    function_stats: list[FunctionStatsResponse] = Field(description="Function statistics")
+    collected_at: str = Field(description="When metrics were collected")
+
+
+@router.get(
+    "/metrics",
+    response_model=MetricsResponse,
+    summary="Get latest metrics",
+    description="Get the most recent collected metrics (collection sizes and function statistics).",
+)
+def get_metrics(
+    session: DbSession,
+    _admin: CurrentAdminUser,
+) -> MetricsResponse:
+    """Get the latest collected metrics."""
+    # Get most recent collection_sizes metric
+    collection_sizes_stmt = (
+        select(Metrics)
+        .where(Metrics.metric_type == "collection_sizes")
+        .order_by(Metrics.collected_at.desc())
+        .limit(1)
+    )
+    collection_sizes_metric = session.exec(collection_sizes_stmt).first()
+
+    # Get most recent function_stats metric
+    function_stats_stmt = (
+        select(Metrics)
+        .where(Metrics.metric_type == "function_stats")
+        .order_by(Metrics.collected_at.desc())
+        .limit(1)
+    )
+    function_stats_metric = session.exec(function_stats_stmt).first()
+
+    # Build response
+    collection_sizes = []
+    if collection_sizes_metric and collection_sizes_metric.data:
+        collection_sizes = [
+            CollectionSizesResponse(collection_name=name, record_count=count)
+            for name, count in collection_sizes_metric.data.items()
+        ]
+
+    function_stats = []
+    collected_at = None
+    if function_stats_metric and function_stats_metric.data:
+        function_stats = [
+            FunctionStatsResponse(
+                function_name=name,
+                avg_runtime_ms=stats.get("avg_runtime_ms"),
+                error_rate=stats.get("error_rate", 0.0),
+                total_calls=stats.get("total_calls", 0),
+            )
+            for name, stats in function_stats_metric.data.items()
+        ]
+        collected_at = function_stats_metric.collected_at.isoformat()
+    elif collection_sizes_metric:
+        collected_at = collection_sizes_metric.collected_at.isoformat()
+
+    return MetricsResponse(
+        collection_sizes=collection_sizes,
+        function_stats=function_stats,
+        collected_at=collected_at or utcnow().isoformat(),
+    )

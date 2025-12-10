@@ -18,6 +18,7 @@ from tinybase.config import settings
 from tinybase.db.core import get_engine
 from tinybase.db.models import FunctionSchedule, InstanceSettings
 from tinybase.functions.core import execute_function, get_global_registry
+from tinybase.metrics import collect_metrics
 from tinybase.utils import TriggerType, utcnow
 
 from .utils import parse_schedule_config
@@ -55,6 +56,7 @@ class Scheduler:
         self._tick_count = 0
         # Cache for settings (refreshed periodically)
         self._cached_cleanup_interval: int | None = None
+        self._cached_metrics_interval: int | None = None
         self._cached_function_timeout: int | None = None
         self._cached_max_schedules_per_tick: int | None = None
         self._cached_max_concurrent_executions: int | None = None
@@ -125,10 +127,15 @@ class Scheduler:
                 self._tick_count = (self._tick_count + 1) % 1_000_000
                 self._metrics["total_ticks"] += 1
 
-                # Get token cleanup interval from instance settings (cached)
+                # Get intervals from instance settings (cached)
                 cleanup_interval = self._get_token_cleanup_interval()
+                metrics_interval = self._get_metrics_collection_interval()
+
+                # Run maintenance tasks at their respective intervals
                 if self._tick_count % cleanup_interval == 0:
-                    await self._run_maintenance()
+                    await self._run_token_cleanup()
+                if self._tick_count % metrics_interval == 0:
+                    await self._run_metrics_collection()
 
             except Exception as e:
                 logger.exception(f"Error in scheduler loop: {e}")
@@ -171,6 +178,16 @@ class Scheduler:
                     else:
                         self._cached_cleanup_interval = getattr(
                             config, "scheduler_token_cleanup_interval", 60
+                        )
+
+                    # Metrics collection interval
+                    if instance_settings and instance_settings.metrics_collection_interval:
+                        self._cached_metrics_interval = (
+                            instance_settings.metrics_collection_interval
+                        )
+                    else:
+                        self._cached_metrics_interval = getattr(
+                            config, "scheduler_metrics_collection_interval", 360
                         )
 
                     # Function timeout
@@ -233,6 +250,9 @@ class Scheduler:
                     self._cached_cleanup_interval = getattr(
                         config, "scheduler_token_cleanup_interval", 60
                     )
+                    self._cached_metrics_interval = getattr(
+                        config, "scheduler_metrics_collection_interval", 360
+                    )
                     self._cached_function_timeout = getattr(
                         config,
                         "scheduler_function_timeout_seconds",
@@ -255,6 +275,11 @@ class Scheduler:
         self._refresh_settings_cache()
         return self._cached_cleanup_interval or 60
 
+    def _get_metrics_collection_interval(self) -> int:
+        """Get metrics collection interval from cache."""
+        self._refresh_settings_cache()
+        return self._cached_metrics_interval or 360
+
     def _get_function_timeout(self) -> int:
         """Get function timeout from cache."""
         self._refresh_settings_cache()
@@ -270,14 +295,23 @@ class Scheduler:
         self._refresh_settings_cache()
         return self._cached_max_concurrent_executions or DEFAULT_MAX_CONCURRENT_EXECUTIONS
 
-    async def _run_maintenance(self) -> None:
-        """Run periodic maintenance tasks."""
+    async def _run_token_cleanup(self) -> None:
+        """Run token cleanup maintenance task."""
         engine = get_engine()
         with Session(engine) as session:
             try:
                 cleanup_expired_tokens(session)
             except Exception as e:
                 logger.exception(f"Error during token cleanup: {e}")
+
+    async def _run_metrics_collection(self) -> None:
+        """Run metrics collection task."""
+        engine = get_engine()
+        with Session(engine) as session:
+            try:
+                collect_metrics(session)
+            except Exception as e:
+                logger.exception(f"Error during metrics collection: {e}")
 
     async def _process_due_schedules(self) -> None:
         """

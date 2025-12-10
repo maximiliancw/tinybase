@@ -246,6 +246,11 @@ class InstanceSettings(SQLModel, table=True):
     token_cleanup_interval: int = Field(
         default=60, ge=1, description="Token cleanup interval in scheduler ticks"
     )
+    # How often to collect metrics (every N scheduler intervals)
+    # Default: 360 intervals (e.g., 360 * 5s = 30 minutes if scheduler_interval_seconds=5)
+    metrics_collection_interval: int = Field(
+        default=360, ge=1, description="Metrics collection interval in scheduler ticks"
+    )
     # Maximum execution time for scheduled functions (in seconds)
     scheduler_function_timeout_seconds: int | None = Field(
         default=None, ge=1, description="Function execution timeout in seconds"
@@ -268,6 +273,37 @@ class InstanceSettings(SQLModel, table=True):
     storage_region: str | None = Field(default=None, max_length=50)
 
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+# =============================================================================
+# Metrics Model
+# =============================================================================
+
+
+class Metrics(SQLModel, table=True):
+    """
+    Metrics snapshot model.
+
+    Stores periodic snapshots of system metrics collected by the scheduler.
+    Metrics include collection sizes and function execution statistics.
+    """
+
+    __tablename__ = "metrics"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+
+    # Metric type: "collection_sizes" or "function_stats"
+    metric_type: str = Field(index=True, max_length=50)
+
+    # Metric data as JSON
+    # For collection_sizes: {"collection_name": count, ...}
+    # For function_stats: {"function_name": {"avg_runtime_ms": ..., "error_rate": ..., "total_calls": ...}, ...}
+    data: dict = Field(default_factory=dict, sa_column=Column(JSON))
+
+    # When this metric snapshot was collected
+    collected_at: datetime = Field(default_factory=utcnow, index=True)
+
+    created_at: datetime = Field(default_factory=utcnow)
 
 
 # =============================================================================
