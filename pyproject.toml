@@ -61,19 +61,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-# Explicitly include all packages and subpackages
-# This ensures consistent builds across all Python versions
-packages = [
-    "tinybase",
-    "tinybase.api",
-    "tinybase.api.routes",
-    "tinybase.cli",
-    "tinybase.collections",
-    "tinybase.db",
-    "tinybase.extensions",
-    "tinybase.functions",
-    "tinybase.schedule",
-]
+# Let hatchling auto-discover all packages and subpackages
+# This is the recommended approach - hatchling will find all packages
+# that have __init__.py files automatically
 
 [tool.hatch.build.targets.sdist]
 include = [
