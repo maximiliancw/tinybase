@@ -5,7 +5,7 @@
  * Admin page for configuring instance settings.
  * Uses semantic HTML elements following PicoCSS conventions.
  */
-import { onMounted, ref, reactive } from "vue";
+import { onMounted, ref, reactive, watch } from "vue";
 import { api } from "../api";
 import { useAuthStore } from "../stores/auth";
 
@@ -79,6 +79,16 @@ const commonTimezones = [
 onMounted(async () => {
   await fetchSettings();
 });
+
+// Disable auth portal when public registration is disabled
+watch(
+  () => settings.allow_public_registration,
+  (enabled) => {
+    if (!enabled) {
+      settings.auth_portal_enabled = false;
+    }
+  }
+);
 
 async function fetchSettings() {
   loading.value = true;
@@ -201,6 +211,69 @@ async function saveSettings() {
           When enabled, anyone can register for an account. When disabled, only
           admins can create users.
         </small>
+
+        <!-- Auth Portal Settings (only shown when public registration is enabled) -->
+        <div v-if="settings.allow_public_registration" class="portal-fields">
+          <header
+            style="
+              margin-top: var(--tb-spacing-lg);
+              margin-bottom: var(--tb-spacing-md);
+            "
+          >
+            <h4 style="margin: 0; font-size: 1rem; font-weight: 600">
+              Auth Portal
+            </h4>
+          </header>
+
+          <label>
+            <input
+              type="checkbox"
+              v-model="settings.auth_portal_enabled"
+              role="switch"
+            />
+            Enable Auth Portal
+          </label>
+          <small class="text-muted">
+            When enabled, a public-facing authentication portal will be
+            available at /auth with login, registration, and password reset
+            functionality.
+          </small>
+
+          <div v-if="settings.auth_portal_enabled" class="portal-config-fields">
+            <label for="auth_portal_logo_url">
+              Logo URL
+              <input
+                id="auth_portal_logo_url"
+                v-model="settings.auth_portal_logo_url"
+                type="url"
+                placeholder="https://example.com/logo.png"
+              />
+              <small>Optional logo URL to display in the auth portal.</small>
+            </label>
+
+            <div class="grid">
+              <label for="auth_portal_primary_color">
+                Primary Color
+                <input
+                  id="auth_portal_primary_color"
+                  v-model="settings.auth_portal_primary_color"
+                  type="color"
+                />
+                <small>Primary color for buttons and links.</small>
+              </label>
+
+              <label for="auth_portal_background_color">
+                Background Color
+                <input
+                  id="auth_portal_background_color"
+                  v-model="settings.auth_portal_background_color"
+                  type="color"
+                />
+                <small>Background color for the portal.</small>
+              </label>
+            </div>
+          </div>
+        </div>
       </article>
 
       <!-- Timezone Settings -->
@@ -385,61 +458,6 @@ async function saveSettings() {
         </div>
       </article>
 
-      <!-- Auth Portal Settings -->
-      <article>
-        <header>
-          <h3>Auth Portal</h3>
-        </header>
-
-        <label>
-          <input
-            type="checkbox"
-            v-model="settings.auth_portal_enabled"
-            role="switch"
-          />
-          Enable Auth Portal
-        </label>
-        <small class="text-muted">
-          When enabled, a public-facing authentication portal will be available
-          at /auth with login, registration, and password reset functionality.
-        </small>
-
-        <div v-if="settings.auth_portal_enabled" class="portal-fields">
-          <label for="auth_portal_logo_url">
-            Logo URL
-            <input
-              id="auth_portal_logo_url"
-              v-model="settings.auth_portal_logo_url"
-              type="url"
-              placeholder="https://example.com/logo.png"
-            />
-            <small>Optional logo URL to display in the auth portal.</small>
-          </label>
-
-          <div class="grid">
-            <label for="auth_portal_primary_color">
-              Primary Color
-              <input
-                id="auth_portal_primary_color"
-                v-model="settings.auth_portal_primary_color"
-                type="color"
-              />
-              <small>Primary color for buttons and links.</small>
-            </label>
-
-            <label for="auth_portal_background_color">
-              Background Color
-              <input
-                id="auth_portal_background_color"
-                v-model="settings.auth_portal_background_color"
-                type="color"
-              />
-              <small>Background color for the portal.</small>
-            </label>
-          </div>
-        </div>
-      </article>
-
       <!-- Status Messages -->
       <ins v-if="success" class="pico-background-green-500">
         {{ success }}
@@ -474,10 +492,21 @@ article {
   margin-bottom: var(--tb-spacing-lg);
 }
 
-.storage-fields,
+.storage-fields {
+  margin-top: var(--tb-spacing-lg);
+  padding-top: var(--tb-spacing-lg);
+  border-top: 1px solid var(--tb-border);
+}
+
 .portal-fields {
   margin-top: var(--tb-spacing-lg);
   padding-top: var(--tb-spacing-lg);
+  border-top: 1px solid var(--tb-border);
+}
+
+.portal-config-fields {
+  margin-top: var(--tb-spacing-md);
+  padding-top: var(--tb-spacing-md);
   border-top: 1px solid var(--tb-border);
 }
 
