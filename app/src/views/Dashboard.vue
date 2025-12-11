@@ -13,6 +13,7 @@ import { useAuthStore } from "../stores/auth";
 import { api } from "../api";
 import CollectionSizesChart from "../components/CollectionSizesChart.vue";
 import FunctionStatsChart from "../components/FunctionStatsChart.vue";
+import Icon from "../components/Icon.vue";
 
 const collectionsStore = useCollectionsStore();
 const functionsStore = useFunctionsStore();
@@ -155,20 +156,7 @@ function dismissNotice() {
           class="action-item"
         >
           <span class="action-icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path
-                d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
-              />
-              <line x1="12" y1="11" x2="12" y2="17" />
-              <line x1="9" y1="14" x2="15" y2="14" />
-            </svg>
+            <Icon name="FolderPlus" :size="18" />
           </span>
           <span class="action-label">Create Collection</span>
           <span class="action-arrow">→</span>
@@ -180,19 +168,7 @@ function dismissNotice() {
           class="action-item"
         >
           <span class="action-icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="8.5" cy="7" r="4" />
-              <line x1="20" y1="8" x2="20" y2="14" />
-              <line x1="17" y1="11" x2="23" y2="11" />
-            </svg>
+            <Icon name="UserPlus" :size="18" />
           </span>
           <span class="action-label">Create User</span>
           <span class="action-arrow">→</span>
@@ -204,19 +180,7 @@ function dismissNotice() {
           class="action-item"
         >
           <span class="action-icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-              <line x1="12" y1="16" x2="12" y2="19" />
-              <line x1="9" y1="17.5" x2="15" y2="17.5" />
-            </svg>
+            <Icon name="Schedules" :size="18" />
           </span>
           <span class="action-label">Create Schedule</span>
           <span class="action-arrow">→</span>

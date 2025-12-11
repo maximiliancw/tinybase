@@ -63,6 +63,18 @@ const iconNameMap: Record<string, string> = {
   Delete: "Trash2",
   Save: "Save",
   Cancel: "X",
+  // Additional icons used throughout the app
+  Box: "Box",
+  FolderPlus: "FolderPlus",
+  UserPlus: "UserPlus",
+  ExternalLink: "ExternalLink",
+  Power: "Power",
+  PowerOff: "PowerOff",
+  Trash2: "Trash2",
+  ThumbsUp: "ThumbsUp",
+  AlertCircle: "AlertCircle",
+  CheckCircle: "CheckCircle",
+  List: "List",
 };
 
 const IconComponent = computed(() => {

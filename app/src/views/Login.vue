@@ -1,46 +1,52 @@
 <script setup lang="ts">
 /**
  * Login View
- * 
+ *
  * Premium authentication page with ambient effects and smooth interactions.
  */
-import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import { api } from '../api'
+import { ref, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuthStore } from "../stores/auth";
+import { api } from "../api";
+import Icon from "../components/Icon.vue";
 
-const router = useRouter()
-const route = useRoute()
-const authStore = useAuthStore()
+const router = useRouter();
+const route = useRoute();
+const authStore = useAuthStore();
 
-const email = ref('')
-const password = ref('')
-const errorMessage = ref('')
-const needsSetup = ref(false)
-const checkingSetup = ref(true)
+const email = ref("");
+const password = ref("");
+const errorMessage = ref("");
+const needsSetup = ref(false);
+const checkingSetup = ref(true);
 
 onMounted(async () => {
   // Fetch instance name and setup status in parallel
   await Promise.all([
     authStore.fetchInstanceInfo(),
-    api.get('/api/auth/setup-status')
-      .then(response => { needsSetup.value = response.data.needs_setup })
-      .catch(() => { /* Ignore errors */ })
-  ])
-  checkingSetup.value = false
-})
+    api
+      .get("/api/auth/setup-status")
+      .then((response) => {
+        needsSetup.value = response.data.needs_setup;
+      })
+      .catch(() => {
+        /* Ignore errors */
+      }),
+  ]);
+  checkingSetup.value = false;
+});
 
 async function handleLogin() {
-  errorMessage.value = ''
-  
-  const success = await authStore.login(email.value, password.value)
-  
+  errorMessage.value = "";
+
+  const success = await authStore.login(email.value, password.value);
+
   if (success) {
     // Redirect to intended destination or dashboard
-    const redirect = route.query.redirect as string || '/'
-    router.push(redirect)
+    const redirect = (route.query.redirect as string) || "/";
+    router.push(redirect);
   } else {
-    errorMessage.value = authStore.error || 'Login failed'
+    errorMessage.value = authStore.error || "Login failed";
   }
 }
 </script>
@@ -52,29 +58,26 @@ async function handleLogin() {
       <!-- Logo -->
       <div class="login-logo">
         <div class="logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-            <line x1="12" y1="22.08" x2="12" y2="12"/>
-          </svg>
+          <Icon name="Box" :size="28" color="white" />
         </div>
         <h1>{{ authStore.instanceName }}</h1>
         <p>Admin Dashboard</p>
       </div>
-      
+
       <!-- First-time setup notice -->
       <div v-if="needsSetup && !checkingSetup" class="setup-notice">
         <div class="setup-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-          </svg>
+          <Icon name="ThumbsUp" :size="18" />
         </div>
         <div class="setup-content">
           <strong>Welcome!</strong>
-          <p>No users exist yet. Enter your credentials to create the first admin account.</p>
+          <p>
+            No users exist yet. Enter your credentials to create the first admin
+            account.
+          </p>
         </div>
       </div>
-      
+
       <!-- Login Form -->
       <form @submit.prevent="handleLogin">
         <label for="email">
@@ -88,7 +91,7 @@ async function handleLogin() {
             autocomplete="email"
           />
         </label>
-        
+
         <label for="password">
           Password
           <input
@@ -100,27 +103,29 @@ async function handleLogin() {
             autocomplete="current-password"
           />
         </label>
-        
+
         <!-- Error message -->
         <div v-if="errorMessage" class="error-message">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
+          <Icon name="AlertCircle" :size="16" />
           {{ errorMessage }}
         </div>
-        
+
         <button
           type="submit"
           class="login-button"
           :aria-busy="authStore.loading"
           :disabled="authStore.loading"
         >
-          {{ authStore.loading ? '' : (needsSetup ? 'Create Admin & Sign In' : 'Sign In') }}
+          {{
+            authStore.loading
+              ? ""
+              : needsSetup
+              ? "Create Admin & Sign In"
+              : "Sign In"
+          }}
         </button>
       </form>
-      
+
       <!-- Footer -->
       <div class="login-footer">
         <small>Powered by TinyBase</small>
@@ -144,9 +149,7 @@ async function handleLogin() {
   height: 3.5rem;
   background: var(--tb-gradient-primary);
   border-radius: var(--tb-radius-lg);
-  box-shadow: 
-    var(--tb-btn-primary-shadow-hover),
-    var(--tb-shadow-glow);
+  box-shadow: var(--tb-btn-primary-shadow-hover), var(--tb-shadow-glow);
   margin-bottom: var(--tb-spacing-md);
 }
 
