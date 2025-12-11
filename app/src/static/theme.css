@@ -172,18 +172,29 @@
 /**
  * Override Pico's CSS variables.
  * These reference theme-aware variables that automatically adapt to dark/light mode.
+ * All theme customizations go through CSS variables to preserve PicoCSS behavior.
  */
 :root {
   /* Typography */
   --pico-font-family: var(--tb-font-sans);
+  --pico-font-family-monospace: var(--tb-font-mono);
   --pico-font-size: 1rem;
   --pico-line-height: 1.6;
+  --pico-font-weight: 400;
+  
+  /* Heading typography - use PicoCSS variables instead of direct overrides */
+  --pico-typography-spacing-vertical: var(--tb-spacing-md);
   
   /* Primary color */
   --pico-primary: var(--tb-primary);
+  --pico-primary-background: var(--tb-primary);
+  --pico-primary-border: var(--tb-primary);
   --pico-primary-hover: var(--tb-primary-hover);
+  --pico-primary-hover-background: var(--tb-primary-hover);
+  --pico-primary-hover-border: var(--tb-primary-hover);
   --pico-primary-focus: var(--tb-primary-focus);
   --pico-primary-inverse: var(--tb-primary-inverse);
+  --pico-primary-underline: rgba(167, 139, 250, 0.5);
   
   /* Background colors */
   --pico-background-color: var(--tb-bg-base);
@@ -196,18 +207,37 @@
   --pico-h2-color: var(--tb-text-heading);
   --pico-h3-color: var(--tb-text-heading);
   --pico-h4-color: var(--tb-text-heading);
+  --pico-h5-color: var(--tb-text-secondary);
+  --pico-h6-color: var(--tb-text-muted);
   --pico-muted-color: var(--tb-text-muted);
   
   /* Border colors */
   --pico-muted-border-color: var(--tb-border);
   --pico-card-border-color: var(--tb-border);
   --pico-table-border-color: var(--tb-border-subtle);
+  --pico-form-element-border-color: var(--tb-border);
+  
+  /* Border radius */
+  --pico-border-radius: var(--tb-radius);
+  
+  /* Box shadow */
+  --pico-box-shadow: var(--tb-shadow);
+  --pico-card-box-shadow: var(--tb-shadow-sm);
   
   /* Form colors */
   --pico-form-element-background-color: var(--tb-bg-elevated);
   --pico-form-element-border-color: var(--tb-border);
+  --pico-form-element-color: var(--tb-text);
+  --pico-form-element-placeholder-color: var(--tb-text-muted);
   --pico-form-element-focus-color: var(--tb-primary);
   --pico-form-element-disabled-opacity: 0.5;
+  --pico-form-element-selected-background-color: var(--tb-bg-hover);
+  
+  /* Code styling - use PicoCSS variables */
+  --pico-code-background-color: var(--tb-bg-elevated);
+  --pico-code-color: var(--tb-primary);
+  --pico-code-kbd-background-color: var(--tb-text);
+  --pico-code-kbd-color: var(--tb-bg-base);
   
   /* Switch/Toggle - PicoCSS native styling */
   --pico-switch-background-color: var(--tb-bg-active);
@@ -220,32 +250,48 @@
   
   /* Secondary button */
   --pico-secondary: var(--tb-bg-hover);
+  --pico-secondary-background: var(--tb-bg-hover);
+  --pico-secondary-border: var(--tb-bg-hover);
   --pico-secondary-hover: var(--tb-bg-active);
+  --pico-secondary-hover-background: var(--tb-bg-active);
+  --pico-secondary-hover-border: var(--tb-bg-active);
   --pico-secondary-inverse: var(--tb-text);
   
   /* Contrast button */
   --pico-contrast: var(--tb-error);
+  --pico-contrast-background: var(--tb-error);
+  --pico-contrast-border: var(--tb-error);
   --pico-contrast-hover: #dc2626;
+  --pico-contrast-hover-background: #dc2626;
+  --pico-contrast-hover-border: #dc2626;
   --pico-contrast-inverse: white;
   
   /* Spacing adjustments */
   --pico-spacing: var(--tb-spacing-lg);
   --pico-block-spacing-vertical: var(--tb-spacing-lg);
   --pico-block-spacing-horizontal: var(--tb-spacing-lg);
+  --pico-typography-spacing-vertical: var(--tb-spacing-md);
+  --pico-form-element-spacing-vertical: var(--tb-spacing-md);
+  --pico-form-element-spacing-horizontal: var(--tb-spacing-md);
+  
+  /* Outline/Focus */
+  --pico-outline-width: 0.125rem;
   
   /* Remove Pico's container max-width */
   --pico-container-max-width: 100%;
+  
+  /* Text selection */
+  --pico-text-selection-color: var(--tb-primary-focus);
 }
 
-/* Override Pico's default max-width on block elements */
-article,
-section,
-table,
-form {
-  max-width: 100%;
+/* Light theme PicoCSS variable overrides */
+@media (prefers-color-scheme: light) {
+  :root {
+    --pico-primary-underline: rgba(124, 58, 237, 0.5);
+  }
 }
 
-/* Global styles */
+/* Global styles - minimal, theme-only */
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
@@ -253,64 +299,14 @@ html {
 }
 
 body {
-  background: var(--tb-bg-base);
+  background: var(--pico-background-color);
   min-height: 100vh;
   margin: 0;
-  font-family: var(--tb-font-sans);
+  font-family: var(--pico-font-family);
   letter-spacing: -0.01em;
 }
 
 /* Ensure no margin on Vue mount point */
 #app {
   margin: 0;
-}
-
-/* Typography refinements */
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
-  letter-spacing: -0.025em;
-}
-
-h1 { font-size: 1.875rem; }
-h2 { font-size: 1.5rem; }
-h3 { font-size: 1.25rem; }
-h4 { font-size: 1.125rem; }
-
-/* Code styling */
-code, kbd, pre, samp {
-  font-family: var(--tb-font-mono);
-  font-size: 0.875em;
-}
-
-code {
-  background: var(--tb-bg-elevated);
-  border: 1px solid var(--tb-border-subtle);
-  border-radius: var(--tb-radius-sm);
-  padding: 0.125em 0.375em;
-  color: var(--tb-primary);
-}
-
-pre {
-  background: var(--tb-bg-dark);
-  border: 1px solid var(--tb-border);
-  border-radius: var(--tb-radius);
-}
-
-pre code {
-  background: transparent;
-  border: none;
-  padding: 0;
-  color: var(--tb-text);
-}
-
-/* Focus ring styling */
-:focus-visible {
-  outline: 2px solid var(--tb-primary);
-  outline-offset: 2px;
-}
-
-/* Selection styling */
-::selection {
-  background: var(--tb-primary-focus);
-  color: var(--tb-text);
 }

@@ -8,9 +8,9 @@
 /* Sidebar container */
 aside.sidebar {
   width: var(--tb-sidebar-width);
-  background: var(--tb-bg-card);
-  border-right: 1px solid var(--tb-border);
-  padding: var(--tb-spacing-lg);
+  background: var(--pico-card-background-color);
+  border-right: 1px solid var(--pico-card-border-color);
+  padding: var(--pico-block-spacing-vertical) var(--pico-block-spacing-horizontal);
   position: fixed;
   height: 100vh;
   overflow-y: auto;
@@ -31,12 +31,12 @@ aside.sidebar::-webkit-scrollbar-track {
 }
 
 aside.sidebar::-webkit-scrollbar-thumb {
-  background: var(--tb-border);
+  background: var(--pico-muted-border-color);
   border-radius: 3px;
 }
 
 aside.sidebar::-webkit-scrollbar-thumb:hover {
-  background: var(--tb-border-strong);
+  background: var(--pico-card-border-color);
 }
 
 /* Brand/logo area */
@@ -44,9 +44,9 @@ aside.sidebar > header {
   display: flex;
   align-items: center;
   gap: var(--tb-spacing-sm);
-  padding-bottom: var(--tb-spacing-lg);
-  margin-bottom: var(--tb-spacing-md);
-  border-bottom: 1px solid var(--tb-border-subtle);
+  padding-bottom: var(--pico-block-spacing-vertical);
+  margin-bottom: var(--pico-spacing);
+  border-bottom: 1px solid var(--pico-muted-border-color);
 }
 
 aside.sidebar > header .logo {
@@ -77,12 +77,31 @@ aside.sidebar > header h1 {
   letter-spacing: -0.02em;
 }
 
-/* Navigation sections */
+/* Navigation - PicoCSS pattern: <nav><ul><li><a> */
 aside.sidebar nav {
   display: flex;
   flex-direction: column;
   gap: var(--tb-spacing-xs);
   width: 100%;
+}
+
+/* Section labels - <small> elements before <ul> */
+aside.sidebar nav > small {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-spacing-xs);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pico-muted-color);
+  padding: 0 var(--pico-spacing);
+  margin-top: var(--pico-spacing);
+  margin-bottom: var(--tb-spacing-sm);
+}
+
+aside.sidebar nav > small:first-child {
+  margin-top: 0;
 }
 
 aside.sidebar nav ul {
@@ -106,17 +125,16 @@ aside.sidebar nav a {
   align-items: center;
   justify-content: flex-start;
   gap: var(--tb-spacing-sm);
-  padding: 0.625rem var(--tb-spacing-md);
-  color: var(--tb-text-secondary);
+  padding: 0.625rem var(--pico-spacing);
+  color: var(--pico-muted-color);
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: var(--tb-radius);
+  border-radius: var(--pico-border-radius);
   width: 100%;
   transition: 
     background var(--tb-transition-fast),
-    color var(--tb-transition-fast),
-    transform var(--tb-transition-fast);
+    color var(--tb-transition-fast);
 }
 
 aside.sidebar nav a:hover {
@@ -124,7 +142,11 @@ aside.sidebar nav a:hover {
   color: var(--tb-text);
 }
 
-/* Active link */
+aside.sidebar nav a:hover .nav-icon {
+  color: var(--tb-text-secondary);
+}
+
+/* Active link - use our theme's primary color consistently */
 aside.sidebar nav a.router-link-active {
   background: var(--tb-primary-focus);
   color: var(--tb-primary);
@@ -141,7 +163,7 @@ aside.sidebar nav a .nav-icon {
   justify-content: center;
   width: 1.25rem;
   height: 1.25rem;
-  color: var(--tb-text-muted);
+  color: var(--pico-muted-color);
   transition: color var(--tb-transition-fast);
   flex-shrink: 0;
 }
@@ -151,38 +173,11 @@ aside.sidebar nav a .nav-icon svg {
   height: 1.125rem;
 }
 
-aside.sidebar nav a:hover .nav-icon {
-  color: var(--tb-text-secondary);
-}
-
-/* Section dividers */
-aside.sidebar section {
-  margin-top: var(--tb-spacing-md);
-}
-
-aside.sidebar section:first-child {
-  margin-top: 0;
-}
-
-/* Section labels */
-aside.sidebar section > small {
-  display: flex;
-  align-items: center;
-  gap: var(--tb-spacing-xs);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--tb-text-muted);
-  padding: 0 var(--tb-spacing-md);
-  margin-bottom: var(--tb-spacing-sm);
-}
-
 /* Footer */
 aside.sidebar > footer {
   margin-top: auto;
-  padding-top: var(--tb-spacing-lg);
-  border-top: 1px solid var(--tb-border-subtle);
+  padding-top: var(--pico-block-spacing-vertical);
+  border-top: 1px solid var(--pico-muted-border-color);
 }
 
 aside.sidebar > footer small {
@@ -192,7 +187,7 @@ aside.sidebar > footer small {
 }
 
 aside.sidebar > footer .user-email {
-  color: var(--tb-text);
+  color: var(--pico-color);
   font-weight: 500;
 }
 

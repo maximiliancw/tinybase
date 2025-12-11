@@ -34,10 +34,10 @@
   z-index: 0;
 }
 
-/* Main content area */
+/* Main content area - use PicoCSS spacing variables */
 main {
   flex: 1;
-  padding: var(--tb-spacing-xl) var(--tb-spacing-2xl);
+  padding: var(--pico-block-spacing-vertical) var(--pico-block-spacing-horizontal);
   min-height: 100vh;
   position: relative;
   z-index: 1;
@@ -51,21 +51,6 @@ main {
   margin-left: var(--tb-sidebar-width);
   width: calc(100% - var(--tb-sidebar-width));
   max-width: calc(100% - var(--tb-sidebar-width));
-}
-
-/* Main content stretches full width */
-main > div:not(.login-layout) {
-  width: 100%;
-  max-width: 100%;
-}
-
-/* Force all content elements to stretch full width */
-main article,
-main form,
-main section,
-main table {
-  width: 100%;
-  max-width: 100%;
 }
 
 /* Exception for stat cards in grid */
@@ -210,17 +195,19 @@ header.page-header hgroup p {
 
 @media (max-width: 1024px) {
   main {
-    padding: var(--tb-spacing-lg);
+    padding: var(--pico-block-spacing-vertical) var(--pico-block-spacing-horizontal);
   }
 }
 
 @media (max-width: 768px) {
   .has-sidebar main {
     margin-left: 0;
+    width: 100%;
+    max-width: 100%;
   }
   
   main {
-    padding: var(--tb-spacing-md);
+    padding: var(--pico-block-spacing-vertical) var(--pico-block-spacing-horizontal);
   }
   
   header.page-header {

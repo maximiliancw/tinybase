@@ -7,106 +7,32 @@
 
 /* ============================================
    ARTICLE (Cards)
-   Premium card styling with depth and shine
+   Theme-only customizations via CSS variables.
+   PicoCSS handles all layout, spacing, and padding.
    ============================================ */
 
+/* Article colors are handled via --pico-card-* variables in theme.css */
+/* Only minimal theme enhancements that don't affect layout */
+
 article {
-  background: var(--tb-bg-card);
-  border: 1px solid var(--tb-border);
-  border-radius: var(--tb-radius-lg);
-  box-shadow: var(--tb-shadow-sm);
-  position: relative;
-  overflow: hidden;
+  /* Use PicoCSS variables for colors - already set in theme.css */
   transition: 
     border-color var(--tb-transition),
     box-shadow var(--tb-transition);
 }
 
-/* Subtle top highlight for depth */
-article::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--tb-surface-3) 50%,
-    transparent 100%
-  );
-}
-
 article:hover {
-  border-color: var(--tb-border-strong);
+  border-color: var(--pico-card-border-color);
 }
 
-/* Article header */
-article > header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--tb-spacing-md) var(--tb-spacing-lg);
-  margin: calc(var(--tb-spacing-lg) * -1);
-  margin-bottom: var(--tb-spacing-lg);
-  background: var(--tb-surface-1);
-  border-bottom: 1px solid var(--tb-border-subtle);
-}
-
-article > header h3,
-article > header h4 {
-  margin: 0;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--tb-text);
-}
-
-/* Article footer */
-article > footer {
-  padding-top: var(--tb-spacing-md);
-  margin-top: var(--tb-spacing-md);
-  border-top: 1px solid var(--tb-border-subtle);
-}
-
-/* Articles containing tables - no body padding for edge-to-edge tables */
-article:has(> table) {
-  padding: 0;
-}
-
-article:has(> table) > header {
-  margin: 0;
-  border-radius: var(--tb-radius-lg) var(--tb-radius-lg) 0 0;
-}
-
-article:has(> table) > table {
-  margin: 0;
-}
-
-/* Remove table header radius when inside a card with header */
-article:has(> header) > table th:first-child,
-article:has(> header) > table th:last-child {
-  border-radius: 0;
-}
-
-/* Stat card variant */
+/* Stat card variant - minimal custom styling for dashboard metrics */
 article.stat-card {
-  padding: var(--tb-spacing-lg);
+  /* Keep gradient background for visual distinction */
   background: linear-gradient(
     135deg,
-    var(--tb-bg-card) 0%,
-    var(--tb-bg-elevated) 100%
+    var(--pico-card-background-color) 0%,
+    var(--pico-card-sectioning-background-color) 100%
   );
-  transition: transform var(--tb-transition), box-shadow var(--tb-transition);
-}
-
-article.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--tb-shadow);
-}
-
-article.stat-card p {
-  margin: 0;
 }
 
 article.stat-card p:first-child {
@@ -117,13 +43,12 @@ article.stat-card p:first-child {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1.1;
-  margin-bottom: var(--tb-spacing-xs);
 }
 
 article.stat-card p:last-child {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--tb-text-muted);
+  color: var(--pico-muted-color);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -131,23 +56,11 @@ article.stat-card p:last-child {
 
 /* ============================================
    BUTTONS
-   Premium buttons with depth and micro-animations
+   Theme-only customizations via CSS variables.
+   PicoCSS handles all layout, spacing, and behavior.
    ============================================ */
 
-button,
-[role="button"] {
-  font-family: var(--tb-font-sans);
-  font-weight: 500;
-  letter-spacing: 0;
-  border-radius: var(--tb-radius);
-  transition: 
-    transform var(--tb-transition-fast),
-    box-shadow var(--tb-transition-fast),
-    background var(--tb-transition-fast),
-    border-color var(--tb-transition-fast);
-}
-
-/* Primary button enhancements */
+/* Primary button - gradient background theme customization */
 button:not(.secondary):not(.contrast):not(.outline),
 [role="button"]:not(.secondary):not(.contrast):not(.outline) {
   background: var(--tb-gradient-primary);
@@ -157,43 +70,30 @@ button:not(.secondary):not(.contrast):not(.outline),
 
 button:not(.secondary):not(.contrast):not(.outline):hover,
 [role="button"]:not(.secondary):not(.contrast):not(.outline):hover {
-  transform: translateY(-1px);
+  border: none;
   box-shadow: var(--tb-btn-primary-shadow-hover);
 }
 
-button:not(.secondary):not(.contrast):not(.outline):active,
-[role="button"]:not(.secondary):not(.contrast):not(.outline):active {
-  transform: translateY(0);
+/* Outline buttons - use our theme primary color for border and text */
+button.outline:not(.secondary):not(.contrast),
+[role="button"].outline:not(.secondary):not(.contrast) {
+  border-color: var(--tb-primary);
+  color: var(--tb-primary);
 }
 
-/* Secondary button */
-button.secondary,
-[role="button"].secondary {
-  background: var(--tb-bg-hover);
-  border: 1px solid var(--tb-border);
-  color: var(--tb-text);
+button.outline:not(.secondary):not(.contrast):hover,
+[role="button"].outline:not(.secondary):not(.contrast):hover {
+  border-color: var(--tb-primary-hover);
+  color: var(--tb-primary-hover);
 }
 
-button.secondary:hover,
-[role="button"].secondary:hover {
-  background: var(--tb-bg-active);
-  border-color: var(--tb-border-strong);
-}
-
-/* Small button variant */
-button.small,
-[role="button"].small {
-  padding: 0.375rem 0.875rem;
-  font-size: 0.8125rem;
-}
-
-/* Danger/Contrast button */
+/* Secondary and contrast buttons use PicoCSS variables set in theme.css */
+/* Only custom theme colors for contrast/danger buttons */
 button.contrast,
 button.danger,
 [role="button"].contrast,
 [role="button"].danger {
   background: var(--tb-error-bg);
-  border: 1px solid transparent;
   color: var(--tb-error);
 }
 
@@ -203,10 +103,9 @@ button.danger:hover,
 [role="button"].danger:hover {
   background: var(--tb-error-bg);
   border-color: var(--tb-error);
-  filter: brightness(1.1);
 }
 
-/* Button icon */
+/* Button icon styling - acceptable as it doesn't change layout behavior */
 button > svg,
 [role="button"] > svg {
   width: 1em;
@@ -218,50 +117,22 @@ button > svg,
 
 /* ============================================
    BUTTON GROUPS
+   PicoCSS handles [role="group"] layout by default
    ============================================ */
 
-[role="group"] {
-  display: inline-flex;
-  gap: var(--tb-spacing-sm);
-}
+/* No custom styling needed - PicoCSS provides default behavior */
 
 
 /* ============================================
    TABLES
-   Clean, refined table styling
+   Theme-only customizations via CSS variables.
+   PicoCSS handles all layout, spacing, and borders.
    ============================================ */
 
-table {
-  border-collapse: separate;
-  border-spacing: 0;
-  width: 100%;
-}
+/* Table colors are handled via --pico-table-* variables in theme.css */
+/* Only minimal theme enhancements */
 
-table th {
-  font-family: var(--tb-font-sans);
-  font-weight: 600;
-  font-size: 0.75rem;
-  color: var(--tb-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: var(--tb-spacing-sm) var(--tb-spacing-md);
-  background: var(--tb-surface-1);
-  border-bottom: 1px solid var(--tb-border);
-}
-
-table th:first-child {
-  border-top-left-radius: var(--tb-radius);
-}
-
-table th:last-child {
-  border-top-right-radius: var(--tb-radius);
-}
-
-table td {
-  padding: var(--tb-spacing-md);
-  border-bottom: 1px solid var(--tb-border-subtle);
-  vertical-align: middle;
-}
+/* Center align only if the column header is specifically an Actions column */
 
 table tbody tr {
   transition: background var(--tb-transition-fast);
@@ -271,25 +142,49 @@ table tbody tr:hover {
   background: var(--tb-surface-2);
 }
 
-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* Clickable row styling */
+/* Clickable row styling - acceptable as it's a data attribute pattern */
 table tbody tr[data-clickable] {
   cursor: pointer;
 }
 
-/* Table links */
+/* Table links - theme color only */
 table a {
-  color: var(--tb-primary);
-  text-decoration: none;
-  font-weight: 500;
+  color: var(--pico-primary);
   transition: color var(--tb-transition-fast);
 }
 
 table a:hover {
-  color: var(--tb-primary-hover);
+  color: var(--pico-primary-hover);
+}
+
+/* Action columns in tables - ensure buttons are small and vertically aligned */
+/* Target any table cell containing buttons or button groups */
+table td:has(button),
+table td:has([role="group"]),
+table td.actions-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 0;
+}
+
+/* Ensure all buttons in action cells are small */
+table td:has(button) > button,
+table td:has([role="group"]) button,
+table td.actions-cell button,
+table td:has([role="group"]) [role="button"],
+table td.actions-cell [role="button"] {
+  font-size: 0.8125rem;
+  padding: 0.375rem 0.875rem;
+  text-transform: uppercase;
+}
+
+/* Ensure button groups in action cells are properly aligned */
+table td:has([role="group"]) [role="group"],
+table td.actions-cell [role="group"] {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
 }
 
 
@@ -426,92 +321,13 @@ label > small {
 
 /* ============================================
    DIALOGS / MODALS
-   Premium modal styling
+   Theme-only customizations via CSS variables.
+   PicoCSS handles all layout, animation, and behavior.
    ============================================ */
 
-dialog {
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-dialog > article {
-  max-width: 480px;
-  margin: auto;
-  animation: dialogSlideIn 0.2s ease-out;
-}
-
-@keyframes dialogSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-dialog article > header {
-  margin: calc(var(--tb-spacing-lg) * -1);
-  margin-bottom: var(--tb-spacing-lg);
-  padding: var(--tb-spacing-lg);
-  background: transparent;
-  border-bottom: 1px solid var(--tb-border-subtle);
-}
-
-dialog article > header h3 {
-  font-size: 1.125rem;
-}
-
-/* Dialog close button */
-dialog article > header > button[aria-label="Close"],
-dialog article > header > button[rel="prev"] {
-  position: relative;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  margin: 0;
-  margin-left: auto;
-  background: var(--tb-surface-2);
-  border: 1px solid var(--tb-border);
-  border-radius: var(--tb-radius);
-  box-shadow: none;
-  cursor: pointer;
-  order: 1;
-}
-
-dialog article > header > button[aria-label="Close"]::before,
-dialog article > header > button[rel="prev"]::before {
-  content: "×";
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  font-weight: 400;
-  line-height: 1;
-  transition: color var(--tb-transition-fast);
-}
-
-dialog article > header > button[aria-label="Close"]:hover,
-dialog article > header > button[rel="prev"]:hover {
-  background: var(--tb-surface-3);
-  border-color: var(--tb-border-strong);
-}
-
-dialog article > header > button[aria-label="Close"]:hover::before,
-dialog article > header > button[rel="prev"]:hover::before {
-  color: var(--tb-text);
-}
-
-dialog article footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--tb-spacing-sm);
-  padding-top: var(--tb-spacing-lg);
-  margin-top: var(--tb-spacing-lg);
-  border-top: 1px solid var(--tb-border-subtle);
-}
+/* Dialog colors are handled via --pico-* variables in theme.css */
+/* PicoCSS provides default dialog behavior with <dialog> and <article> */
+/* No custom styling needed - use PicoCSS defaults */
 
 
 /* ============================================
