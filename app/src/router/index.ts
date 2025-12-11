@@ -71,10 +71,6 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: "/admin/",
-      redirect: "/admin",
-    },
-    {
       path: "/admin/collections",
       name: "collections",
       component: Collections,
@@ -138,10 +134,10 @@ const router = createRouter({
       path: "/auth",
       redirect: "/auth/login",
     },
-    // Catch-all redirect to admin dashboard
+    // Catch-all - redirect to admin login (not dashboard, to avoid auth loops)
     {
       path: "/:pathMatch(.*)*",
-      redirect: "/admin",
+      redirect: "/admin/login",
     },
   ],
 });
@@ -167,7 +163,12 @@ router.beforeEach(async (to, _from, next) => {
 
   if (requiresAuth && !authStore.isAuthenticated && !isAuthPortal) {
     // Redirect to admin login if not authenticated (not for auth portal)
-    next({ name: "admin-login", query: { redirect: to.fullPath } });
+    // Only add redirect query if we're not already going to login
+    if (to.name !== "admin-login") {
+      next({ name: "admin-login", query: { redirect: to.fullPath } });
+    } else {
+      next();
+    }
   } else if (requiresAdmin && !authStore.isAdmin) {
     // Redirect to dashboard if not admin
     next({ name: "dashboard" });
