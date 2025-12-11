@@ -68,11 +68,14 @@ onUnmounted(() => {
   <dialog :open="open">
     <article>
       <header v-if="title || $slots.header">
-        <button aria-label="Close" rel="prev" @click="close">
-          <Icon name="X" :size="20" />
-        </button>
         <h3 v-if="title && !$slots.header">{{ title }}</h3>
         <slot v-else name="header" />
+        <button
+          aria-label="Close"
+          rel="prev"
+          class="secondary icon-only"
+          @click="close"
+        ></button>
       </header>
 
       <slot />
@@ -97,22 +100,17 @@ footer button {
   margin: 0;
 }
 
-/* Close button styling */
-header button {
+/* Close button positioning */
+header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: var(--tb-spacing-xs);
-  margin: 0;
-  margin-left: auto;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: var(--tb-text-muted);
-  transition: color var(--tb-transition-fast);
+  gap: var(--tb-spacing-md);
 }
 
-header button:hover {
-  color: var(--tb-text);
+header button.icon-only {
+  margin: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+  align-self: center;
 }
 </style>

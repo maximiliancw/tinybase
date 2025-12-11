@@ -282,7 +282,7 @@ function formatDate(dateStr: string): string {
             Before installing, review the extension's source code on GitHub.
           </small>
         </p>
-        <button @click="showWarningAccepted = true">
+        <button class="secondary" @click="showWarningAccepted = true">
           I understand, continue
         </button>
       </div>

@@ -114,6 +114,49 @@ button > svg,
   vertical-align: -0.125em;
 }
 
+/* Round icon-only buttons - for buttons that contain only an icon */
+button.icon-only,
+[role="button"].icon-only {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border-radius: 50%;
+  aspect-ratio: 1;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Ensure icon is centered and properly sized */
+button.icon-only > *,
+[role="button"].icon-only > * {
+  margin: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Remove default icon margin and set size for icon-only buttons */
+button.icon-only > svg,
+[role="button"].icon-only > svg,
+button.icon-only svg.lucide-icon,
+[role="button"].icon-only svg.lucide-icon,
+button.icon-only .lucide-icon,
+[role="button"].icon-only .lucide-icon {
+  margin: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  display: block;
+  line-height: 1;
+}
+
 
 /* ============================================
    BUTTON GROUPS
