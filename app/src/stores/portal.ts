@@ -13,8 +13,10 @@ interface PortalConfig {
   instance_name: string;
   logo_url: string | null;
   primary_color: string | null;
-  background_color: string | null;
+  background_image_url: string | null;
   registration_enabled: boolean;
+  login_redirect_url: string | null;
+  register_redirect_url: string | null;
 }
 
 export const usePortalStore = defineStore("portal", () => {
@@ -22,8 +24,10 @@ export const usePortalStore = defineStore("portal", () => {
     instance_name: "TinyBase",
     logo_url: null,
     primary_color: null,
-    background_color: null,
+    background_image_url: null,
     registration_enabled: true,
+    login_redirect_url: null,
+    register_redirect_url: null,
   });
 
   const loading = ref(false);
@@ -32,13 +36,18 @@ export const usePortalStore = defineStore("portal", () => {
   // Computed styles based on config
   const styles = computed(() => {
     const style: Record<string, string> = {};
-    if (config.value.background_color) {
-      style["--pico-background-color"] = config.value.background_color;
+    if (config.value.background_image_url) {
+      style[
+        "--auth-background-image"
+      ] = `url(${config.value.background_image_url})`;
     }
     if (config.value.primary_color) {
+      // Apply primary color to PicoCSS variables
       style["--pico-primary"] = config.value.primary_color;
       style["--pico-primary-background"] = config.value.primary_color;
       style["--pico-primary-underline"] = config.value.primary_color;
+      // Also apply to buttons directly
+      style["--auth-primary-color"] = config.value.primary_color;
     }
     return style;
   });
@@ -48,7 +57,42 @@ export const usePortalStore = defineStore("portal", () => {
     error.value = null;
 
     try {
-      const response = await api.get("/api/auth/portal-config");
+      // Check for preview parameters in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPreview = urlParams.get("preview") === "true";
+
+      let url = "/api/auth/portal-config";
+      let headers: Record<string, string> = {};
+
+      if (isPreview) {
+        const params = new URLSearchParams();
+        params.append("preview", "true");
+
+        // Get preview values from URL
+        // Only include params if they exist (were provided in URL)
+        const logoUrl = urlParams.get("logo_url");
+        const primaryColor = urlParams.get("primary_color");
+        const backgroundImageUrl = urlParams.get("background_image_url");
+
+        if (logoUrl !== null) params.append("logo_url", logoUrl);
+        if (primaryColor !== null) params.append("primary_color", primaryColor);
+        if (backgroundImageUrl !== null)
+          params.append("background_image_url", backgroundImageUrl);
+
+        url = `${url}?${params.toString()}`;
+
+        // If token is provided in URL (for iframe preview), add it to headers
+        const previewToken = urlParams.get("token");
+        if (previewToken) {
+          headers.Authorization = `Bearer ${previewToken}`;
+        }
+      }
+
+      // Make API call with custom headers if in preview mode
+      // Note: Custom headers will override interceptor headers for the same key
+      const requestConfig =
+        Object.keys(headers).length > 0 ? { headers } : undefined;
+      const response = await api.get(url, requestConfig);
       config.value = response.data;
     } catch (err: any) {
       error.value =

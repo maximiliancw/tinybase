@@ -10,7 +10,7 @@ Provides endpoints for:
 import asyncio
 import os
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request, status
 from pydantic import BaseModel, EmailStr, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -18,6 +18,7 @@ from sqlmodel import select
 
 from tinybase.auth import (
     CurrentUser,
+    CurrentUserOptional,
     DbSession,
     create_auth_token,
     generate_token,
@@ -135,8 +136,10 @@ class PortalConfigResponse(BaseModel):
     instance_name: str = Field(description="Instance name")
     logo_url: str | None = Field(default=None, description="Logo URL")
     primary_color: str | None = Field(default=None, description="Primary color")
-    background_color: str | None = Field(default=None, description="Background color")
+    background_image_url: str | None = Field(default=None, description="Background image URL")
     registration_enabled: bool = Field(description="Whether registration is enabled")
+    login_redirect_url: str | None = Field(default=None, description="Default redirect URL after login")
+    register_redirect_url: str | None = Field(default=None, description="Default redirect URL after registration")
 
 
 # =============================================================================
@@ -441,14 +444,24 @@ def confirm_password_reset(
     "/portal-config",
     response_model=PortalConfigResponse,
     summary="Get portal configuration",
-    description="Get public portal configuration (no auth required).",
+    description="Get public portal configuration. Supports preview mode for admins.",
 )
-def get_portal_config(session: DbSession) -> PortalConfigResponse:
+def get_portal_config(
+    session: DbSession,
+    preview: bool = Query(default=False, description="Enable preview mode (admin only)"),
+    logo_url: str | None = Query(default=None, description="Preview logo URL"),
+    primary_color: str | None = Query(default=None, description="Preview primary color"),
+    background_image_url: str | None = Query(
+        default=None, description="Preview background image URL"
+    ),
+    user: CurrentUserOptional = None,  # type: ignore[assignment]
+) -> PortalConfigResponse:
     """
     Get portal configuration for the auth portal UI.
 
     Returns instance name, logo, colors, and registration status.
-    This endpoint does not require authentication.
+    When preview=true, requires admin authentication and returns preview values
+    if provided, otherwise falls back to saved settings.
     """
     instance_settings = session.get(InstanceSettings, 1)
     if not instance_settings:
@@ -457,10 +470,38 @@ def get_portal_config(session: DbSession) -> PortalConfigResponse:
             registration_enabled=True,
         )
 
+    # If preview mode is requested, require admin authentication
+    if preview:
+        if not user or not user.is_admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin access required for preview mode",
+            )
+        # Use preview values if explicitly provided (including empty string to clear),
+        # otherwise fall back to saved settings
+        # Note: logo_url, primary_color, background_image_url can be None (not provided)
+        # or empty string (explicitly cleared), so we check for None specifically
+        return PortalConfigResponse(
+            instance_name=instance_settings.instance_name,
+            logo_url=logo_url if logo_url is not None else instance_settings.auth_portal_logo_url,
+            primary_color=primary_color
+            if primary_color is not None
+            else instance_settings.auth_portal_primary_color,
+            background_image_url=background_image_url
+            if background_image_url is not None
+            else instance_settings.auth_portal_background_image_url,
+            registration_enabled=instance_settings.allow_public_registration,
+            login_redirect_url=instance_settings.auth_portal_login_redirect_url,
+            register_redirect_url=instance_settings.auth_portal_register_redirect_url,
+        )
+
+    # Normal mode: return saved settings (no auth required)
     return PortalConfigResponse(
         instance_name=instance_settings.instance_name,
         logo_url=instance_settings.auth_portal_logo_url,
         primary_color=instance_settings.auth_portal_primary_color,
-        background_color=instance_settings.auth_portal_background_color,
+        background_image_url=instance_settings.auth_portal_background_image_url,
         registration_enabled=instance_settings.allow_public_registration,
+        login_redirect_url=instance_settings.auth_portal_login_redirect_url,
+        register_redirect_url=instance_settings.auth_portal_register_redirect_url,
     )

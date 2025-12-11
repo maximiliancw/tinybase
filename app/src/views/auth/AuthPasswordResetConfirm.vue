@@ -8,10 +8,12 @@ import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { api } from "../../api";
 import { usePortalStore } from "../../stores/portal";
+import { usePreviewParams } from "../../composables/usePreviewParams";
 
 const route = useRoute();
 const router = useRouter();
 const portalStore = usePortalStore();
+const { withPreviewParams } = usePreviewParams();
 
 const token = ref<string>("");
 const password = ref("");
@@ -53,7 +55,7 @@ async function handleResetPassword() {
 
     // Redirect to login after 2 seconds
     setTimeout(() => {
-      router.push("/auth/login");
+      router.push(withPreviewParams("/auth/login"));
     }, 2000);
   } catch (err: any) {
     errorMessage.value =
@@ -65,7 +67,12 @@ async function handleResetPassword() {
 </script>
 
 <template>
-  <div class="auth-layout">
+  <div
+    class="auth-layout"
+    :data-has-background="
+      portalStore.config.background_image_url ? true : undefined
+    "
+  >
     <article class="auth-card" data-animate="fade-in">
       <!-- Logo -->
       <div class="auth-logo">
@@ -151,7 +158,9 @@ async function handleResetPassword() {
 
       <!-- Links -->
       <div class="auth-links">
-        <router-link to="/auth/login">Back to sign in</router-link>
+        <router-link :to="withPreviewParams('/auth/login')"
+          >Back to sign in</router-link
+        >
       </div>
 
       <!-- Footer -->

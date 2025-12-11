@@ -312,7 +312,13 @@ class InstanceSettings(SQLModel, table=True):
     auth_portal_enabled: bool = Field(default=True)
     auth_portal_logo_url: str | None = Field(default=None, max_length=500)
     auth_portal_primary_color: str | None = Field(default=None, max_length=50)
-    auth_portal_background_color: str | None = Field(default=None, max_length=50)
+    auth_portal_background_image_url: str | None = Field(default=None, max_length=500)
+    auth_portal_login_redirect_url: str | None = Field(
+        default=None, max_length=500, description="Default redirect URL after login"
+    )
+    auth_portal_register_redirect_url: str | None = Field(
+        default=None, max_length=500, description="Default redirect URL after registration"
+    )
 
     # Server timezone (used for schedule defaults)
     # If empty, schedules use UTC by default

@@ -7,6 +7,7 @@ Provides admin-only endpoints for:
 - Instance settings
 """
 
+from datetime import timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -14,8 +15,14 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlmodel import select
 
-from tinybase.auth import CurrentAdminUser, DbSession, hash_password
-from tinybase.db.models import FunctionCall, InstanceSettings, Metrics, User
+from tinybase.auth import (
+    CurrentAdminUser,
+    DbSession,
+    create_application_token,
+    hash_password,
+    revoke_application_token,
+)
+from tinybase.db.models import ApplicationToken, FunctionCall, InstanceSettings, Metrics, User
 from tinybase.utils import FunctionCallStatus, TriggerType, utcnow
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -423,8 +430,14 @@ class InstanceSettingsResponse(BaseModel):
     auth_portal_primary_color: str | None = Field(
         default=None, description="Auth portal primary color"
     )
-    auth_portal_background_color: str | None = Field(
-        default=None, description="Auth portal background color"
+    auth_portal_background_image_url: str | None = Field(
+        default=None, description="Auth portal background image URL"
+    )
+    auth_portal_login_redirect_url: str | None = Field(
+        default=None, description="Auth portal login redirect URL"
+    )
+    auth_portal_register_redirect_url: str | None = Field(
+        default=None, description="Auth portal register redirect URL"
     )
     updated_at: str = Field(description="Last update time")
 
@@ -459,7 +472,7 @@ class InstanceSettingsUpdate(BaseModel):
     auth_portal_enabled: bool | None = Field(default=None)
     auth_portal_logo_url: str | None = Field(default=None, max_length=500)
     auth_portal_primary_color: str | None = Field(default=None, max_length=50)
-    auth_portal_background_color: str | None = Field(default=None, max_length=50)
+    auth_portal_background_image_url: str | None = Field(default=None, max_length=500)
 
 
 def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse:
@@ -480,7 +493,9 @@ def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse
         auth_portal_enabled=settings.auth_portal_enabled,
         auth_portal_logo_url=settings.auth_portal_logo_url,
         auth_portal_primary_color=settings.auth_portal_primary_color,
-        auth_portal_background_color=settings.auth_portal_background_color,
+        auth_portal_background_image_url=settings.auth_portal_background_image_url,
+        auth_portal_login_redirect_url=settings.auth_portal_login_redirect_url,
+        auth_portal_register_redirect_url=settings.auth_portal_register_redirect_url,
         updated_at=settings.updated_at.isoformat(),
     )
 
@@ -614,8 +629,49 @@ def update_settings(
         settings.auth_portal_logo_url = request.auth_portal_logo_url
     if request.auth_portal_primary_color is not None:
         settings.auth_portal_primary_color = request.auth_portal_primary_color
-    if request.auth_portal_background_color is not None:
-        settings.auth_portal_background_color = request.auth_portal_background_color
+    if request.auth_portal_background_image_url is not None:
+        settings.auth_portal_background_image_url = request.auth_portal_background_image_url
+    if request.auth_portal_login_redirect_url is not None:
+        # Validate that it's an absolute URL and not pointing to /admin
+        if not request.auth_portal_login_redirect_url.startswith(("http://", "https://")):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Login redirect URL must be an absolute URL (e.g., https://app.example.com/dashboard)",
+            )
+        # Prevent redirecting to /admin URLs (those are for TinyBase Admin UI)
+        if "/admin" in request.auth_portal_login_redirect_url:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Login redirect URL must not point to /admin URLs. Use your application's URL instead.",
+            )
+        settings.auth_portal_login_redirect_url = request.auth_portal_login_redirect_url
+    if request.auth_portal_register_redirect_url is not None:
+        # Validate that it's an absolute URL and not pointing to /admin
+        if not request.auth_portal_register_redirect_url.startswith(("http://", "https://")):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Register redirect URL must be an absolute URL (e.g., https://app.example.com/welcome)",
+            )
+        # Prevent redirecting to /admin URLs (those are for TinyBase Admin UI)
+        if "/admin" in request.auth_portal_register_redirect_url:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Register redirect URL must not point to /admin URLs. Use your application's URL instead.",
+            )
+        settings.auth_portal_register_redirect_url = request.auth_portal_register_redirect_url
+
+    # If auth portal is enabled, require redirect URLs to be set
+    if settings.auth_portal_enabled:
+        if not settings.auth_portal_login_redirect_url:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Login redirect URL is required when auth portal is enabled",
+            )
+        if not settings.auth_portal_register_redirect_url:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Register redirect URL is required when auth portal is enabled",
+            )
 
     settings.updated_at = utcnow()
     session.add(settings)
@@ -712,3 +768,167 @@ def get_metrics(
         function_stats=function_stats,
         collected_at=collected_at or utcnow().isoformat(),
     )
+
+
+# =============================================================================
+# Application Token Routes
+# =============================================================================
+
+
+class ApplicationTokenInfo(BaseModel):
+    """Application token information."""
+
+    id: str = Field(description="Token ID")
+    name: str = Field(description="Token name")
+    description: str | None = Field(default=None, description="Token description")
+    created_at: str = Field(description="Created timestamp")
+    last_used_at: str | None = Field(default=None, description="Last used timestamp")
+    expires_at: str | None = Field(default=None, description="Expiration timestamp")
+    is_active: bool = Field(description="Whether token is active")
+    is_valid: bool = Field(description="Whether token is valid (active and not expired)")
+
+
+class ApplicationTokenListResponse(BaseModel):
+    """Application token list response."""
+
+    tokens: list[ApplicationTokenInfo] = Field(description="Application tokens")
+
+
+class ApplicationTokenCreate(BaseModel):
+    """Create application token request."""
+
+    name: str = Field(max_length=200, description="Token name")
+    description: str | None = Field(default=None, max_length=500, description="Token description")
+    expires_days: int | None = Field(
+        default=None, ge=1, description="Expiration in days (None = never expires)"
+    )
+
+
+class ApplicationTokenCreateResponse(BaseModel):
+    """Application token creation response."""
+
+    token: ApplicationTokenInfo = Field(description="Token information")
+    token_value: str = Field(description="The actual token value (only shown once)")
+
+
+class ApplicationTokenUpdate(BaseModel):
+    """Update application token request."""
+
+    name: str | None = Field(default=None, max_length=200, description="Token name")
+    description: str | None = Field(default=None, max_length=500, description="Token description")
+    is_active: bool | None = Field(default=None, description="Active status")
+
+
+def token_to_response(token: ApplicationToken) -> ApplicationTokenInfo:
+    """Convert an ApplicationToken model to response schema."""
+    return ApplicationTokenInfo(
+        id=str(token.id),
+        name=token.name,
+        description=token.description,
+        created_at=token.created_at.isoformat(),
+        last_used_at=token.last_used_at.isoformat() if token.last_used_at else None,
+        expires_at=token.expires_at.isoformat() if token.expires_at else None,
+        is_active=token.is_active,
+        is_valid=token.is_valid(),
+    )
+
+
+@router.get(
+    "/application-tokens",
+    response_model=ApplicationTokenListResponse,
+    summary="List application tokens",
+    description="Get a list of all application tokens.",
+)
+def list_application_tokens(
+    session: DbSession,
+    _admin: CurrentAdminUser,
+) -> ApplicationTokenListResponse:
+    """List all application tokens."""
+    tokens = list(
+        session.exec(select(ApplicationToken).order_by(ApplicationToken.created_at.desc())).all()
+    )
+    return ApplicationTokenListResponse(tokens=[token_to_response(t) for t in tokens])
+
+
+@router.post(
+    "/application-tokens",
+    response_model=ApplicationTokenCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create application token",
+    description="Create a new application token for client applications.",
+)
+def create_application_token_endpoint(
+    request: ApplicationTokenCreate,
+    session: DbSession,
+    _admin: CurrentAdminUser,
+) -> ApplicationTokenCreateResponse:
+    """Create a new application token."""
+    expires_at = None
+    if request.expires_days:
+        expires_at = utcnow() + timedelta(days=request.expires_days)
+
+    token = create_application_token(
+        session=session,
+        name=request.name,
+        description=request.description,
+        expires_at=expires_at,
+    )
+
+    return ApplicationTokenCreateResponse(
+        token=token_to_response(token),
+        token_value=token.token,
+    )
+
+
+@router.patch(
+    "/application-tokens/{token_id}",
+    response_model=ApplicationTokenInfo,
+    summary="Update application token",
+    description="Update an application token's details.",
+)
+def update_application_token(
+    token_id: UUID,
+    request: ApplicationTokenUpdate,
+    session: DbSession,
+    _admin: CurrentAdminUser,
+) -> ApplicationTokenInfo:
+    """Update an application token."""
+    token = session.get(ApplicationToken, token_id)
+
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application token '{token_id}' not found",
+        )
+
+    if request.name is not None:
+        token.name = request.name
+    if request.description is not None:
+        token.description = request.description
+    if request.is_active is not None:
+        token.is_active = request.is_active
+
+    session.add(token)
+    session.commit()
+    session.refresh(token)
+
+    return token_to_response(token)
+
+
+@router.delete(
+    "/application-tokens/{token_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Revoke application token",
+    description="Revoke (deactivate) an application token.",
+)
+def revoke_application_token_endpoint(
+    token_id: UUID,
+    session: DbSession,
+    _admin: CurrentAdminUser,
+) -> None:
+    """Revoke an application token."""
+    if not revoke_application_token(session, token_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application token '{token_id}' not found",
+        )

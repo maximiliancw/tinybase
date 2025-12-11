@@ -7,8 +7,10 @@
 import { ref, onMounted } from "vue";
 import { usePortalStore } from "../../stores/portal";
 import { api } from "../../api";
+import { usePreviewParams } from "../../composables/usePreviewParams";
 
 const portalStore = usePortalStore();
+const { withPreviewParams } = usePreviewParams();
 
 const email = ref("");
 const errorMessage = ref("");
@@ -43,7 +45,12 @@ async function handleRequestReset() {
 </script>
 
 <template>
-  <div class="auth-layout">
+  <div
+    class="auth-layout"
+    :data-has-background="
+      portalStore.config.background_image_url ? true : undefined
+    "
+  >
     <article class="auth-card" data-animate="fade-in">
       <!-- Logo -->
       <div class="auth-logo">
@@ -115,7 +122,9 @@ async function handleRequestReset() {
 
       <!-- Links -->
       <div class="auth-links">
-        <router-link to="/auth/login">Back to sign in</router-link>
+        <router-link :to="withPreviewParams('/auth/login')"
+          >Back to sign in</router-link
+        >
       </div>
 
       <!-- Footer -->

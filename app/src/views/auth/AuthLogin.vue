@@ -5,21 +5,50 @@
  * Public-facing login page for users.
  */
 import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { api } from "../../api";
 import { usePortalStore } from "../../stores/portal";
+import { usePreviewParams } from "../../composables/usePreviewParams";
 
 const router = useRouter();
+const route = useRoute();
 const portalStore = usePortalStore();
+const { withPreviewParams } = usePreviewParams();
 
 const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
 const loading = ref(false);
 
+function isValidAbsoluteUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 onMounted(async () => {
   await portalStore.fetchConfig();
 });
+
+function getRedirectUrl(): string {
+  // Check for redirect query parameter first (takes precedence)
+  const redirectParam = route.query.redirect as string | undefined;
+  if (redirectParam && isValidAbsoluteUrl(redirectParam)) {
+    return redirectParam;
+  }
+  // Use configured redirect URL (required when portal is enabled)
+  const configuredUrl = portalStore.config.login_redirect_url;
+  if (configuredUrl && isValidAbsoluteUrl(configuredUrl)) {
+    return configuredUrl;
+  }
+  // No valid redirect URL - show error
+  throw new Error(
+    "No valid redirect URL configured. Please contact your administrator."
+  );
+}
 
 async function handleLogin() {
   errorMessage.value = "";
@@ -34,13 +63,22 @@ async function handleLogin() {
     // Store token
     localStorage.setItem("tinybase_token", response.data.token);
 
-    // Redirect to admin dashboard or show success
-    // For public users, they might just want the token
-    alert("Login successful! You can now use the API with your token.");
-
-    // Clear form
-    email.value = "";
-    password.value = "";
+    // Redirect to configured URL or query parameter
+    try {
+      const redirectUrl = getRedirectUrl();
+      // Validate redirect URL - must be absolute URL
+      if (isValidAbsoluteUrl(redirectUrl)) {
+        window.location.href = redirectUrl;
+      } else {
+        throw new Error("Invalid redirect URL");
+      }
+    } catch (err: any) {
+      errorMessage.value =
+        err.message ||
+        "Redirect configuration error. Please contact your administrator.";
+      loading.value = false;
+      return;
+    }
   } catch (err: any) {
     errorMessage.value = err.response?.data?.detail || "Login failed";
   } finally {
@@ -50,7 +88,12 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="auth-layout">
+  <div
+    class="auth-layout"
+    :data-has-background="
+      portalStore.config.background_image_url ? true : undefined
+    "
+  >
     <article class="auth-card" data-animate="fade-in">
       <!-- Logo -->
       <div class="auth-logo">
@@ -113,9 +156,14 @@ async function handleLogin() {
 
       <!-- Links -->
       <div class="auth-links">
-        <router-link to="/auth/password-reset">Forgot password?</router-link>
+        <router-link :to="withPreviewParams('/auth/password-reset')"
+          >Forgot password?</router-link
+        >
         <span v-if="portalStore.config.registration_enabled">
-          | <router-link to="/auth/register">Create account</router-link>
+          |
+          <router-link :to="withPreviewParams('/auth/register')"
+            >Create account</router-link
+          >
         </span>
       </div>
 

@@ -5,7 +5,7 @@
  * Admin page for configuring instance settings.
  * Uses semantic HTML elements following PicoCSS conventions.
  */
-import { onMounted, ref, reactive, watch } from "vue";
+import { onMounted, ref, reactive, watch, computed } from "vue";
 import { api } from "../api";
 import { useAuthStore } from "../stores/auth";
 
@@ -27,8 +27,21 @@ interface InstanceSettings {
   auth_portal_enabled: boolean;
   auth_portal_logo_url: string | null;
   auth_portal_primary_color: string | null;
-  auth_portal_background_color: string | null;
+  auth_portal_background_image_url: string | null;
+  auth_portal_login_redirect_url: string | null;
+  auth_portal_register_redirect_url: string | null;
   updated_at: string;
+}
+
+interface ApplicationToken {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  last_used_at: string | null;
+  expires_at: string | null;
+  is_active: boolean;
+  is_valid: boolean;
 }
 
 const loading = ref(true);
@@ -52,13 +65,28 @@ const settings = reactive<InstanceSettings>({
   auth_portal_enabled: true,
   auth_portal_logo_url: null,
   auth_portal_primary_color: null,
-  auth_portal_background_color: null,
+  auth_portal_background_image_url: null,
+  auth_portal_login_redirect_url: null,
+  auth_portal_register_redirect_url: null,
   updated_at: "",
 });
 
 // Storage credentials (not returned by API, only for updates)
 const storageAccessKey = ref("");
 const storageSecretKey = ref("");
+
+// Application Tokens
+const applicationTokens = ref<ApplicationToken[]>([]);
+const loadingTokens = ref(false);
+const showCreateTokenForm = ref(false);
+const newTokenName = ref("");
+const newTokenDescription = ref("");
+const newTokenExpiresDays = ref<number | null>(null);
+const newlyCreatedToken = ref<{
+  token: ApplicationToken;
+  token_value: string;
+} | null>(null);
+const creatingToken = ref(false);
 
 // Common timezones for selection
 const commonTimezones = [
@@ -78,6 +106,7 @@ const commonTimezones = [
 
 onMounted(async () => {
   await fetchSettings();
+  await fetchApplicationTokens();
 });
 
 // Disable auth portal when public registration is disabled
@@ -89,6 +118,66 @@ watch(
     }
   }
 );
+
+// Validate redirect URLs when saving if auth portal is enabled
+function validateAuthPortalSettings() {
+  if (settings.auth_portal_enabled) {
+    if (
+      !settings.auth_portal_login_redirect_url ||
+      (!settings.auth_portal_login_redirect_url.startsWith("http://") &&
+        !settings.auth_portal_login_redirect_url.startsWith("https://"))
+    ) {
+      throw new Error(
+        "Login redirect URL is required and must be an absolute URL when auth portal is enabled"
+      );
+    }
+    if (settings.auth_portal_login_redirect_url.includes("/admin")) {
+      throw new Error("Login redirect URL must not point to /admin URLs");
+    }
+    if (
+      !settings.auth_portal_register_redirect_url ||
+      (!settings.auth_portal_register_redirect_url.startsWith("http://") &&
+        !settings.auth_portal_register_redirect_url.startsWith("https://"))
+    ) {
+      throw new Error(
+        "Register redirect URL is required and must be an absolute URL when auth portal is enabled"
+      );
+    }
+    if (settings.auth_portal_register_redirect_url.includes("/admin")) {
+      throw new Error("Register redirect URL must not point to /admin URLs");
+    }
+  }
+}
+
+// Generate preview URL with current (unsaved) settings
+const previewUrl = computed(() => {
+  const params = new URLSearchParams();
+  params.append("preview", "true");
+  // Only include params if they have values (non-empty)
+  // This way, if a field is cleared, we don't pass it and backend uses saved value
+  if (settings.auth_portal_logo_url) {
+    params.append("logo_url", settings.auth_portal_logo_url);
+  }
+  if (settings.auth_portal_primary_color) {
+    params.append("primary_color", settings.auth_portal_primary_color);
+  }
+  if (settings.auth_portal_background_image_url) {
+    params.append(
+      "background_image_url",
+      settings.auth_portal_background_image_url
+    );
+  }
+  // Include auth token for preview mode (iframe needs it for API calls)
+  const token = localStorage.getItem("tinybase_token");
+  if (token) {
+    params.append("token", token);
+  }
+  return `/auth/login?${params.toString()}`;
+});
+
+function openPreviewInNewTab() {
+  window.open(previewUrl.value, "_blank", "noopener,noreferrer");
+}
 
 async function fetchSettings() {
   loading.value = true;
@@ -104,12 +193,100 @@ async function fetchSettings() {
   }
 }
 
+async function fetchApplicationTokens() {
+  loadingTokens.value = true;
+  try {
+    const response = await api.get("/api/admin/application-tokens");
+    applicationTokens.value = response.data.tokens;
+  } catch (err: any) {
+    console.error("Failed to load application tokens:", err);
+  } finally {
+    loadingTokens.value = false;
+  }
+}
+
+async function createApplicationToken() {
+  creatingToken.value = true;
+  error.value = null;
+
+  try {
+    const payload: Record<string, any> = {
+      name: newTokenName.value,
+    };
+    if (newTokenDescription.value) {
+      payload.description = newTokenDescription.value;
+    }
+    if (newTokenExpiresDays.value) {
+      payload.expires_days = newTokenExpiresDays.value;
+    }
+
+    const response = await api.post("/api/admin/application-tokens", payload);
+    newlyCreatedToken.value = response.data;
+    await fetchApplicationTokens();
+
+    // Reset form and close modal
+    newTokenName.value = "";
+    newTokenDescription.value = "";
+    newTokenExpiresDays.value = null;
+    showCreateTokenForm.value = false;
+  } catch (err: any) {
+    error.value = err.response?.data?.detail || "Failed to create token";
+  } finally {
+    creatingToken.value = false;
+  }
+}
+
+async function revokeApplicationToken(tokenId: string) {
+  if (
+    !confirm(
+      "Are you sure you want to revoke this token? It will no longer be usable."
+    )
+  ) {
+    return;
+  }
+
+  try {
+    await api.delete(`/api/admin/application-tokens/${tokenId}`);
+    await fetchApplicationTokens();
+    if (newlyCreatedToken.value?.token.id === tokenId) {
+      newlyCreatedToken.value = null;
+    }
+  } catch (err: any) {
+    error.value = err.response?.data?.detail || "Failed to revoke token";
+  }
+}
+
+async function toggleTokenActive(tokenId: string, currentStatus: boolean) {
+  try {
+    await api.patch(`/api/admin/application-tokens/${tokenId}`, {
+      is_active: !currentStatus,
+    });
+    await fetchApplicationTokens();
+  } catch (err: any) {
+    error.value = err.response?.data?.detail || "Failed to update token";
+  }
+}
+
+function copyTokenToClipboard(tokenValue: string) {
+  navigator.clipboard.writeText(tokenValue);
+  success.value = "Token copied to clipboard";
+  setTimeout(() => {
+    success.value = null;
+  }, 2000);
+}
+
+function dismissNewToken() {
+  newlyCreatedToken.value = null;
+}
+
 async function saveSettings() {
   saving.value = true;
   error.value = null;
   success.value = null;
 
   try {
+    // Validate auth portal settings
+    validateAuthPortalSettings();
     const payload: Record<string, any> = {
       instance_name: settings.instance_name,
       allow_public_registration: settings.allow_public_registration,
@@ -129,7 +306,11 @@ async function saveSettings() {
       auth_portal_enabled: settings.auth_portal_enabled,
       auth_portal_logo_url: settings.auth_portal_logo_url,
       auth_portal_primary_color: settings.auth_portal_primary_color,
-      auth_portal_background_color: settings.auth_portal_background_color,
+      auth_portal_background_image_url:
+        settings.auth_portal_background_image_url,
+      auth_portal_login_redirect_url: settings.auth_portal_login_redirect_url,
+      auth_portal_register_redirect_url:
+        settings.auth_portal_register_redirect_url,
     };
 
     // Only include credentials if they're filled in
@@ -191,6 +372,18 @@ async function saveSettings() {
           />
           <small>The name displayed in the admin UI and API responses.</small>
         </label>
+        <label for="server_timezone">
+          Server Timezone
+          <select id="server_timezone" v-model="settings.server_timezone">
+            <option v-for="tz in commonTimezones" :key="tz" :value="tz">
+              {{ tz }}
+            </option>
+          </select>
+          <small>
+            Default timezone for scheduled functions. Individual schedules can
+            override this.
+          </small>
+        </label>
       </article>
 
       <!-- Authentication Settings -->
@@ -235,65 +428,169 @@ async function saveSettings() {
           </label>
           <small class="text-muted">
             When enabled, a public-facing authentication portal will be
-            available at /auth with login, registration, and password reset
-            functionality.
+            available at <code>/auth</code> with login, registration, and
+            password reset functionality. <br />
+            <small class="text-muted">
+              Example: <code>https://where.you.host.tinybase.com/auth</code>
+            </small>
           </small>
 
-          <div v-if="settings.auth_portal_enabled" class="portal-config-fields">
-            <label for="auth_portal_logo_url">
-              Logo URL
-              <input
-                id="auth_portal_logo_url"
-                v-model="settings.auth_portal_logo_url"
-                type="url"
-                placeholder="https://example.com/logo.png"
-              />
-              <small>Optional logo URL to display in the auth portal.</small>
-            </label>
+          <div
+            v-if="settings.auth_portal_enabled"
+            class="portal-config-fields grid"
+          >
+            <!-- Redirects Section -->
+            <details name="auth-portal-config" open>
+              <summary role="button" class="outline">Redirects</summary>
+              <div>
+                <label for="auth_portal_login_redirect_url">
+                  Login Redirect URL
+                  <input
+                    id="auth_portal_login_redirect_url"
+                    v-model="settings.auth_portal_login_redirect_url"
+                    type="url"
+                    placeholder="https://app.example.com/dashboard"
+                    pattern="https?://.+"
+                    required
+                  />
+                  <small>
+                    Required: Absolute URL where users are redirected after
+                    successful login (e.g., https://app.example.com/dashboard).
+                    Must not point to /admin URLs.
+                  </small>
+                </label>
 
-            <div class="grid">
-              <label for="auth_portal_primary_color">
-                Primary Color
-                <input
-                  id="auth_portal_primary_color"
-                  v-model="settings.auth_portal_primary_color"
-                  type="color"
-                />
-                <small>Primary color for buttons and links.</small>
-              </label>
+                <label for="auth_portal_register_redirect_url">
+                  Registration Redirect URL
+                  <input
+                    id="auth_portal_register_redirect_url"
+                    v-model="settings.auth_portal_register_redirect_url"
+                    type="url"
+                    placeholder="https://app.example.com/welcome"
+                    pattern="https?://.+"
+                    required
+                  />
+                  <small>
+                    Required: Absolute URL where users are redirected after
+                    successful registration (e.g.,
+                    https://app.example.com/welcome). Must not point to /admin
+                    URLs.
+                  </small>
+                </label>
+              </div>
+            </details>
 
-              <label for="auth_portal_background_color">
-                Background Color
-                <input
-                  id="auth_portal_background_color"
-                  v-model="settings.auth_portal_background_color"
-                  type="color"
-                />
-                <small>Background color for the portal.</small>
-              </label>
+            <!-- Styling Section -->
+            <details name="auth-portal-config">
+              <summary role="button" class="outline">Styling</summary>
+              <div>
+                <label for="auth_portal_logo_url">
+                  Logo URL
+                  <input
+                    id="auth_portal_logo_url"
+                    v-model="settings.auth_portal_logo_url"
+                    type="url"
+                    placeholder="https://example.com/logo.png"
+                  />
+                  <small
+                    >Optional logo URL to display in the auth portal.</small
+                  >
+                </label>
+
+                <label for="auth_portal_background_image_url">
+                  Background Image URL
+                  <input
+                    id="auth_portal_background_image_url"
+                    v-model="settings.auth_portal_background_image_url"
+                    type="url"
+                    placeholder="https://example.com/background.jpg"
+                  />
+                  <small
+                    >Optional background image. The login card will have a
+                    frosted glass effect when a background image is set.</small
+                  >
+                </label>
+              </div>
+
+              <div class="color-picker-group">
+                <label for="auth_portal_primary_color_hex">
+                  Primary Color
+                  <div class="color-input-row">
+                    <input
+                      id="auth_portal_primary_color_hex"
+                      v-model="settings.auth_portal_primary_color"
+                      type="text"
+                      class="color-hex"
+                      placeholder="#000000"
+                      pattern="^#?[0-9A-Fa-f]{6}$"
+                      @blur="
+                          (e) => {
+                            const val = (e.target as HTMLInputElement).value;
+                            if (val && !val.startsWith('#')) {
+                              settings.auth_portal_primary_color = '#' + val;
+                            }
+                          }
+                        "
+                    />
+                    <label
+                      for="auth_portal_primary_color"
+                      class="color-picker-trigger"
+                    >
+                      <input
+                        id="auth_portal_primary_color"
+                        v-model="settings.auth_portal_primary_color"
+                        type="color"
+                        class="color-picker-input"
+                      />
+                      <span
+                        class="color-picker-preview"
+                        :style="{
+                          backgroundColor:
+                            settings.auth_portal_primary_color || '#000000',
+                        }"
+                      ></span>
+                    </label>
+                  </div>
+                  <small>Primary color for buttons and links.</small>
+                </label>
+              </div>
+            </details>
+
+            <!-- Preview Controls -->
+            <div
+              style="display: flex; align-items: start; justify-content: center"
+            >
+              <button
+                type="button"
+                @click="openPreviewInNewTab"
+                class="primary"
+              >
+                Open Preview in New Tab
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="
+                    display: inline-block;
+                    vertical-align: middle;
+                    margin-left: 0.25rem;
+                  "
+                >
+                  <path
+                    d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                  />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
-      </article>
-
-      <!-- Timezone Settings -->
-      <article>
-        <header>
-          <h3>Timezone</h3>
-        </header>
-
-        <label for="server_timezone">
-          Server Timezone
-          <select id="server_timezone" v-model="settings.server_timezone">
-            <option v-for="tz in commonTimezones" :key="tz" :value="tz">
-              {{ tz }}
-            </option>
-          </select>
-          <small
-            >Default timezone for scheduled functions. Individual schedules can
-            override this.</small
-          >
-        </label>
       </article>
 
       <!-- Scheduler Settings -->
@@ -302,85 +599,89 @@ async function saveSettings() {
           <h3>Scheduler</h3>
         </header>
 
-        <label for="token_cleanup_interval">
-          Token Cleanup Interval
-          <input
-            id="token_cleanup_interval"
-            v-model.number="settings.token_cleanup_interval"
-            type="number"
-            min="1"
-            step="1"
-          />
-          <small
-            >How often to run token cleanup (in scheduler ticks). For example,
-            if scheduler runs every 5 seconds and this is set to 60, cleanup
-            runs every 5 minutes (60 × 5s).</small
-          >
-        </label>
+        <div class="grid grid-3">
+          <label for="token_cleanup_interval">
+            Token Cleanup Interval
+            <input
+              id="token_cleanup_interval"
+              v-model.number="settings.token_cleanup_interval"
+              type="number"
+              min="1"
+              step="1"
+            />
+            <small
+              >How often to run token cleanup (in scheduler ticks). For example,
+              if scheduler runs every 5 seconds and this is set to 60, cleanup
+              runs every 5 minutes (60 × 5s).</small
+            >
+          </label>
 
-        <label for="metrics_collection_interval">
-          Metrics Collection Interval
-          <input
-            id="metrics_collection_interval"
-            v-model.number="settings.metrics_collection_interval"
-            type="number"
-            min="1"
-            step="1"
-          />
-          <small
-            >How often to collect metrics (in scheduler ticks). For example, if
-            scheduler runs every 5 seconds and this is set to 360, metrics are
-            collected every 30 minutes (360 × 5s).</small
-          >
-        </label>
+          <label for="metrics_collection_interval">
+            Metrics Collection Interval
+            <input
+              id="metrics_collection_interval"
+              v-model.number="settings.metrics_collection_interval"
+              type="number"
+              min="1"
+              step="1"
+            />
+            <small
+              >How often to collect metrics (in scheduler ticks). For example,
+              if scheduler runs every 5 seconds and this is set to 360, metrics
+              are collected every 30 minutes (360 × 5s).</small
+            >
+          </label>
 
-        <label for="scheduler_function_timeout_seconds">
-          Function Execution Timeout (seconds)
-          <input
-            id="scheduler_function_timeout_seconds"
-            v-model.number="settings.scheduler_function_timeout_seconds"
-            type="number"
-            min="1"
-            step="1"
-            placeholder="1800"
-          />
-          <small
-            >Maximum execution time for scheduled functions. Leave empty to use
-            default (1800 seconds = 30 minutes).</small
-          >
-        </label>
+          <label for="scheduler_function_timeout_seconds">
+            Function Execution Timeout (seconds)
+            <input
+              id="scheduler_function_timeout_seconds"
+              v-model.number="settings.scheduler_function_timeout_seconds"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="1800"
+            />
+            <small
+              >Maximum execution time for scheduled functions. Leave empty to
+              use default (1800 seconds = 30 minutes).</small
+            >
+          </label>
+        </div>
 
-        <label for="scheduler_max_schedules_per_tick">
-          Max Schedules Per Tick
-          <input
-            id="scheduler_max_schedules_per_tick"
-            v-model.number="settings.scheduler_max_schedules_per_tick"
-            type="number"
-            min="1"
-            step="1"
-            placeholder="100"
-          />
-          <small
-            >Maximum number of schedules to process in each scheduler tick.
-            Leave empty to use default (100).</small
-          >
-        </label>
+        <div class="grid grid-3">
+          <label for="scheduler_max_schedules_per_tick">
+            Max Schedules Per Tick
+            <input
+              id="scheduler_max_schedules_per_tick"
+              v-model.number="settings.scheduler_max_schedules_per_tick"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="100"
+            />
+            <small
+              >Maximum number of schedules to process in each scheduler tick.
+              Leave empty to use default (100).</small
+            >
+          </label>
 
-        <label for="scheduler_max_concurrent_executions">
-          Max Concurrent Executions
-          <input
-            id="scheduler_max_concurrent_executions"
-            v-model.number="settings.scheduler_max_concurrent_executions"
-            type="number"
-            min="1"
-            step="1"
-            placeholder="10"
-          />
-          <small
-            >Maximum number of schedules to execute concurrently. Leave empty to
-            use default (10).</small
-          >
-        </label>
+          <label for="scheduler_max_concurrent_executions">
+            Max Concurrent Executions
+            <input
+              id="scheduler_max_concurrent_executions"
+              v-model.number="settings.scheduler_max_concurrent_executions"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="10"
+            />
+            <small
+              >Maximum number of schedules to execute concurrently. Leave empty
+              to use default (10).</small
+            >
+          </label>
+        </div>
       </article>
 
       <!-- Storage Settings -->
@@ -458,6 +759,253 @@ async function saveSettings() {
         </div>
       </article>
 
+      <!-- Application Tokens -->
+      <article>
+        <header class="token-header">
+          <div>
+            <h3>Application Tokens</h3>
+            <small class="text-muted">
+              Application tokens allow client applications to authenticate with
+              your TinyBase instance. Create tokens for each client application
+              and use them in API requests.
+            </small>
+          </div>
+          <button
+            type="button"
+            @click="showCreateTokenForm = true"
+            class="primary outline small"
+          >
+            Create Token
+          </button>
+        </header>
+
+        <!-- Newly Created Token Display -->
+        <div v-if="newlyCreatedToken" class="token-created-alert">
+          <strong>Token Created Successfully!</strong>
+          <p>Copy this token now - you won't be able to see it again:</p>
+          <div class="token-display">
+            <code>{{ newlyCreatedToken.token_value }}</code>
+            <button
+              type="button"
+              @click="copyTokenToClipboard(newlyCreatedToken.token_value)"
+              class="secondary"
+            >
+              Copy
+            </button>
+          </div>
+          <button type="button" @click="dismissNewToken" class="secondary">
+            Dismiss
+          </button>
+        </div>
+
+        <!-- Token List -->
+        <div>
+          <div v-if="loadingTokens" aria-busy="true">Loading tokens...</div>
+
+          <div v-else-if="applicationTokens.length === 0" class="empty-state">
+            <p>No application tokens yet. Create one to get started.</p>
+          </div>
+
+          <table v-else>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Last Used</th>
+                <th>Expires</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="token in applicationTokens" :key="token.id">
+                <td>
+                  <strong>{{ token.name }}</strong>
+                </td>
+                <td>{{ token.description || "-" }}</td>
+                <td>
+                  <span
+                    :class="{
+                      'status-active': token.is_valid,
+                      'status-inactive': !token.is_valid,
+                    }"
+                  >
+                    {{ token.is_valid ? "✓ Active" : "✗ Inactive" }}
+                  </span>
+                </td>
+                <td>{{ new Date(token.created_at).toLocaleDateString() }}</td>
+                <td>
+                  {{
+                    token.last_used_at
+                      ? new Date(token.last_used_at).toLocaleDateString()
+                      : "Never"
+                  }}
+                </td>
+                <td>
+                  {{
+                    token.expires_at
+                      ? new Date(token.expires_at).toLocaleDateString()
+                      : "Never"
+                  }}
+                </td>
+                <td class="actions-cell">
+                  <div role="group">
+                    <button
+                      type="button"
+                      @click="toggleTokenActive(token.id, token.is_active)"
+                      class="secondary outline small"
+                      :data-tooltip="
+                        token.is_active
+                          ? 'Deactivate token temporarily'
+                          : 'Activate token'
+                      "
+                    >
+                      <svg
+                        v-if="token.is_active"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="orange"
+                        stroke="orange"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <rect
+                          x="7"
+                          y="7"
+                          width="3"
+                          height="10"
+                          rx="1"
+                          fill="orange"
+                          stroke="orange"
+                        />
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          fill="orange"
+                          stroke="orange"
+                        />
+                      </svg>
+                      <svg
+                        v-else
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="green"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M12 2v10" />
+                        <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      @click="revokeApplicationToken(token.id)"
+                      class="secondary outline small"
+                      data-tooltip="Revoke token permanently"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="red"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path
+                          d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                        />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <!-- Create Token Modal -->
+      <dialog :open="showCreateTokenForm">
+        <article>
+          <header>
+            <button
+              aria-label="Close"
+              rel="prev"
+              @click="showCreateTokenForm = false"
+            ></button>
+            <h3>Create Application Token</h3>
+          </header>
+
+          <form @submit.prevent="createApplicationToken">
+            <label for="token_name">
+              Name
+              <input
+                id="token_name"
+                v-model="newTokenName"
+                type="text"
+                placeholder="e.g., Production API Client"
+                maxlength="200"
+                required
+              />
+              <small>A descriptive name for this token.</small>
+            </label>
+
+            <label for="token_description">
+              Description (optional)
+              <textarea
+                id="token_description"
+                v-model="newTokenDescription"
+                placeholder="What will this token be used for?"
+                maxlength="500"
+                rows="3"
+              ></textarea>
+            </label>
+
+            <label for="token_expires_days">
+              Expires in (days)
+              <input
+                id="token_expires_days"
+                v-model.number="newTokenExpiresDays"
+                type="number"
+                min="1"
+                placeholder="Leave empty for no expiration"
+              />
+              <small>Leave empty if the token should never expire.</small>
+            </label>
+
+            <footer>
+              <button
+                type="button"
+                class="secondary"
+                @click="showCreateTokenForm = false"
+                :disabled="creatingToken"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                :aria-busy="creatingToken"
+                :disabled="creatingToken || !newTokenName"
+              >
+                {{ creatingToken ? "" : "Create Token" }}
+              </button>
+            </footer>
+          </form>
+        </article>
+      </dialog>
+
       <!-- Status Messages -->
       <ins v-if="success" class="pico-background-green-500">
         {{ success }}
@@ -510,6 +1058,33 @@ article {
   border-top: 1px solid var(--tb-border);
 }
 
+.preview-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tb-spacing-xs);
+}
+
+.preview-controls button {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--tb-spacing-sm) var(--tb-spacing-md);
+  font-size: 0.875rem;
+  align-self: flex-start;
+}
+
+/* Accordion styling for portal config - minimal overrides for spacing */
+.portal-config-fields details {
+  margin-bottom: var(--tb-spacing-md);
+}
+
+.portal-config-fields details .grid {
+  margin-top: var(--tb-spacing-md);
+}
+
+.portal-config-fields details .color-picker-group {
+  margin-top: var(--tb-spacing-md);
+}
+
 .save-footer {
   display: flex;
   justify-content: space-between;
@@ -540,5 +1115,171 @@ del {
 
 .mb-3 {
   margin-bottom: var(--tb-spacing-lg);
+}
+
+.color-picker-group {
+  margin-bottom: var(--tb-spacing-md);
+}
+
+.color-input-row {
+  display: flex;
+  gap: var(--tb-spacing-md);
+  align-items: flex-start;
+}
+
+.color-hex {
+  flex: 1;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.color-picker-trigger {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  width: 3rem;
+  height: 2.5rem;
+  border: 2px solid var(--pico-border-color);
+  border-radius: var(--tb-radius);
+  overflow: hidden;
+  background: var(--pico-background-color);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.color-picker-trigger:hover {
+  border-color: var(--pico-primary);
+  box-shadow: 0 0 0 2px var(--pico-primary-background);
+}
+
+.color-picker-input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+
+.color-picker-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--tb-radius) - 2px);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.token-created-alert {
+  background: var(--pico-background-color);
+  border: 2px solid var(--pico-primary);
+  border-radius: var(--tb-radius);
+  padding: var(--tb-spacing-lg);
+  margin-bottom: var(--tb-spacing-lg);
+}
+
+.token-created-alert strong {
+  display: block;
+  margin-bottom: var(--tb-spacing-sm);
+  color: var(--pico-primary);
+}
+
+.token-display {
+  display: flex;
+  gap: var(--tb-spacing-sm);
+  align-items: center;
+  justify-content: center;
+  margin: var(--tb-spacing-md) 0;
+  padding: var(--tb-spacing-sm);
+  background: var(--pico-background-color);
+  border: 1px solid var(--tb-border);
+  border-radius: var(--tb-radius);
+}
+
+.token-display code {
+  flex: 1;
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.empty-state {
+  padding: var(--tb-spacing-lg);
+  text-align: center;
+  color: var(--pico-muted-color);
+}
+
+.status-active {
+  color: var(--pico-success);
+  font-weight: 600;
+}
+
+.status-inactive {
+  color: var(--pico-muted-color);
+}
+
+table {
+  width: 100%;
+  margin-top: var(--tb-spacing-md);
+}
+
+table th {
+  text-align: left;
+  font-weight: 600;
+  padding: var(--tb-spacing-sm);
+  border-bottom: 2px solid var(--tb-border);
+}
+
+table td {
+  padding: var(--tb-spacing-sm);
+  border-bottom: 1px solid var(--tb-border);
+}
+
+table tr:last-child td {
+  border-bottom: none;
+}
+
+table tr:first-child th:last-child {
+  text-align: center;
+}
+
+.actions-cell {
+  padding-bottom: 0;
+}
+
+.actions-cell [role="group"] {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+}
+
+.actions-cell [role="group"] button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 50px;
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 768px) {
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.token-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.token-header button.small {
+  font-size: 0.875rem;
+  padding: var(--tb-spacing-xs) var(--tb-spacing-sm);
 }
 </style>
