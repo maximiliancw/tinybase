@@ -29,6 +29,13 @@ interface Column {
   actions?: ActionButton[]; // For Actions column
 }
 
+interface HeaderAction {
+  label: string;
+  action: () => void | Promise<void>;
+  variant?: "primary" | "secondary" | "contrast" | "outline";
+  icon?: string;
+}
+
 interface Props {
   data: any[];
   columns: Column[];
@@ -37,6 +44,7 @@ interface Props {
   pageSize?: number;
   searchPlaceholder?: string;
   emptyMessage?: string;
+  headerAction?: HeaderAction;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -187,19 +195,36 @@ function isVNode(value: any): value is VNode {
 
 <template>
   <div class="datatable">
-    <!-- Search Bar -->
-    <div v-if="searchable" class="datatable-search">
-      <input
-        type="search"
-        :placeholder="searchPlaceholder"
-        v-model="searchQuery"
-      />
-      <small
-        v-if="searchQuery.trim() && filteredData.length !== data.length"
-        class="text-muted"
-      >
-        Showing {{ filteredData.length }} of {{ data.length }} results
-      </small>
+    <!-- Search Bar and Header Action -->
+    <div v-if="searchable || headerAction" class="datatable-header">
+      <div class="grid">
+        <div v-if="searchable" class="datatable-search-wrapper">
+          <input
+            type="search"
+            :placeholder="searchPlaceholder"
+            v-model="searchQuery"
+          />
+          <small
+            v-if="searchQuery.trim() && filteredData.length !== data.length"
+            class="text-muted"
+          >
+            Showing {{ filteredData.length }} of {{ data.length }} results
+          </small>
+        </div>
+        <div v-if="headerAction" class="datatable-header-action">
+          <button
+            :class="[headerAction.variant || 'primary']"
+            @click="headerAction.action"
+          >
+            <Icon
+              v-if="headerAction.icon"
+              :name="headerAction.icon"
+              :size="16"
+            />
+            {{ headerAction.label }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Desktop Table View -->
@@ -223,20 +248,18 @@ function isVNode(value: any): value is VNode {
           <tr v-for="(row, index) in paginatedData" :key="index">
             <td v-for="column in columns" :key="column.key">
               <!-- Actions Column -->
-              <div v-if="isActionsColumn(column)" role="group">
-                <button
+              <div v-if="isActionsColumn(column)" class="datatable-actions">
+                <a
                   v-for="(button, btnIndex) in column.actions"
                   :key="btnIndex"
-                  :class="[
-                    'small',
-                    button.variant || 'secondary',
-                  ]"
+                  href="#"
+                  :class="['small', button.variant || 'secondary']"
                   :disabled="isButtonDisabled(button, row)"
                   @click="handleAction(button, row)"
                 >
                   <Icon v-if="button.icon" :name="button.icon" :size="14" />
                   {{ getButtonLabel(button, row) }}
-                </button>
+                </a>
               </div>
               <!-- Regular Column -->
               <template v-else>
@@ -270,19 +293,16 @@ function isVNode(value: any): value is VNode {
             <template v-if="isActionsColumn(column)">
               <dt>{{ column.label }}</dt>
               <dd>
-                <div role="group" class="datatable-mobile-actions">
+                <div class="datatable-mobile-actions">
                   <button
                     v-for="(button, btnIndex) in column.actions"
                     :key="btnIndex"
-                    :class="[
-                      'small',
-                      button.variant || 'secondary',
-                    ]"
+                    :class="['small', button.variant || 'secondary']"
                     :disabled="isButtonDisabled(button, row)"
                     @click="handleAction(button, row)"
                   >
                     <Icon v-if="button.icon" :name="button.icon" :size="14" />
-                    {{ button.label }}
+                    {{ getButtonLabel(button, row) }}
                   </button>
                 </div>
               </dd>
@@ -332,19 +352,66 @@ function isVNode(value: any): value is VNode {
   width: 100%;
 }
 
-/* Search Bar */
-.datatable-search {
+/* Header (Search Bar and Action) */
+.datatable-header {
   margin-bottom: var(--tb-spacing-md);
 }
 
-.datatable-search input[type="search"] {
-  width: 100%;
-  max-width: 400px;
+.datatable-header .grid {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--tb-spacing-md);
 }
 
-.datatable-search small {
+.datatable-search-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 50%;
+}
+
+.datatable-header input[type="search"] {
+  width: 100%;
+}
+
+.datatable-header small {
   display: block;
   margin-top: var(--tb-spacing-xs);
+}
+
+.datatable-header-action {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 0;
+  flex-shrink: 0;
+}
+
+.datatable-header-action button {
+  white-space: nowrap;
+  margin-top: 0;
+}
+
+/* Mobile: Stack and center */
+@media (max-width: 768px) {
+  .datatable-header .grid {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .datatable-search-wrapper {
+    width: 100%;
+  }
+
+  .datatable-header-action {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .datatable-header-action button {
+    width: auto;
+  }
 }
 
 /* Desktop Table View */
@@ -354,6 +421,18 @@ function isVNode(value: any): value is VNode {
 
 .datatable-desktop table {
   width: 100%;
+}
+
+/* Action buttons container */
+.datatable-actions {
+  display: flex;
+  gap: var(--tb-spacing-xs);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.datatable-actions a {
+  padding: 5px 10px;
 }
 
 .datatable-empty {
@@ -399,8 +478,16 @@ function isVNode(value: any): value is VNode {
 
 .datatable-mobile-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--tb-spacing-xs);
+  width: 100%;
+}
+
+.datatable-mobile-actions button {
+  width: 100%;
+  font-size: 0.8125rem;
+  padding: 0.375rem 0.875rem;
+  text-transform: uppercase;
 }
 
 /* Pagination */
@@ -435,4 +522,3 @@ function isVNode(value: any): value is VNode {
   }
 }
 </style>
-

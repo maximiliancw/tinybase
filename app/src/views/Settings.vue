@@ -848,7 +848,7 @@ async function saveSettings() {
                   }}
                 </td>
                 <td class="actions-cell">
-                  <div role="group">
+                  <div class="token-actions">
                     <button
                       type="button"
                       @click="toggleTokenActive(token.id, token.is_active)"
@@ -1149,14 +1149,14 @@ table tr:first-child th:last-child {
   padding-bottom: 0;
 }
 
-.actions-cell [role="group"] {
-  display: inline-flex;
+.token-actions {
+  display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0;
+  gap: var(--tb-spacing-xs);
 }
 
-.actions-cell [role="group"] button {
+.token-actions button {
   display: flex;
   align-items: center;
   justify-content: center;

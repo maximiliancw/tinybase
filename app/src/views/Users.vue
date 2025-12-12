@@ -101,7 +101,6 @@ const userColumns = computed(() => [
         <h1>Users</h1>
         <p>Manage user accounts</p>
       </hgroup>
-      <button @click="showCreateModal = true">+ New User</button>
     </header>
 
     <!-- Loading State -->
@@ -116,6 +115,13 @@ const userColumns = computed(() => [
         :columns="userColumns as any"
         :page-size="20"
         search-placeholder="Search users..."
+        :header-action="{
+          label: '+ New User',
+          action: () => {
+            showCreateModal = true;
+          },
+          variant: 'primary',
+        }"
       />
     </article>
 

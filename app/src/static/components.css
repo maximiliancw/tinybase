@@ -201,9 +201,8 @@ table a:hover {
 }
 
 /* Action columns in tables - ensure buttons are small and vertically aligned */
-/* Target any table cell containing buttons or button groups */
+/* Target any table cell containing buttons */
 table td:has(button),
-table td:has([role="group"]),
 table td.actions-cell {
   display: flex;
   justify-content: center;
@@ -213,21 +212,11 @@ table td.actions-cell {
 
 /* Ensure all buttons in action cells are small */
 table td:has(button) > button,
-table td:has([role="group"]) button,
 table td.actions-cell button,
-table td:has([role="group"]) [role="button"],
 table td.actions-cell [role="button"] {
   font-size: 0.8125rem;
   padding: 0.375rem 0.875rem;
   text-transform: uppercase;
-}
-
-/* Ensure button groups in action cells are properly aligned */
-table td:has([role="group"]) [role="group"],
-table td.actions-cell [role="group"] {
-  display: inline-flex;
-  align-items: center;
-  vertical-align: middle;
 }
 
 
