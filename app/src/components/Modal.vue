@@ -6,7 +6,6 @@
  * Provides consistent structure and behavior across the application.
  */
 import { watch, onUnmounted } from "vue";
-import Icon from "./Icon.vue";
 
 interface Props {
   /** Whether the modal is open */

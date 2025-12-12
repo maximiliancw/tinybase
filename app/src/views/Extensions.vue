@@ -5,9 +5,12 @@
  * Admin page for managing TinyBase extensions.
  * Allows installing, uninstalling, and enabling/disabling extensions.
  */
-import { onMounted, ref, reactive } from "vue";
+import { onMounted, ref } from "vue";
+import { useForm } from "vee-validate";
 import { api } from "../api";
+import { validationSchemas } from "../composables/useFormValidation";
 import Modal from "../components/Modal.vue";
+import FormField from "../components/FormField.vue";
 
 interface Extension {
   id: string;
@@ -39,9 +42,15 @@ const total = ref(0);
 
 // Install modal
 const showInstallModal = ref(false);
-const installUrl = ref("");
 const installError = ref<string | null>(null);
 const showWarningAccepted = ref(false);
+
+const { handleSubmit, resetForm } = useForm({
+  validationSchema: validationSchemas.installExtension,
+  initialValues: {
+    repo_url: "",
+  },
+});
 
 // Uninstall confirmation
 const showUninstallModal = ref(false);
@@ -71,24 +80,19 @@ async function fetchExtensions() {
 }
 
 function openInstallModal() {
-  installUrl.value = "";
+  resetForm();
   installError.value = null;
   showWarningAccepted.value = false;
   showInstallModal.value = true;
 }
 
-async function handleInstall() {
-  if (!installUrl.value.trim()) {
-    installError.value = "Please enter a GitHub URL";
-    return;
-  }
-
+const onSubmit = handleSubmit(async (values) => {
   installing.value = true;
   installError.value = null;
 
   try {
     await api.post("/api/admin/extensions", {
-      repo_url: installUrl.value.trim(),
+      repo_url: values.repo_url.trim(),
     });
 
     showInstallModal.value = false;
@@ -104,7 +108,7 @@ async function handleInstall() {
   } finally {
     installing.value = false;
   }
-}
+});
 
 function openUninstallModal(ext: Extension) {
   extensionToUninstall.value = ext;
@@ -287,20 +291,15 @@ function formatDate(dateStr: string): string {
         </button>
       </div>
 
-      <form id="install-form" v-else @submit.prevent="handleInstall">
-        <label for="install_url">
-          GitHub Repository URL
-          <input
-            id="install_url"
-            v-model="installUrl"
-            type="url"
-            placeholder="https://github.com/username/tinybase-extension"
-            :disabled="installing"
-          />
-          <small>
-            The repository must contain an <code>extension.toml</code> manifest.
-          </small>
-        </label>
+      <form id="install-form" v-else @submit="onSubmit">
+        <FormField
+          name="repo_url"
+          type="url"
+          label="GitHub Repository URL"
+          placeholder="https://github.com/username/tinybase-extension"
+          :disabled="installing"
+          helper="The repository must contain an extension.toml manifest."
+        />
 
         <small v-if="installError" class="text-error">
           {{ installError }}

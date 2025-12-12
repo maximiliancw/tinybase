@@ -7,40 +7,43 @@
  */
 import { onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
+import { useForm, Field } from "vee-validate";
 import {
   useFunctionsStore,
   generateTemplateFromSchema,
 } from "../stores/functions";
+import { validationSchemas } from "../composables/useFormValidation";
 import Modal from "../components/Modal.vue";
+import FormField from "../components/FormField.vue";
 
 const route = useRoute();
 const functionsStore = useFunctionsStore();
 
 const showCreateModal = ref(false);
 const loadingSchema = ref(false);
-const newSchedule = ref({
-  name: "",
-  function_name: "",
-  method: "interval" as "once" | "interval" | "cron",
-  timezone: "UTC",
-  // Interval fields
-  unit: "hours",
-  value: 1,
-  // Cron fields
-  cron: "0 * * * *",
-  // Once fields
-  date: "",
-  time: "",
-  // Input data for the function
-  input_data: "{}",
+
+const { handleSubmit, resetForm, watch: watchForm, setFieldValue } = useForm({
+  validationSchema: validationSchemas.createSchedule,
+  initialValues: {
+    name: "",
+    function_name: "",
+    method: "interval" as "once" | "interval" | "cron",
+    timezone: "UTC",
+    unit: "hours",
+    value: 1,
+    cron: "0 * * * *",
+    date: "",
+    time: "",
+    input_data: "{}",
+  },
 });
 
 // Watch for function selection changes to fetch schema
-watch(
-  () => newSchedule.value.function_name,
+watchForm(
+  (values) => values.function_name,
   async (functionName) => {
     if (!functionName) {
-      newSchedule.value.input_data = "{}";
+      setFieldValue("input_data", "{}");
       return;
     }
 
@@ -49,12 +52,12 @@ watch(
       const schema = await functionsStore.fetchFunctionSchema(functionName);
       if (schema?.input_schema) {
         const template = generateTemplateFromSchema(schema.input_schema);
-        newSchedule.value.input_data = JSON.stringify(template, null, 2);
+        setFieldValue("input_data", JSON.stringify(template, null, 2));
       } else {
-        newSchedule.value.input_data = "{}";
+        setFieldValue("input_data", "{}");
       }
     } catch {
-      newSchedule.value.input_data = "{}";
+      setFieldValue("input_data", "{}");
     } finally {
       loadingSchema.value = false;
     }
@@ -69,67 +72,69 @@ onMounted(async () => {
   }
 });
 
-function buildSchedulePayload() {
+function buildSchedulePayload(values: any) {
   const base = {
-    timezone: newSchedule.value.timezone,
+    timezone: values.timezone,
   };
 
-  switch (newSchedule.value.method) {
+  switch (values.method) {
     case "interval":
       return {
         ...base,
         method: "interval",
-        unit: newSchedule.value.unit,
-        value: newSchedule.value.value,
+        unit: values.unit,
+        value: values.value,
       };
     case "cron":
       return {
         ...base,
         method: "cron",
-        cron: newSchedule.value.cron,
+        cron: values.cron,
       };
     case "once":
       return {
         ...base,
         method: "once",
-        date: newSchedule.value.date,
-        time: newSchedule.value.time,
+        date: values.date,
+        time: values.time,
       };
   }
 }
 
-async function handleCreate() {
+const onSubmit = handleSubmit(async (values) => {
   let inputData = {};
   try {
-    inputData = JSON.parse(newSchedule.value.input_data);
+    inputData = JSON.parse(values.input_data);
   } catch {
     functionsStore.error = "Invalid JSON in input data";
     return;
   }
 
   const result = await functionsStore.createSchedule({
-    name: newSchedule.value.name,
-    function_name: newSchedule.value.function_name,
-    schedule: buildSchedulePayload(),
+    name: values.name,
+    function_name: values.function_name,
+    schedule: buildSchedulePayload(values),
     input_data: inputData,
   });
 
   if (result) {
     showCreateModal.value = false;
-    newSchedule.value = {
-      name: "",
-      function_name: "",
-      method: "interval",
-      timezone: "UTC",
-      unit: "hours",
-      value: 1,
-      cron: "0 * * * *",
-      date: "",
-      time: "",
-      input_data: "{}",
-    };
+    resetForm({
+      values: {
+        name: "",
+        function_name: "",
+        method: "interval",
+        timezone: "UTC",
+        unit: "hours",
+        value: 1,
+        cron: "0 * * * *",
+        date: "",
+        time: "",
+        input_data: "{}",
+      },
+    });
   }
-}
+});
 
 async function handleToggleActive(scheduleId: string, currentStatus: boolean) {
   await functionsStore.updateSchedule(scheduleId, {
@@ -248,111 +253,104 @@ function formatSchedule(schedule: any): string {
 
     <!-- Create Schedule Modal -->
     <Modal v-model:open="showCreateModal" title="Create Schedule">
-      <form id="schedule-form" @submit.prevent="handleCreate">
-        <label for="name">
-          Name
-          <input id="name" v-model="newSchedule.name" type="text" required />
-        </label>
+      <form id="schedule-form" @submit="onSubmit">
+        <FormField name="name" type="text" label="Name" />
 
-        <label for="function">
-          Function
-          <select id="function" v-model="newSchedule.function_name" required>
-            <option value="">Select a function</option>
-            <option
-              v-for="fn in functionsStore.functions"
-              :key="fn.name"
-              :value="fn.name"
-            >
-              {{ fn.name }}
-            </option>
-          </select>
-        </label>
+        <FormField name="function_name" as="select" label="Function">
+          <option value="">Select a function</option>
+          <option
+            v-for="fn in functionsStore.functions"
+            :key="fn.name"
+            :value="fn.name"
+          >
+            {{ fn.name }}
+          </option>
+        </FormField>
 
-        <fieldset>
-          <legend>Schedule Type</legend>
-          <label>
-            <input type="radio" v-model="newSchedule.method" value="interval" />
-            Interval
-          </label>
-          <label>
-            <input type="radio" v-model="newSchedule.method" value="cron" />
-            Cron
-          </label>
-          <label>
-            <input type="radio" v-model="newSchedule.method" value="once" />
-            Once
-          </label>
-        </fieldset>
+        <Field name="method" v-slot="{ field }">
+          <fieldset>
+            <legend>Schedule Type</legend>
+            <label>
+              <input type="radio" v-bind="field" value="interval" />
+              Interval
+            </label>
+            <label>
+              <input type="radio" v-bind="field" value="cron" />
+              Cron
+            </label>
+            <label>
+              <input type="radio" v-bind="field" value="once" />
+              Once
+            </label>
+          </fieldset>
+        </Field>
 
-        <!-- Interval Options -->
-        <div v-if="newSchedule.method === 'interval'" class="grid">
-          <label>
-            Value
-            <input v-model.number="newSchedule.value" type="number" min="1" />
-          </label>
-          <label>
-            Unit
-            <select v-model="newSchedule.unit">
+        <Field name="method" v-slot="{ value: method }">
+          <!-- Interval Options -->
+          <div v-if="method === 'interval'" class="grid">
+            <FormField name="value" type="number" label="Value" :min="1" />
+            <FormField name="unit" as="select" label="Unit">
               <option value="seconds">Seconds</option>
               <option value="minutes">Minutes</option>
               <option value="hours">Hours</option>
               <option value="days">Days</option>
-            </select>
-          </label>
-        </div>
+            </FormField>
+          </div>
 
-        <!-- Cron Options -->
-        <label v-if="newSchedule.method === 'cron'">
-          Cron Expression
-          <input
-            v-model="newSchedule.cron"
+          <!-- Cron Options -->
+          <FormField
+            v-if="method === 'cron'"
+            name="cron"
             type="text"
+            label="Cron Expression"
             placeholder="0 * * * *"
+            helper="Format: minute hour day_of_month month day_of_week"
           />
-          <small>Format: minute hour day_of_month month day_of_week</small>
-        </label>
 
-        <!-- Once Options -->
-        <div v-if="newSchedule.method === 'once'" class="grid">
-          <label>
-            Date
-            <input v-model="newSchedule.date" type="date" />
-          </label>
-          <label>
-            Time
-            <input v-model="newSchedule.time" type="time" />
-          </label>
-        </div>
+          <!-- Once Options -->
+          <div v-if="method === 'once'" class="grid">
+            <FormField name="date" type="date" label="Date" />
+            <FormField name="time" type="time" label="Time" />
+          </div>
+        </Field>
 
-        <label>
-          Timezone
-          <input v-model="newSchedule.timezone" type="text" placeholder="UTC" />
-        </label>
+        <FormField
+          name="timezone"
+          type="text"
+          label="Timezone"
+          placeholder="UTC"
+        />
 
         <!-- Input Data -->
-        <label for="input_data">
-          Input Data (JSON)
-          <textarea
-            v-if="loadingSchema"
-            id="input_data"
-            rows="6"
-            disabled
-            aria-busy="true"
-            class="code-editor"
-          >
+        <Field name="input_data" v-slot="{ field, errors, meta }">
+          <label for="field-input_data">
+            Input Data (JSON)
+            <textarea
+              v-if="loadingSchema"
+              id="field-input_data"
+              rows="6"
+              disabled
+              aria-busy="true"
+              class="code-editor"
+            >
 Loading schema...</textarea
-          >
-          <textarea
-            v-else
-            id="input_data"
-            v-model="newSchedule.input_data"
-            rows="6"
-            class="code-editor"
-            spellcheck="false"
-            placeholder="{}"
-          ></textarea>
-          <small>Data to pass to the function when executed</small>
-        </label>
+            >
+            <textarea
+              v-else
+              id="field-input_data"
+              v-bind="field"
+              rows="6"
+              class="code-editor"
+              spellcheck="false"
+              placeholder="{}"
+              :aria-invalid="meta.touched && !meta.valid ? 'true' : 'false'"
+            ></textarea>
+            <small v-if="meta.touched && errors[0]" class="text-error">
+              {{ errors[0] }}
+            </small>
+            <small v-else>Data to pass to the function when executed</small>
+          </label>
+        </Field>
 
         <small v-if="functionsStore.error" class="text-error">
           {{ functionsStore.error }}

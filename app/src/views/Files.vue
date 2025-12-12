@@ -6,8 +6,11 @@
  * Allows uploading, downloading, and deleting files.
  */
 import { onMounted, ref } from "vue";
+import { useForm, Field } from "vee-validate";
 import { api } from "../api";
+import { validationSchemas } from "../composables/useFormValidation";
 import Modal from "../components/Modal.vue";
+import FormField from "../components/FormField.vue";
 
 interface FileInfo {
   key: string;
@@ -28,9 +31,15 @@ const files = ref<FileInfo[]>([]);
 
 // Upload modal
 const showUploadModal = ref(false);
-const uploadFile = ref<File | null>(null);
-const pathPrefix = ref("");
 const uploadError = ref<string | null>(null);
+
+const { handleSubmit, resetForm, setFieldValue } = useForm({
+  validationSchema: validationSchemas.uploadFile,
+  initialValues: {
+    file: null as File | null,
+    path_prefix: "",
+  },
+});
 
 // Manual key input
 const manualKey = ref("");
@@ -66,8 +75,7 @@ async function checkStorageStatus() {
 }
 
 function openUploadModal() {
-  uploadFile.value = null;
-  pathPrefix.value = "";
+  resetForm();
   uploadError.value = null;
   showUploadModal.value = true;
 }
@@ -75,24 +83,21 @@ function openUploadModal() {
 function handleFileSelect(event: Event) {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
-    uploadFile.value = target.files[0];
+    setFieldValue("file", target.files[0]);
   }
 }
 
-async function handleUpload() {
-  if (!uploadFile.value) {
-    uploadError.value = "Please select a file";
-    return;
-  }
-
+const onSubmit = handleSubmit(async (values) => {
   uploading.value = true;
   uploadError.value = null;
 
   try {
     const formData = new FormData();
-    formData.append("file", uploadFile.value);
-    if (pathPrefix.value.trim()) {
-      formData.append("path_prefix", pathPrefix.value.trim());
+    if (values.file) {
+      formData.append("file", values.file);
+    }
+    if (values.path_prefix?.trim()) {
+      formData.append("path_prefix", values.path_prefix.trim());
     }
 
     const response = await api.post("/api/files/upload", formData, {
@@ -123,7 +128,7 @@ async function handleUpload() {
   } finally {
     uploading.value = false;
   }
-}
+});
 
 function saveFilesToStorage() {
   // Keep only last 100 files
@@ -340,32 +345,31 @@ async function handleKeyAction(action: "download" | "delete") {
 
     <!-- Upload Modal -->
     <Modal v-model:open="showUploadModal" title="Upload File">
-      <form id="upload-form" @submit.prevent="handleUpload">
-        <label for="file">
-          File
-          <input
-            id="file"
-            type="file"
-            @change="handleFileSelect"
-            :disabled="uploading"
-            required
-          />
-        </label>
+      <form id="upload-form" @submit="onSubmit">
+        <Field name="file" v-slot="{ field, errors, meta }">
+          <label for="field-file">
+            File
+            <input
+              id="field-file"
+              type="file"
+              @change="handleFileSelect"
+              :disabled="uploading"
+              :aria-invalid="meta.touched && !meta.valid ? 'true' : 'false'"
+            />
+            <small v-if="meta.touched && errors[0]" class="text-error">
+              {{ errors[0] }}
+            </small>
+          </label>
+        </Field>
 
-        <label for="path_prefix">
-          Path Prefix (optional)
-          <input
-            id="path_prefix"
-            v-model="pathPrefix"
-            type="text"
-            placeholder="uploads/images/"
-            :disabled="uploading"
-          />
-          <small>
-            Optional prefix to organize files (e.g., "uploads/images/").
-            Trailing slash is optional.
-          </small>
-        </label>
+        <FormField
+          name="path_prefix"
+          type="text"
+          label="Path Prefix (optional)"
+          placeholder="uploads/images/"
+          :disabled="uploading"
+          helper="Optional prefix to organize files (e.g., 'uploads/images/'). Trailing slash is optional."
+        />
 
         <small v-if="uploadError" class="text-error">
           {{ uploadError }}
@@ -384,7 +388,7 @@ async function handleKeyAction(action: "download" | "delete") {
           type="submit"
           form="upload-form"
           :aria-busy="uploading"
-          :disabled="uploading || !uploadFile"
+          :disabled="uploading"
         >
           {{ uploading ? "" : "Upload" }}
         </button>
@@ -500,3 +504,4 @@ code {
   border-radius: var(--tb-radius);
 }
 </style>
+

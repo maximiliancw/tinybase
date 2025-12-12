@@ -6,10 +6,13 @@
  * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, reactive, watch, computed } from "vue";
+import { useForm } from "vee-validate";
 import { api } from "../api";
 import { useAuthStore } from "../stores/auth";
+import { validationSchemas } from "../composables/useFormValidation";
 import Modal from "../components/Modal.vue";
 import Icon from "../components/Icon.vue";
+import FormField from "../components/FormField.vue";
 
 const authStore = useAuthStore();
 
@@ -81,14 +84,20 @@ const storageSecretKey = ref("");
 const applicationTokens = ref<ApplicationToken[]>([]);
 const loadingTokens = ref(false);
 const showCreateTokenForm = ref(false);
-const newTokenName = ref("");
-const newTokenDescription = ref("");
-const newTokenExpiresDays = ref<number | null>(null);
 const newlyCreatedToken = ref<{
   token: ApplicationToken;
   token_value: string;
 } | null>(null);
 const creatingToken = ref(false);
+
+const { handleSubmit: handleTokenSubmit, resetForm: resetTokenForm } = useForm({
+  validationSchema: validationSchemas.createToken,
+  initialValues: {
+    name: "",
+    description: "",
+    expires_days: null as number | null,
+  },
+});
 
 // Common timezones for selection
 const commonTimezones = [
@@ -207,19 +216,19 @@ async function fetchApplicationTokens() {
   }
 }
 
-async function createApplicationToken() {
+const onCreateToken = handleTokenSubmit(async (values) => {
   creatingToken.value = true;
   error.value = null;
 
   try {
     const payload: Record<string, any> = {
-      name: newTokenName.value,
+      name: values.name,
     };
-    if (newTokenDescription.value) {
-      payload.description = newTokenDescription.value;
+    if (values.description) {
+      payload.description = values.description;
     }
-    if (newTokenExpiresDays.value) {
-      payload.expires_days = newTokenExpiresDays.value;
+    if (values.expires_days) {
+      payload.expires_days = values.expires_days;
     }
 
     const response = await api.post("/api/admin/application-tokens", payload);
@@ -227,16 +236,14 @@ async function createApplicationToken() {
     await fetchApplicationTokens();
 
     // Reset form and close modal
-    newTokenName.value = "";
-    newTokenDescription.value = "";
-    newTokenExpiresDays.value = null;
+    resetTokenForm();
     showCreateTokenForm.value = false;
   } catch (err: any) {
     error.value = err.response?.data?.detail || "Failed to create token";
   } finally {
     creatingToken.value = false;
   }
-}
+});
 
 async function revokeApplicationToken(tokenId: string) {
   if (
@@ -881,42 +888,33 @@ async function saveSettings() {
         v-model:open="showCreateTokenForm"
         title="Create Application Token"
       >
-        <form id="token-form" @submit.prevent="createApplicationToken">
-          <label for="token_name">
-            Name
-            <input
-              id="token_name"
-              v-model="newTokenName"
-              type="text"
-              placeholder="e.g., Production API Client"
-              maxlength="200"
-              required
-            />
-            <small>A descriptive name for this token.</small>
-          </label>
+        <form id="token-form" @submit="onCreateToken">
+          <FormField
+            name="name"
+            type="text"
+            label="Name"
+            placeholder="e.g., Production API Client"
+            :maxlength="200"
+            helper="A descriptive name for this token."
+          />
 
-          <label for="token_description">
-            Description (optional)
-            <textarea
-              id="token_description"
-              v-model="newTokenDescription"
-              placeholder="What will this token be used for?"
-              maxlength="500"
-              rows="3"
-            ></textarea>
-          </label>
+          <FormField
+            name="description"
+            as="textarea"
+            label="Description (optional)"
+            placeholder="What will this token be used for?"
+            :maxlength="500"
+            :rows="3"
+          />
 
-          <label for="token_expires_days">
-            Expires in (days)
-            <input
-              id="token_expires_days"
-              v-model.number="newTokenExpiresDays"
-              type="number"
-              min="1"
-              placeholder="Leave empty for no expiration"
-            />
-            <small>Leave empty if the token should never expire.</small>
-          </label>
+          <FormField
+            name="expires_days"
+            type="number"
+            label="Expires in (days)"
+            placeholder="Leave empty for no expiration"
+            :min="1"
+            helper="Leave empty if the token should never expire."
+          />
         </form>
         <template #footer>
           <button

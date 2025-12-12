@@ -7,20 +7,50 @@
  */
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
+import { useForm } from "vee-validate";
 import { useCollectionsStore } from "../stores/collections";
 import { useAuthStore } from "../stores/auth";
+import { validationSchemas } from "../composables/useFormValidation";
 import Modal from "../components/Modal.vue";
+import FormField from "../components/FormField.vue";
 
 const route = useRoute();
 const collectionsStore = useCollectionsStore();
 const authStore = useAuthStore();
 
 const showCreateModal = ref(false);
-const newCollection = ref({
-  name: "",
-  label: "",
-  schemaText:
-    '{\n  "fields": [\n    {\n      "name": "title",\n      "type": "string",\n      "required": true\n    }\n  ]\n}',
+const defaultSchemaText =
+  '{\n  "fields": [\n    {\n      "name": "title",\n      "type": "string",\n      "required": true\n    }\n  ]\n}';
+
+const { handleSubmit, resetForm } = useForm({
+  validationSchema: validationSchemas.createCollection,
+  initialValues: {
+    name: "",
+    label: "",
+    schemaText: defaultSchemaText,
+  },
+});
+
+const onSubmit = handleSubmit(async (values) => {
+  try {
+    const schema = JSON.parse(values.schemaText);
+    await collectionsStore.createCollection({
+      name: values.name,
+      label: values.label,
+      schema,
+    });
+    showCreateModal.value = false;
+    resetForm({
+      values: {
+        name: "",
+        label: "",
+        schemaText: defaultSchemaText,
+      },
+    });
+  } catch (err) {
+    // JSON validation should catch this, but handle just in case
+    collectionsStore.error = "Invalid schema JSON";
+  }
 });
 
 onMounted(async () => {
@@ -29,26 +59,6 @@ onMounted(async () => {
     showCreateModal.value = true;
   }
 });
-
-async function handleCreate() {
-  try {
-    const schema = JSON.parse(newCollection.value.schemaText);
-    await collectionsStore.createCollection({
-      name: newCollection.value.name,
-      label: newCollection.value.label,
-      schema,
-    });
-    showCreateModal.value = false;
-    newCollection.value = {
-      name: "",
-      label: "",
-      schemaText:
-        '{\n  "fields": [\n    {\n      "name": "title",\n      "type": "string",\n      "required": true\n    }\n  ]\n}',
-    };
-  } catch (err) {
-    alert("Invalid schema JSON");
-  }
-}
 
 async function handleDelete(name: string) {
   if (
@@ -141,40 +151,28 @@ async function handleDelete(name: string) {
 
     <!-- Create Collection Modal -->
     <Modal v-model:open="showCreateModal" title="Create Collection">
-      <form id="collection-form" @submit.prevent="handleCreate">
-        <label for="name">
-          Name (snake_case)
-          <input
-            id="name"
-            v-model="newCollection.name"
-            type="text"
-            pattern="[a-z][a-z0-9_]*"
-            placeholder="my_collection"
-            required
-          />
-        </label>
+      <form id="collection-form" @submit="onSubmit">
+        <FormField
+          name="name"
+          type="text"
+          label="Name (snake_case)"
+          placeholder="my_collection"
+        />
 
-        <label for="label">
-          Label
-          <input
-            id="label"
-            v-model="newCollection.label"
-            type="text"
-            placeholder="My Collection"
-            required
-          />
-        </label>
+        <FormField
+          name="label"
+          type="text"
+          label="Label"
+          placeholder="My Collection"
+        />
 
-        <label for="schema">
-          Schema (JSON)
-          <textarea
-            id="schema"
-            v-model="newCollection.schemaText"
-            rows="10"
-            style="font-family: monospace; font-size: 0.875rem"
-            required
-          ></textarea>
-        </label>
+        <FormField
+          name="schemaText"
+          as="textarea"
+          label="Schema (JSON)"
+          :rows="10"
+          style="font-family: monospace; font-size: 0.875rem"
+        />
 
         <small v-if="collectionsStore.error" class="text-error">
           {{ collectionsStore.error }}

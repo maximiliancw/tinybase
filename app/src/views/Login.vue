@@ -6,19 +6,42 @@
  */
 import { ref, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import { useForm } from "vee-validate";
 import { useAuthStore } from "../stores/auth";
 import { api } from "../api";
+import { validationSchemas } from "../composables/useFormValidation";
 import Icon from "../components/Icon.vue";
+import FormField from "../components/FormField.vue";
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
-const email = ref("");
-const password = ref("");
 const errorMessage = ref("");
 const needsSetup = ref(false);
 const checkingSetup = ref(true);
+
+const { handleSubmit } = useForm({
+  validationSchema: validationSchemas.login,
+  initialValues: {
+    email: "",
+    password: "",
+  },
+});
+
+const onSubmit = handleSubmit(async (values) => {
+  errorMessage.value = "";
+
+  const success = await authStore.login(values.email, values.password);
+
+  if (success) {
+    // Redirect to intended destination or dashboard
+    const redirect = (route.query.redirect as string) || "/";
+    router.push(redirect);
+  } else {
+    errorMessage.value = authStore.error || "Login failed";
+  }
+});
 
 onMounted(async () => {
   // Fetch instance name and setup status in parallel
@@ -35,20 +58,6 @@ onMounted(async () => {
   ]);
   checkingSetup.value = false;
 });
-
-async function handleLogin() {
-  errorMessage.value = "";
-
-  const success = await authStore.login(email.value, password.value);
-
-  if (success) {
-    // Redirect to intended destination or dashboard
-    const redirect = (route.query.redirect as string) || "/";
-    router.push(redirect);
-  } else {
-    errorMessage.value = authStore.error || "Login failed";
-  }
-}
 </script>
 
 <template>
@@ -79,30 +88,22 @@ async function handleLogin() {
       </div>
 
       <!-- Login Form -->
-      <form @submit.prevent="handleLogin">
-        <label for="email">
-          Email
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            placeholder="admin@example.com"
-            required
-            autocomplete="email"
-          />
-        </label>
+      <form @submit="onSubmit">
+        <FormField
+          name="email"
+          type="email"
+          label="Email"
+          placeholder="admin@example.com"
+          autocomplete="email"
+        />
 
-        <label for="password">
-          Password
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            placeholder="••••••••"
-            required
-            autocomplete="current-password"
-          />
-        </label>
+        <FormField
+          name="password"
+          type="password"
+          label="Password"
+          placeholder="••••••••"
+          autocomplete="current-password"
+        />
 
         <!-- Error message -->
         <div v-if="errorMessage" class="error-message">

@@ -7,17 +7,32 @@
  */
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
+import { useForm, Field } from "vee-validate";
 import { useUsersStore } from "../stores/users";
+import { validationSchemas } from "../composables/useFormValidation";
 import Modal from "../components/Modal.vue";
+import FormField from "../components/FormField.vue";
 
 const route = useRoute();
 const usersStore = useUsersStore();
 
 const showCreateModal = ref(false);
-const newUser = ref({
-  email: "",
-  password: "",
-  is_admin: false,
+
+const { handleSubmit, resetForm } = useForm({
+  validationSchema: validationSchemas.createUser,
+  initialValues: {
+    email: "",
+    password: "",
+    is_admin: false,
+  },
+});
+
+const onSubmit = handleSubmit(async (values) => {
+  const result = await usersStore.createUser(values);
+  if (result) {
+    showCreateModal.value = false;
+    resetForm();
+  }
 });
 
 onMounted(async () => {
@@ -26,14 +41,6 @@ onMounted(async () => {
     showCreateModal.value = true;
   }
 });
-
-async function handleCreate() {
-  const result = await usersStore.createUser(newUser.value);
-  if (result) {
-    showCreateModal.value = false;
-    newUser.value = { email: "", password: "", is_admin: false };
-  }
-}
 
 async function handleToggleAdmin(userId: string, currentStatus: boolean) {
   await usersStore.updateUser(userId, { is_admin: !currentStatus });
@@ -105,27 +112,22 @@ async function handleDelete(userId: string) {
 
     <!-- Create User Modal -->
     <Modal v-model:open="showCreateModal" title="Create User">
-      <form id="user-form" @submit.prevent="handleCreate">
-        <label for="email">
-          Email
-          <input id="email" v-model="newUser.email" type="email" required />
-        </label>
+      <form id="user-form" @submit="onSubmit">
+        <FormField name="email" type="email" label="Email" />
 
-        <label for="password">
-          Password
-          <input
-            id="password"
-            v-model="newUser.password"
-            type="password"
-            minlength="8"
-            required
-          />
-        </label>
+        <FormField
+          name="password"
+          type="password"
+          label="Password"
+          helper="Password must be at least 8 characters"
+        />
 
-        <label>
-          <input type="checkbox" v-model="newUser.is_admin" role="switch" />
-          Admin privileges
-        </label>
+        <Field name="is_admin" v-slot="{ field }">
+          <label>
+            <input v-bind="field" type="checkbox" role="switch" />
+            Admin privileges
+          </label>
+        </Field>
 
         <small v-if="usersStore.error" class="text-error">
           {{ usersStore.error }}
