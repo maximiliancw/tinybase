@@ -5,7 +5,7 @@
  * List and manage data collections.
  * Uses semantic HTML elements following PicoCSS conventions.
  */
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed, h } from "vue";
 import { useRoute } from "vue-router";
 import { useForm } from "vee-validate";
 import { useCollectionsStore } from "../stores/collections";
@@ -13,6 +13,7 @@ import { useAuthStore } from "../stores/auth";
 import { validationSchemas } from "../composables/useFormValidation";
 import Modal from "../components/Modal.vue";
 import FormField from "../components/FormField.vue";
+import DataTable from "../components/DataTable.vue";
 
 const route = useRoute();
 const collectionsStore = useCollectionsStore();
@@ -69,6 +70,48 @@ async function handleDelete(name: string) {
     await collectionsStore.deleteCollection(name);
   }
 }
+
+const collectionColumns = computed(() => {
+  const columns: any[] = [
+    {
+      key: "name",
+      label: "Name",
+      render: (value: any) =>
+        h("router-link", { to: `/collections/${value}` }, value),
+    },
+    { key: "label", label: "Label" },
+    {
+      key: "fields",
+      label: "Fields",
+      render: (_value: any, row: any) =>
+        `${row.schema?.fields?.length || 0} fields`,
+    },
+    {
+      key: "created_at",
+      label: "Created",
+      render: (value: any) =>
+        h("small", { class: "text-muted" }, [
+          new Date(value).toLocaleDateString(),
+        ]),
+    },
+  ];
+
+  if (authStore.isAdmin) {
+    columns.push({
+      key: "actions",
+      label: "Actions",
+      actions: [
+        {
+          label: "Delete",
+          action: (row: any) => handleDelete(row.name),
+          variant: "contrast" as const,
+        },
+      ],
+    });
+  }
+
+  return columns;
+});
 </script>
 
 <template>
@@ -109,44 +152,12 @@ async function handleDelete(name: string) {
 
     <!-- Collections Table -->
     <article v-else>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Label</th>
-            <th>Fields</th>
-            <th>Created</th>
-            <th v-if="authStore.isAdmin">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="collection in collectionsStore.collections"
-            :key="collection.id"
-          >
-            <td>
-              <router-link :to="`/collections/${collection.name}`">
-                {{ collection.name }}
-              </router-link>
-            </td>
-            <td>{{ collection.label }}</td>
-            <td>{{ collection.schema?.fields?.length || 0 }} fields</td>
-            <td>
-              <small class="text-muted">{{
-                new Date(collection.created_at).toLocaleDateString()
-              }}</small>
-            </td>
-            <td v-if="authStore.isAdmin">
-              <button
-                class="small contrast"
-                @click="handleDelete(collection.name)"
-              >
-                Delete
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <DataTable
+        :data="collectionsStore.collections"
+        :columns="collectionColumns"
+        :page-size="20"
+        search-placeholder="Search collections..."
+      />
     </article>
 
     <!-- Create Collection Modal -->

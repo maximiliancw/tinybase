@@ -5,12 +5,13 @@
  * Admin page for managing file storage.
  * Allows uploading, downloading, and deleting files.
  */
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed, h } from "vue";
 import { useForm, Field } from "vee-validate";
 import { api } from "../api";
 import { validationSchemas } from "../composables/useFormValidation";
 import Modal from "../components/Modal.vue";
 import FormField from "../components/FormField.vue";
+import DataTable from "../components/DataTable.vue";
 
 interface FileInfo {
   key: string;
@@ -187,6 +188,53 @@ async function deleteFile(key: string) {
   }
 }
 
+const fileColumns = computed(() => [
+  {
+    key: "filename",
+    label: "Filename",
+    render: (value: any) => h("code", value),
+  },
+  {
+    key: "key",
+    label: "Key",
+    render: (value: any) =>
+      h("code", { class: "text-muted", style: "font-size: 0.75rem" }, value),
+  },
+  {
+    key: "content_type",
+    label: "Type",
+    render: (value: any) => h("small", { class: "text-muted" }, value),
+  },
+  {
+    key: "size",
+    label: "Size",
+    render: (value: any) =>
+      h("small", { class: "text-muted" }, formatFileSize(value)),
+  },
+  {
+    key: "uploaded_at",
+    label: "Uploaded",
+    render: (value: any) =>
+      h("small", { class: "text-muted" }, formatDate(value)),
+  },
+  {
+    key: "actions",
+    label: "Actions",
+    actions: [
+      {
+        label: "Download",
+        action: (row: any) => downloadFile(row.key),
+        variant: "primary" as const,
+      },
+      {
+        label: "Delete",
+        action: (row: any) => deleteFile(row.key),
+        variant: "contrast" as const,
+      },
+    ],
+  },
+]);
+
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
@@ -277,53 +325,12 @@ async function handleKeyAction(action: "download" | "delete") {
           </small>
         </header>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Filename</th>
-              <th>Key</th>
-              <th>Type</th>
-              <th>Size</th>
-              <th>Uploaded</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="file in files" :key="file.key">
-              <td>
-                <code>{{ file.filename }}</code>
-              </td>
-              <td>
-                <code class="text-muted" style="font-size: 0.75rem">{{
-                  file.key
-                }}</code>
-              </td>
-              <td>
-                <small class="text-muted">{{ file.content_type }}</small>
-              </td>
-              <td>
-                <small class="text-muted">{{
-                  formatFileSize(file.size)
-                }}</small>
-              </td>
-              <td>
-                <small class="text-muted">{{
-                  formatDate(file.uploaded_at)
-                }}</small>
-              </td>
-              <td>
-                <div class="action-buttons">
-                  <button class="small" @click="downloadFile(file.key)">
-                    Download
-                  </button>
-                  <button class="small contrast" @click="deleteFile(file.key)">
-                    Delete
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <DataTable
+          :data="files"
+          :columns="fileColumns"
+          :page-size="20"
+          search-placeholder="Search files..."
+        />
       </article>
 
       <!-- Empty State -->

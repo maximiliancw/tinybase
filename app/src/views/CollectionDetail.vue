@@ -5,11 +5,12 @@
  * View and manage records in a collection.
  * Uses semantic HTML elements following PicoCSS conventions.
  */
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, h } from "vue";
 import { useRoute } from "vue-router";
 import { useCollectionsStore, type Record } from "../stores/collections";
 import { useAuthStore } from "../stores/auth";
 import Modal from "../components/Modal.vue";
+import DataTable from "../components/DataTable.vue";
 
 const route = useRoute();
 const collectionsStore = useCollectionsStore();
@@ -63,6 +64,58 @@ function getFieldNames() {
     collectionsStore.currentCollection?.schema?.fields?.map((f) => f.name) || []
   );
 }
+
+const recordColumns = computed(() => {
+  const fieldNames = getFieldNames().slice(0, 5);
+  const columns: any[] = [
+    {
+      key: "id",
+      label: "ID",
+      render: (value: any) =>
+        h("code", { class: "text-muted" }, `${value.slice(0, 8)}...`),
+    },
+  ];
+
+  // Add dynamic field columns
+  fieldNames.forEach((field) => {
+      columns.push({
+      key: field,
+      label: field,
+      render: (_value: any, row: any) => {
+        const fieldValue = row.data[field];
+        if (typeof fieldValue === "object") {
+          return JSON.stringify(fieldValue);
+        }
+        return fieldValue ?? "-";
+      },
+    });
+  });
+
+  columns.push({
+    key: "created_at",
+    label: "Created",
+    render: (value: any) =>
+      h("small", { class: "text-muted" }, [
+        new Date(value).toLocaleDateString(),
+      ]),
+  });
+
+  columns.push({
+    key: "actions",
+    label: "Actions",
+    actions: [
+      {
+        label: "Delete",
+        action: (row: any) => handleDeleteRecord(row.id),
+        variant: "contrast" as const,
+        disabled: (row: any) =>
+          !authStore.isAdmin && row.owner_id !== authStore.user?.id,
+      },
+    ],
+  });
+
+  return columns;
+});
 </script>
 
 <template>
@@ -118,77 +171,42 @@ function getFieldNames() {
       </div>
 
       <!-- Records Table -->
-      <div v-else class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th v-for="field in getFieldNames().slice(0, 5)" :key="field">
-                {{ field }}
-              </th>
-              <th>Created</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="record in records" :key="record.id">
-              <td>
-                <code class="text-muted">{{ record.id.slice(0, 8) }}...</code>
-              </td>
-              <td v-for="field in getFieldNames().slice(0, 5)" :key="field">
-                {{
-                  typeof record.data[field] === "object"
-                    ? JSON.stringify(record.data[field])
-                    : record.data[field]
-                }}
-              </td>
-              <td>
-                <small class="text-muted">{{
-                  new Date(record.created_at).toLocaleDateString()
-                }}</small>
-              </td>
-              <td>
-                <button
-                  class="small contrast"
-                  @click="handleDeleteRecord(record.id)"
-                  :disabled="
-                    !authStore.isAdmin && record.owner_id !== authStore.user?.id
-                  "
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <div v-else>
+        <DataTable
+          :data="records"
+          :columns="recordColumns"
+          :paginated="false"
+          search-placeholder="Search records..."
+        />
 
-      <!-- Pagination -->
-      <footer v-if="total > pageSize">
-        <button
-          class="small secondary"
-          :disabled="page === 1"
-          @click="
-            page--;
-            loadRecords();
-          "
-        >
-          Previous
-        </button>
-        <small class="text-muted">
-          Page {{ page }} of {{ Math.ceil(total / pageSize) }}
-        </small>
-        <button
-          class="small secondary"
-          :disabled="page >= Math.ceil(total / pageSize)"
-          @click="
-            page++;
-            loadRecords();
-          "
-        >
-          Next
-        </button>
-      </footer>
+        <!-- Server-side Pagination -->
+        <footer v-if="total > pageSize" class="server-pagination">
+          <button
+            class="small secondary"
+            :disabled="page === 1"
+            @click="
+              page--;
+              loadRecords();
+            "
+          >
+            Previous
+          </button>
+          <small class="text-muted">
+            Page {{ page }} of {{ Math.ceil(total / pageSize) }} ({{ total }}
+            total)
+          </small>
+          <button
+            class="small secondary"
+            :disabled="page >= Math.ceil(total / pageSize)"
+            @click="
+              page++;
+              loadRecords();
+            "
+          >
+            Next
+          </button>
+        </footer>
+      </div>
     </article>
 
     <!-- Create Record Modal -->
@@ -271,13 +289,8 @@ function getFieldNames() {
   gap: var(--tb-spacing-xs);
 }
 
-/* Table wrapper for horizontal scroll */
-.table-wrapper {
-  overflow-x: auto;
-}
-
-/* Pagination footer */
-article > footer {
+/* Server-side Pagination footer */
+.server-pagination {
   display: flex;
   justify-content: space-between;
   align-items: center;

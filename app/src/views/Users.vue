@@ -5,13 +5,14 @@
  * Manage user accounts (admin only).
  * Uses semantic HTML elements following PicoCSS conventions.
  */
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed, h } from "vue";
 import { useRoute } from "vue-router";
 import { useForm, Field } from "vee-validate";
 import { useUsersStore } from "../stores/users";
 import { validationSchemas } from "../composables/useFormValidation";
 import Modal from "../components/Modal.vue";
 import FormField from "../components/FormField.vue";
+import DataTable from "../components/DataTable.vue";
 
 const route = useRoute();
 const usersStore = useUsersStore();
@@ -51,6 +52,46 @@ async function handleDelete(userId: string) {
     await usersStore.deleteUser(userId);
   }
 }
+
+const userColumns = computed(() => [
+  { key: "email", label: "Email" },
+  {
+    key: "role",
+    label: "Role",
+    render: (_value: any, row: any) => {
+      return h(
+        "mark",
+        { "data-status": row.is_admin ? "info" : "neutral" },
+        row.is_admin ? "Admin" : "User"
+      );
+    },
+  },
+  {
+    key: "created_at",
+    label: "Created",
+    render: (value: any) => {
+      return h("small", { class: "text-muted" }, [
+        new Date(value).toLocaleDateString(),
+      ]);
+    },
+  },
+  {
+    key: "actions",
+    label: "Actions",
+    actions: [
+      {
+        label: (row: any) => (row.is_admin ? "Remove Admin" : "Make Admin"),
+        action: (row: any) => handleToggleAdmin(row.id, row.is_admin),
+        variant: "secondary" as const,
+      },
+      {
+        label: "Delete",
+        action: (row: any) => handleDelete(row.id),
+        variant: "contrast" as const,
+      },
+    ],
+  },
+]);
 </script>
 
 <template>
@@ -70,44 +111,12 @@ async function handleDelete(userId: string) {
 
     <!-- Users Table -->
     <article v-else>
-      <table>
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Created</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in usersStore.users" :key="user.id">
-            <td>{{ user.email }}</td>
-            <td>
-              <mark :data-status="user.is_admin ? 'info' : 'neutral'">
-                {{ user.is_admin ? "Admin" : "User" }}
-              </mark>
-            </td>
-            <td>
-              <small class="text-muted">{{
-                new Date(user.created_at).toLocaleDateString()
-              }}</small>
-            </td>
-            <td>
-              <div role="group">
-                <button
-                  class="small secondary"
-                  @click="handleToggleAdmin(user.id, user.is_admin)"
-                >
-                  {{ user.is_admin ? "Remove Admin" : "Make Admin" }}
-                </button>
-                <button class="small contrast" @click="handleDelete(user.id)">
-                  Delete
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <DataTable
+        :data="usersStore.users"
+        :columns="userColumns as any"
+        :page-size="20"
+        search-placeholder="Search users..."
+      />
     </article>
 
     <!-- Create User Modal -->

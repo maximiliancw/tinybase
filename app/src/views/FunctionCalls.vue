@@ -5,8 +5,9 @@
  * View function call history (admin only).
  * Uses semantic HTML elements following PicoCSS conventions.
  */
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed, h } from 'vue'
 import { useFunctionsStore } from '../stores/functions'
+import DataTable from '../components/DataTable.vue'
 
 const functionsStore = useFunctionsStore()
 
@@ -52,6 +53,44 @@ function formatDuration(ms: number | null): string {
   if (ms < 1000) return `${ms}ms`
   return `${(ms / 1000).toFixed(2)}s`
 }
+
+const functionCallColumns = computed(() => [
+  {
+    key: 'function_name',
+    label: 'Function',
+    render: (value: any) => h('code', value),
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    render: (value: any) => h('mark', { 'data-status': getStatusType(value) }, value),
+  },
+  {
+    key: 'trigger_type',
+    label: 'Trigger',
+    render: (value: any) => h('mark', { 'data-status': 'neutral' }, value),
+  },
+  {
+    key: 'duration_ms',
+    label: 'Duration',
+    render: (value: any) => h('small', { class: 'text-muted' }, formatDuration(value)),
+  },
+  {
+    key: 'started_at',
+    label: 'Started',
+    render: (value: any) => h('small', { class: 'text-muted' }, value ? new Date(value).toLocaleString() : '-'),
+  },
+  {
+    key: 'error',
+    label: 'Error',
+    render: (_value: any, row: any) => {
+      if (row.error_message) {
+        return h('small', { class: 'text-error' }, `${row.error_type}: ${row.error_message.slice(0, 50)}...`);
+      }
+      return h('small', { class: 'text-muted' }, '-');
+    },
+  },
+])
 </script>
 
 <template>
@@ -113,44 +152,15 @@ function formatDuration(ms: number | null): string {
     
     <!-- Function Calls Table -->
     <article v-else>
-      <table>
-        <thead>
-          <tr>
-            <th>Function</th>
-            <th>Status</th>
-            <th>Trigger</th>
-            <th>Duration</th>
-            <th>Started</th>
-            <th>Error</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="call in functionsStore.functionCalls" :key="call.id">
-            <td><code>{{ call.function_name }}</code></td>
-            <td>
-              <mark :data-status="getStatusType(call.status)">
-                {{ call.status }}
-              </mark>
-            </td>
-            <td>
-              <mark data-status="neutral">{{ call.trigger_type }}</mark>
-            </td>
-            <td><small class="text-muted">{{ formatDuration(call.duration_ms) }}</small></td>
-            <td><small class="text-muted">
-              {{ call.started_at ? new Date(call.started_at).toLocaleString() : '-' }}
-            </small></td>
-            <td>
-              <small v-if="call.error_message" class="text-error">
-                {{ call.error_type }}: {{ call.error_message.slice(0, 50) }}...
-              </small>
-              <small v-else class="text-muted">-</small>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <DataTable
+        :data="functionsStore.functionCalls"
+        :columns="functionCallColumns"
+        :paginated="false"
+        search-placeholder="Search function calls..."
+      />
       
-      <!-- Pagination -->
-      <footer v-if="total > pageSize">
+      <!-- Server-side Pagination -->
+      <footer v-if="total > pageSize" class="server-pagination">
         <button
           class="small secondary"
           :disabled="page === 1"
@@ -182,7 +192,7 @@ function formatDuration(ms: number | null): string {
   margin-bottom: var(--tb-spacing-md);
 }
 
-article > footer {
+.server-pagination {
   display: flex;
   justify-content: space-between;
   align-items: center;

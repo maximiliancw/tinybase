@@ -5,7 +5,7 @@
  * Manage function schedules (admin only).
  * Uses semantic HTML elements following PicoCSS conventions.
  */
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, computed, h } from "vue";
 import { useRoute } from "vue-router";
 import { useForm, Field } from "vee-validate";
 import {
@@ -15,6 +15,7 @@ import {
 import { validationSchemas } from "../composables/useFormValidation";
 import Modal from "../components/Modal.vue";
 import FormField from "../components/FormField.vue";
+import DataTable from "../components/DataTable.vue";
 
 const route = useRoute();
 const functionsStore = useFunctionsStore();
@@ -160,6 +161,57 @@ function formatSchedule(schedule: any): string {
       return "Unknown";
   }
 }
+
+const scheduleColumns = computed(() => [
+  { key: "name", label: "Name" },
+  {
+    key: "function_name",
+    label: "Function",
+    render: (value: any) => h("code", value),
+  },
+  {
+    key: "schedule",
+    label: "Schedule",
+    render: (_value: any, row: any) =>
+      h("small", { class: "text-muted" }, formatSchedule(row.schedule)),
+  },
+  {
+    key: "status",
+    label: "Status",
+    render: (_value: any, row: any) =>
+      h(
+        "mark",
+        { "data-status": row.is_active ? "success" : "neutral" },
+        row.is_active ? "Active" : "Inactive"
+      ),
+  },
+  {
+    key: "next_run_at",
+    label: "Next Run",
+    render: (value: any) =>
+      h(
+        "small",
+        { class: "text-muted" },
+        value ? new Date(value).toLocaleString() : "-"
+      ),
+  },
+  {
+    key: "actions",
+    label: "Actions",
+    actions: [
+      {
+        label: (row: any) => (row.is_active ? "Pause" : "Resume"),
+        action: (row: any) => handleToggleActive(row.id, row.is_active),
+        variant: "secondary" as const,
+      },
+      {
+        label: "Delete",
+        action: (row: any) => handleDelete(row.id),
+        variant: "contrast" as const,
+      },
+    ],
+  },
+]);
 </script>
 
 <template>
@@ -194,61 +246,12 @@ function formatSchedule(schedule: any): string {
 
     <!-- Schedules Table -->
     <article v-else>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Function</th>
-            <th>Schedule</th>
-            <th>Status</th>
-            <th>Next Run</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="schedule in functionsStore.schedules" :key="schedule.id">
-            <td>{{ schedule.name }}</td>
-            <td>
-              <code>{{ schedule.function_name }}</code>
-            </td>
-            <td>
-              <small class="text-muted">{{
-                formatSchedule(schedule.schedule)
-              }}</small>
-            </td>
-            <td>
-              <mark :data-status="schedule.is_active ? 'success' : 'neutral'">
-                {{ schedule.is_active ? "Active" : "Inactive" }}
-              </mark>
-            </td>
-            <td>
-              <small class="text-muted">
-                {{
-                  schedule.next_run_at
-                    ? new Date(schedule.next_run_at).toLocaleString()
-                    : "-"
-                }}
-              </small>
-            </td>
-            <td>
-              <div role="group">
-                <button
-                  class="small secondary"
-                  @click="handleToggleActive(schedule.id, schedule.is_active)"
-                >
-                  {{ schedule.is_active ? "Pause" : "Resume" }}
-                </button>
-                <button
-                  class="small contrast"
-                  @click="handleDelete(schedule.id)"
-                >
-                  Delete
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <DataTable
+        :data="functionsStore.schedules"
+        :columns="scheduleColumns"
+        :page-size="20"
+        search-placeholder="Search schedules..."
+      />
     </article>
 
     <!-- Create Schedule Modal -->

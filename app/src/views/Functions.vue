@@ -5,7 +5,7 @@
  * View and invoke registered functions.
  * Uses semantic HTML elements following PicoCSS conventions.
  */
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed, h } from "vue";
 import {
   useFunctionsStore,
   generateTemplateFromSchema,
@@ -13,6 +13,7 @@ import {
 } from "../stores/functions";
 import { useAuthStore } from "../stores/auth";
 import Modal from "../components/Modal.vue";
+import DataTable from "../components/DataTable.vue";
 
 const functionsStore = useFunctionsStore();
 const authStore = useAuthStore();
@@ -94,6 +95,65 @@ const displayFunctions = () => {
     ? functionsStore.adminFunctions
     : functionsStore.functions;
 };
+
+const functionColumns = computed(() => {
+  const columns: any[] = [
+    {
+      key: "name",
+      label: "Name",
+      render: (value: any) => h("code", value),
+    },
+    {
+      key: "description",
+      label: "Description",
+      render: (value: any) =>
+        h("small", { class: "text-muted" }, value || "-"),
+    },
+    {
+      key: "auth",
+      label: "Auth",
+      render: (value: any) =>
+        h("mark", { "data-status": getAuthStatus(value) }, value),
+    },
+    {
+      key: "tags",
+      label: "Tags",
+      render: (value: any, row: any) => {
+        if (!row.tags || row.tags.length === 0) {
+          return h("small", { class: "text-muted" }, "-");
+        }
+        return h(
+          "span",
+          row.tags.map((tag: string) =>
+            h("mark", { "data-status": "neutral", style: "margin-right: 0.25rem" }, tag)
+          )
+        );
+      },
+    },
+  ];
+
+  if (authStore.isAdmin) {
+    columns.push({
+      key: "module",
+      label: "Module",
+      render: (value: any) => h("small", { class: "text-muted" }, value),
+    });
+  }
+
+  columns.push({
+    key: "actions",
+    label: "Actions",
+    actions: [
+      {
+        label: "Call",
+        action: (row: any) => openCallModal(row),
+        variant: "primary" as const,
+      },
+    ],
+  });
+
+  return columns;
+});
 </script>
 
 <template>
@@ -108,65 +168,15 @@ const displayFunctions = () => {
       Loading functions...
     </article>
 
-    <!-- Empty State -->
-    <article v-else-if="displayFunctions().length === 0">
-      <div data-empty data-empty-icon="⚡">
-        <p>No functions registered</p>
-        <p>
-          <small class="text-muted"
-            >Define functions in functions.py using the @register
-            decorator.</small
-          >
-        </p>
-      </div>
-    </article>
-
     <!-- Functions Table -->
     <article v-else>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Auth</th>
-            <th>Tags</th>
-            <th v-if="authStore.isAdmin">Module</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="fn in displayFunctions()" :key="fn.name">
-            <td>
-              <code>{{ fn.name }}</code>
-            </td>
-            <td>
-              <small class="text-muted">{{ fn.description || "-" }}</small>
-            </td>
-            <td>
-              <mark :data-status="getAuthStatus(fn.auth)">
-                {{ fn.auth }}
-              </mark>
-            </td>
-            <td>
-              <mark
-                v-for="tag in fn.tags"
-                :key="tag"
-                data-status="neutral"
-                style="margin-right: 0.25rem"
-              >
-                {{ tag }}
-              </mark>
-              <small v-if="fn.tags.length === 0" class="text-muted">-</small>
-            </td>
-            <td v-if="authStore.isAdmin">
-              <small class="text-muted">{{ fn.module }}</small>
-            </td>
-            <td>
-              <button class="small" @click="openCallModal(fn)">Call</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <DataTable
+        :data="displayFunctions()"
+        :columns="functionColumns"
+        :page-size="20"
+        search-placeholder="Search functions..."
+        empty-message="No functions registered. Define functions in functions.py using the @register decorator."
+      />
     </article>
 
     <!-- Call Function Modal -->
