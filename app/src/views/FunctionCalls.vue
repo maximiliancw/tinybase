@@ -55,7 +55,7 @@ function formatDuration(ms: number | null): string {
 </script>
 
 <template>
-  <div data-animate="fade-in">
+  <section data-animate="fade-in">
     <header class="page-header">
       <h1>Function Calls</h1>
       <p>Execution history for all functions</p>
@@ -170,7 +170,7 @@ function formatDuration(ms: number | null): string {
         </button>
       </footer>
     </article>
-  </div>
+  </section>
 </template>
 
 <style scoped>

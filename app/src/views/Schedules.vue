@@ -163,7 +163,7 @@ function formatSchedule(schedule: any): string {
 </script>
 
 <template>
-  <div data-animate="fade-in">
+  <section data-animate="fade-in">
     <header class="page-header">
       <hgroup>
         <h1>Schedules</h1>
@@ -374,7 +374,7 @@ Loading schema...</textarea
         </button>
       </template>
     </Modal>
-  </div>
+  </section>
 </template>
 
 <style scoped>

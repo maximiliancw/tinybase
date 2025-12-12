@@ -72,7 +72,7 @@ async function handleDelete(name: string) {
 </script>
 
 <template>
-  <div data-animate="fade-in">
+  <section data-animate="fade-in">
     <header class="page-header">
       <hgroup>
         <h1>Collections</h1>
@@ -196,7 +196,7 @@ async function handleDelete(name: string) {
         </button>
       </template>
     </Modal>
-  </div>
+  </section>
 </template>
 
 <style scoped>

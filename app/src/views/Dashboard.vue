@@ -100,7 +100,7 @@ function dismissNotice() {
 </script>
 
 <template>
-  <div data-animate="fade-in">
+  <section data-animate="fade-in">
     <!-- Admin Created Notice -->
     <article
       v-if="showAdminCreatedNotice"
@@ -250,7 +250,7 @@ function dismissNotice() {
         <FunctionStatsChart v-else :data="metrics.function_stats" />
       </article>
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped>

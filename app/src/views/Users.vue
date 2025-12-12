@@ -54,7 +54,7 @@ async function handleDelete(userId: string) {
 </script>
 
 <template>
-  <div data-animate="fade-in">
+  <section data-animate="fade-in">
     <header class="page-header">
       <hgroup>
         <h1>Users</h1>
@@ -151,7 +151,7 @@ async function handleDelete(userId: string) {
         </button>
       </template>
     </Modal>
-  </div>
+  </section>
 </template>
 
 <style scoped>

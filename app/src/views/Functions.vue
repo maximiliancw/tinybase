@@ -97,7 +97,7 @@ const displayFunctions = () => {
 </script>
 
 <template>
-  <div data-animate="fade-in">
+  <section data-animate="fade-in">
     <header class="page-header">
       <h1>Functions</h1>
       <p>Registered server-side functions</p>
@@ -245,7 +245,7 @@ Loading schema...</textarea
         {{ callError }}
       </small>
     </Modal>
-  </div>
+  </section>
 </template>
 
 <style scoped>

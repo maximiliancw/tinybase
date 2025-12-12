@@ -221,7 +221,7 @@ async function handleKeyAction(action: "download" | "delete") {
 </script>
 
 <template>
-  <div data-animate="fade-in">
+  <section data-animate="fade-in">
     <header class="page-header">
       <hgroup>
         <h1>Files</h1>
@@ -433,7 +433,7 @@ async function handleKeyAction(action: "download" | "delete") {
         </button>
       </template>
     </Modal>
-  </div>
+  </section>
 </template>
 
 <style scoped>

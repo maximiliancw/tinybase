@@ -355,7 +355,7 @@ async function saveSettings() {
 </script>
 
 <template>
-  <div data-animate="fade-in">
+  <section data-animate="fade-in">
     <header class="page-header">
       <h1>Settings</h1>
       <p>Configure your TinyBase instance</p>
@@ -964,7 +964,7 @@ async function saveSettings() {
         </div>
       </article>
     </form>
-  </div>
+  </section>
 </template>
 
 <style scoped>

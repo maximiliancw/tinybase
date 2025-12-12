@@ -66,7 +66,7 @@ function getFieldNames() {
 </script>
 
 <template>
-  <div data-animate="fade-in">
+  <section data-animate="fade-in">
     <header class="page-header">
       <hgroup>
         <h1>
@@ -230,7 +230,7 @@ function getFieldNames() {
         </button>
       </template>
     </Modal>
-  </div>
+  </section>
 </template>
 
 <style scoped>

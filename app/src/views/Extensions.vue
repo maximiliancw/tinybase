@@ -169,7 +169,7 @@ function formatDate(dateStr: string): string {
 </script>
 
 <template>
-  <div data-animate="fade-in">
+  <section data-animate="fade-in">
     <header class="page-header">
       <div>
         <h1>Extensions</h1>
@@ -356,7 +356,7 @@ function formatDate(dateStr: string): string {
         </button>
       </template>
     </Modal>
-  </div>
+  </section>
 </template>
 
 <style scoped>
