@@ -5,12 +5,14 @@
  * Public-facing login page for users.
  */
 import { ref, onMounted } from "vue";
+import { useToast } from "vue-toastification";
 import { useRouter, useRoute } from "vue-router";
 import { api } from "../../api";
 import { usePortalStore } from "../../stores/portal";
 import { usePreviewParams } from "../../composables/usePreviewParams";
 import Icon from "../../components/Icon.vue";
 
+const toast = useToast();
 const router = useRouter();
 const route = useRoute();
 const portalStore = usePortalStore();
@@ -18,7 +20,6 @@ const { withPreviewParams } = usePreviewParams();
 
 const email = ref("");
 const password = ref("");
-const errorMessage = ref("");
 const loading = ref(false);
 
 function isValidAbsoluteUrl(url: string): boolean {
@@ -52,7 +53,6 @@ function getRedirectUrl(): string {
 }
 
 async function handleLogin() {
-  errorMessage.value = "";
   loading.value = true;
 
   try {
@@ -74,14 +74,15 @@ async function handleLogin() {
         throw new Error("Invalid redirect URL");
       }
     } catch (err: any) {
-      errorMessage.value =
+      toast.error(
         err.message ||
-        "Redirect configuration error. Please contact your administrator.";
+          "Redirect configuration error. Please contact your administrator."
+      );
       loading.value = false;
       return;
     }
   } catch (err: any) {
-    errorMessage.value = err.response?.data?.detail || "Login failed";
+    toast.error(err.response?.data?.detail || "Login failed");
   } finally {
     loading.value = false;
   }
@@ -132,12 +133,6 @@ async function handleLogin() {
             autocomplete="current-password"
           />
         </label>
-
-        <!-- Error message -->
-        <div v-if="errorMessage" class="error-message">
-          <Icon name="AlertCircle" :size="16" />
-          {{ errorMessage }}
-        </div>
 
         <button type="submit" :aria-busy="loading" :disabled="loading">
           {{ loading ? "" : "Sign In" }}

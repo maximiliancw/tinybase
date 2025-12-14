@@ -6,6 +6,7 @@
  * Allows uploading, downloading, and deleting files.
  */
 import { onMounted, ref, computed, h } from "vue";
+import { useToast } from "vue-toastification";
 import { useForm, Field } from "vee-validate";
 import { api } from "../api";
 import { validationSchemas } from "../composables/useFormValidation";
@@ -21,10 +22,9 @@ interface FileInfo {
   uploaded_at: string;
 }
 
+const toast = useToast();
 const loading = ref(true);
 const uploading = ref(false);
-const error = ref<string | null>(null);
-const success = ref<string | null>(null);
 const storageEnabled = ref(false);
 
 // Track uploaded files in component state
@@ -32,7 +32,6 @@ const files = ref<FileInfo[]>([]);
 
 // Upload modal
 const showUploadModal = ref(false);
-const uploadError = ref<string | null>(null);
 
 const { handleSubmit, resetForm, setFieldValue } = useForm({
   validationSchema: validationSchemas.uploadFile,
@@ -61,14 +60,12 @@ onMounted(async () => {
 
 async function checkStorageStatus() {
   loading.value = true;
-  error.value = null;
 
   try {
     const response = await api.get("/api/files/status");
     storageEnabled.value = response.data.enabled;
   } catch (err: any) {
-    error.value =
-      err.response?.data?.detail || "Failed to check storage status";
+    toast.error(err.response?.data?.detail || "Failed to check storage status");
     storageEnabled.value = false;
   } finally {
     loading.value = false;
@@ -77,7 +74,6 @@ async function checkStorageStatus() {
 
 function openUploadModal() {
   resetForm();
-  uploadError.value = null;
   showUploadModal.value = true;
 }
 
@@ -90,7 +86,6 @@ function handleFileSelect(event: Event) {
 
 const onSubmit = handleSubmit(async (values) => {
   uploading.value = true;
-  uploadError.value = null;
 
   try {
     const formData = new FormData();
@@ -120,12 +115,9 @@ const onSubmit = handleSubmit(async (values) => {
     saveFilesToStorage();
 
     showUploadModal.value = false;
-    success.value = `File "${fileInfo.filename}" uploaded successfully`;
-    setTimeout(() => {
-      success.value = null;
-    }, 3000);
+    toast.success(`File "${fileInfo.filename}" uploaded successfully`);
   } catch (err: any) {
-    uploadError.value = err.response?.data?.detail || "Upload failed";
+    toast.error(err.response?.data?.detail || "Upload failed");
   } finally {
     uploading.value = false;
   }
@@ -156,11 +148,9 @@ async function downloadFile(key: string) {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+    toast.success(`File "${filename}" downloaded successfully`);
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "Download failed";
-    setTimeout(() => {
-      error.value = null;
-    }, 3000);
+    toast.error(err.response?.data?.detail || "Download failed");
   }
 }
 
@@ -176,15 +166,9 @@ async function deleteFile(key: string) {
     files.value = files.value.filter((f) => f.key !== key);
     saveFilesToStorage();
 
-    success.value = "File deleted successfully";
-    setTimeout(() => {
-      success.value = null;
-    }, 3000);
+    toast.success("File deleted successfully");
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "Delete failed";
-    setTimeout(() => {
-      error.value = null;
-    }, 3000);
+    toast.error(err.response?.data?.detail || "Delete failed");
   }
 }
 
@@ -283,15 +267,6 @@ async function handleKeyAction(action: "download" | "delete") {
       </div>
     </header>
 
-    <!-- Status Messages -->
-    <ins v-if="success" class="alert-success">
-      {{ success }}
-    </ins>
-
-    <del v-if="error" class="alert-error">
-      {{ error }}
-    </del>
-
     <!-- Loading State -->
     <article v-if="loading" aria-busy="true">
       Checking storage status...
@@ -377,10 +352,6 @@ async function handleKeyAction(action: "download" | "delete") {
           :disabled="uploading"
           helper="Optional prefix to organize files (e.g., 'uploads/images/'). Trailing slash is optional."
         />
-
-        <small v-if="uploadError" class="text-error">
-          {{ uploadError }}
-        </small>
       </form>
       <template #footer>
         <button
@@ -478,28 +449,6 @@ async function handleKeyAction(action: "download" | "delete") {
   margin: 0;
 }
 
-/* Alert styles */
-ins.alert-success,
-del.alert-error {
-  display: block;
-  padding: var(--tb-spacing-sm) var(--tb-spacing-md);
-  border-radius: var(--tb-radius);
-  margin-bottom: var(--tb-spacing-lg);
-  text-decoration: none;
-}
-
-ins.alert-success {
-  background: var(--tb-success-bg);
-  color: var(--tb-success);
-  border: 1px solid var(--tb-success);
-}
-
-del.alert-error {
-  background: var(--tb-error-bg);
-  color: var(--tb-error);
-  border: 1px solid var(--tb-error);
-}
-
 .mt-3 {
   margin-top: var(--tb-spacing-lg);
 }
@@ -511,4 +460,3 @@ code {
   border-radius: var(--tb-radius);
 }
 </style>
-

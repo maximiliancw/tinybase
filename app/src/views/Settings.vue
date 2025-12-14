@@ -6,7 +6,8 @@
  * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, reactive, watch, computed } from "vue";
-import { useForm } from "vee-validate";
+import { useToast } from "vue-toastification";
+import { useForm, useField } from "vee-validate";
 import { api } from "../api";
 import { useAuthStore } from "../stores/auth";
 import { validationSchemas } from "../composables/useFormValidation";
@@ -14,6 +15,7 @@ import Modal from "../components/Modal.vue";
 import Icon from "../components/Icon.vue";
 import FormField from "../components/FormField.vue";
 
+const toast = useToast();
 const authStore = useAuthStore();
 
 interface InstanceSettings {
@@ -51,8 +53,6 @@ interface ApplicationToken {
 
 const loading = ref(true);
 const saving = ref(false);
-const error = ref<string | null>(null);
-const success = ref<string | null>(null);
 
 const settings = reactive<InstanceSettings>({
   instance_name: "TinyBase",
@@ -97,6 +97,11 @@ const { handleSubmit: handleTokenSubmit, resetForm: resetTokenForm } = useForm({
     description: "",
     expires_days: null as number | null,
   },
+});
+
+// Get the name field value for button disable state
+const { value: tokenName } = useField("name", undefined, {
+  initialValue: "",
 });
 
 // Common timezones for selection
@@ -192,13 +197,12 @@ function openPreviewInNewTab() {
 
 async function fetchSettings() {
   loading.value = true;
-  error.value = null;
 
   try {
     const response = await api.get("/api/admin/settings");
     Object.assign(settings, response.data);
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "Failed to load settings";
+    toast.error(err.response?.data?.detail || "Failed to load settings");
   } finally {
     loading.value = false;
   }
@@ -218,7 +222,6 @@ async function fetchApplicationTokens() {
 
 const onCreateToken = handleTokenSubmit(async (values) => {
   creatingToken.value = true;
-  error.value = null;
 
   try {
     const payload: Record<string, any> = {
@@ -238,8 +241,9 @@ const onCreateToken = handleTokenSubmit(async (values) => {
     // Reset form and close modal
     resetTokenForm();
     showCreateTokenForm.value = false;
+    toast.success("Application token created successfully");
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "Failed to create token";
+    toast.error(err.response?.data?.detail || "Failed to create token");
   } finally {
     creatingToken.value = false;
   }
@@ -260,8 +264,9 @@ async function revokeApplicationToken(tokenId: string) {
     if (newlyCreatedToken.value?.token.id === tokenId) {
       newlyCreatedToken.value = null;
     }
+    toast.success("Token revoked successfully");
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "Failed to revoke token";
+    toast.error(err.response?.data?.detail || "Failed to revoke token");
   }
 }
 
@@ -271,17 +276,17 @@ async function toggleTokenActive(tokenId: string, currentStatus: boolean) {
       is_active: !currentStatus,
     });
     await fetchApplicationTokens();
+    toast.success(
+      `Token ${!currentStatus ? "activated" : "deactivated"} successfully`
+    );
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "Failed to update token";
+    toast.error(err.response?.data?.detail || "Failed to update token");
   }
 }
 
 function copyTokenToClipboard(tokenValue: string) {
   navigator.clipboard.writeText(tokenValue);
-  success.value = "Token copied to clipboard";
-  setTimeout(() => {
-    success.value = null;
-  }, 2000);
+  toast.success("Token copied to clipboard");
 }
 
 function dismissNewToken() {
@@ -290,12 +295,20 @@ function dismissNewToken() {
 
 async function saveSettings() {
   saving.value = true;
-  error.value = null;
-  success.value = null;
 
   try {
     // Validate auth portal settings
-    validateAuthPortalSettings();
+    try {
+      validateAuthPortalSettings();
+    } catch (validationError: any) {
+      // Show validation error and prevent save
+      toast.error(
+        validationError.message || "Invalid auth portal configuration"
+      );
+      saving.value = false;
+      return;
+    }
+
     const payload: Record<string, any> = {
       instance_name: settings.instance_name,
       allow_public_registration: settings.allow_public_registration,
@@ -342,12 +355,11 @@ async function saveSettings() {
     // Refresh storage status if it changed
     await authStore.checkStorageStatus();
 
-    success.value = "Settings saved successfully";
-    setTimeout(() => {
-      success.value = null;
-    }, 3000);
+    toast.success("Settings saved successfully");
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "Failed to save settings";
+    const errorMessage =
+      err.response?.data?.detail || err.message || "Failed to save settings";
+    toast.error(errorMessage);
   } finally {
     saving.value = false;
   }
@@ -929,21 +941,12 @@ async function saveSettings() {
             type="submit"
             form="token-form"
             :aria-busy="creatingToken"
-            :disabled="creatingToken || !newTokenName"
+            :disabled="creatingToken || !tokenName"
           >
             {{ creatingToken ? "" : "Create Token" }}
           </button>
         </template>
       </Modal>
-
-      <!-- Status Messages -->
-      <ins v-if="success" class="pico-background-green-500">
-        {{ success }}
-      </ins>
-
-      <del v-if="error" class="pico-background-red-500">
-        {{ error }}
-      </del>
 
       <!-- Save Footer -->
       <article class="save-footer">

@@ -5,6 +5,7 @@
  * Premium authentication page with ambient effects and smooth interactions.
  */
 import { ref, onMounted } from "vue";
+import { useToast } from "vue-toastification";
 import { useRouter, useRoute } from "vue-router";
 import { useForm } from "vee-validate";
 import { useAuthStore } from "../stores/auth";
@@ -13,11 +14,11 @@ import { validationSchemas } from "../composables/useFormValidation";
 import Icon from "../components/Icon.vue";
 import FormField from "../components/FormField.vue";
 
+const toast = useToast();
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
-const errorMessage = ref("");
 const needsSetup = ref(false);
 const checkingSetup = ref(true);
 
@@ -30,8 +31,6 @@ const { handleSubmit } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  errorMessage.value = "";
-
   const success = await authStore.login(values.email, values.password);
 
   if (success) {
@@ -39,7 +38,7 @@ const onSubmit = handleSubmit(async (values) => {
     const redirect = (route.query.redirect as string) || "/";
     router.push(redirect);
   } else {
-    errorMessage.value = authStore.error || "Login failed";
+    toast.error(authStore.error || "Login failed");
   }
 });
 
@@ -104,12 +103,6 @@ onMounted(async () => {
           placeholder="••••••••"
           autocomplete="current-password"
         />
-
-        <!-- Error message -->
-        <div v-if="errorMessage" class="error-message">
-          <Icon name="AlertCircle" :size="16" />
-          {{ errorMessage }}
-        </div>
 
         <button
           type="submit"
@@ -230,25 +223,6 @@ form label {
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--tb-text-secondary);
-}
-
-/* Error message */
-.error-message {
-  display: flex;
-  align-items: center;
-  gap: var(--tb-spacing-sm);
-  padding: var(--tb-spacing-sm) var(--tb-spacing-md);
-  background: var(--tb-error-bg);
-  border: 1px solid var(--tb-error-bg);
-  border-radius: var(--tb-radius);
-  color: var(--tb-error);
-  font-size: 0.8125rem;
-}
-
-.error-message svg {
-  width: 1rem;
-  height: 1rem;
-  flex-shrink: 0;
 }
 
 /* Login button */

@@ -6,12 +6,14 @@
  * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, computed, h } from "vue";
+import { useToast } from "vue-toastification";
 import { useRoute } from "vue-router";
 import { useCollectionsStore, type Record } from "../stores/collections";
 import { useAuthStore } from "../stores/auth";
 import Modal from "../components/Modal.vue";
 import DataTable from "../components/DataTable.vue";
 
+const toast = useToast();
 const route = useRoute();
 const collectionsStore = useCollectionsStore();
 const authStore = useAuthStore();
@@ -43,19 +45,35 @@ async function loadRecords() {
 async function handleCreateRecord() {
   try {
     const data = JSON.parse(newRecordData.value);
-    await collectionsStore.createRecord(collectionName.value, data);
-    showCreateModal.value = false;
-    newRecordData.value = "{}";
-    await loadRecords();
+    const result = await collectionsStore.createRecord(
+      collectionName.value,
+      data
+    );
+    if (result) {
+      toast.success("Record created successfully");
+      showCreateModal.value = false;
+      newRecordData.value = "{}";
+      await loadRecords();
+    } else {
+      toast.error(collectionsStore.error || "Failed to create record");
+    }
   } catch (err) {
-    alert("Invalid JSON data");
+    toast.error("Invalid JSON data");
   }
 }
 
 async function handleDeleteRecord(recordId: string) {
   if (confirm("Are you sure you want to delete this record?")) {
-    await collectionsStore.deleteRecord(collectionName.value, recordId);
-    await loadRecords();
+    const result = await collectionsStore.deleteRecord(
+      collectionName.value,
+      recordId
+    );
+    if (result) {
+      toast.success("Record deleted successfully");
+      await loadRecords();
+    } else {
+      toast.error(collectionsStore.error || "Failed to delete record");
+    }
   }
 }
 
@@ -78,7 +96,7 @@ const recordColumns = computed(() => {
 
   // Add dynamic field columns
   fieldNames.forEach((field) => {
-      columns.push({
+    columns.push({
       key: field,
       label: field,
       render: (_value: any, row: any) => {
@@ -225,10 +243,6 @@ const recordColumns = computed(() => {
             Fields: {{ getFieldNames().join(", ") }}
           </small>
         </label>
-
-        <small v-if="collectionsStore.error" class="text-error">
-          {{ collectionsStore.error }}
-        </small>
       </form>
       <template #footer>
         <button

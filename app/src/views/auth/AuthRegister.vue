@@ -5,12 +5,14 @@
  * Public-facing registration page.
  */
 import { ref, onMounted } from "vue";
+import { useToast } from "vue-toastification";
 import { useRouter, useRoute } from "vue-router";
 import { api } from "../../api";
 import { usePortalStore } from "../../stores/portal";
 import { usePreviewParams } from "../../composables/usePreviewParams";
 import Icon from "../../components/Icon.vue";
 
+const toast = useToast();
 const router = useRouter();
 const route = useRoute();
 const portalStore = usePortalStore();
@@ -19,8 +21,6 @@ const { withPreviewParams } = usePreviewParams();
 const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
-const errorMessage = ref("");
-const successMessage = ref("");
 const loading = ref(false);
 
 function isValidAbsoluteUrl(url: string): boolean {
@@ -42,13 +42,11 @@ onMounted(async () => {
 });
 
 async function handleRegister() {
-  errorMessage.value = "";
-  successMessage.value = "";
   loading.value = true;
 
   // Validate passwords match
   if (password.value !== confirmPassword.value) {
-    errorMessage.value = "Passwords do not match";
+    toast.error("Passwords do not match");
     loading.value = false;
     return;
   }
@@ -59,7 +57,7 @@ async function handleRegister() {
       password: password.value,
     });
 
-    successMessage.value = "Registration successful! Redirecting...";
+    toast.success("Registration successful! Redirecting...");
 
     // Clear form
     email.value = "";
@@ -84,13 +82,13 @@ async function handleRegister() {
         window.location.href = redirectUrl;
       } else {
         // No valid redirect URL configured - show error
-        successMessage.value = "";
-        errorMessage.value =
-          "Registration successful, but redirect URL is not configured. Please contact your administrator.";
+        toast.error(
+          "Registration successful, but redirect URL is not configured. Please contact your administrator."
+        );
       }
     }, 1000);
   } catch (err: any) {
-    errorMessage.value = err.response?.data?.detail || "Registration failed";
+    toast.error(err.response?.data?.detail || "Registration failed");
   } finally {
     loading.value = false;
   }
@@ -156,18 +154,6 @@ async function handleRegister() {
             minlength="8"
           />
         </label>
-
-        <!-- Error message -->
-        <div v-if="errorMessage" class="error-message">
-          <Icon name="AlertCircle" :size="16" />
-          {{ errorMessage }}
-        </div>
-
-        <!-- Success message -->
-        <div v-if="successMessage" class="success-message">
-          <Icon name="CheckCircle" :size="16" />
-          {{ successMessage }}
-        </div>
 
         <button type="submit" :aria-busy="loading" :disabled="loading">
           {{ loading ? "" : "Create Account" }}

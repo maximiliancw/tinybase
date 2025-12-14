@@ -6,6 +6,7 @@
  * Allows installing, uninstalling, and enabling/disabling extensions.
  */
 import { onMounted, ref } from "vue";
+import { useToast } from "vue-toastification";
 import { useForm } from "vee-validate";
 import { api } from "../api";
 import { validationSchemas } from "../composables/useFormValidation";
@@ -32,17 +33,15 @@ interface ExtensionListResponse {
   offset: number;
 }
 
+const toast = useToast();
 const loading = ref(true);
 const installing = ref(false);
-const error = ref<string | null>(null);
-const success = ref<string | null>(null);
 
 const extensions = ref<Extension[]>([]);
 const total = ref(0);
 
 // Install modal
 const showInstallModal = ref(false);
-const installError = ref<string | null>(null);
 const showWarningAccepted = ref(false);
 
 const { handleSubmit, resetForm } = useForm({
@@ -63,7 +62,6 @@ onMounted(async () => {
 
 async function fetchExtensions() {
   loading.value = true;
-  error.value = null;
 
   try {
     const response = await api.get<ExtensionListResponse>(
@@ -73,7 +71,7 @@ async function fetchExtensions() {
     extensions.value = response.data.extensions;
     total.value = response.data.total;
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "Failed to load extensions";
+    toast.error(err.response?.data?.detail || "Failed to load extensions");
   } finally {
     loading.value = false;
   }
@@ -81,14 +79,12 @@ async function fetchExtensions() {
 
 function openInstallModal() {
   resetForm();
-  installError.value = null;
   showWarningAccepted.value = false;
   showInstallModal.value = true;
 }
 
 const onSubmit = handleSubmit(async (values) => {
   installing.value = true;
-  installError.value = null;
 
   try {
     await api.post("/api/admin/extensions", {
@@ -96,15 +92,16 @@ const onSubmit = handleSubmit(async (values) => {
     });
 
     showInstallModal.value = false;
-    success.value =
-      "Extension installed successfully. Restart the server to load it.";
-    setTimeout(() => {
-      success.value = null;
-    }, 5000);
+    toast.success(
+      "Extension installed successfully. Restart the server to load it.",
+      {
+        timeout: 5000,
+      }
+    );
 
     await fetchExtensions();
   } catch (err: any) {
-    installError.value = err.response?.data?.detail || "Installation failed";
+    toast.error(err.response?.data?.detail || "Installation failed");
   } finally {
     installing.value = false;
   }
@@ -126,15 +123,16 @@ async function handleUninstall() {
     );
 
     showUninstallModal.value = false;
-    success.value =
-      "Extension uninstalled. Restart the server to fully unload it.";
-    setTimeout(() => {
-      success.value = null;
-    }, 5000);
+    toast.success(
+      "Extension uninstalled. Restart the server to fully unload it.",
+      {
+        timeout: 5000,
+      }
+    );
 
     await fetchExtensions();
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "Uninstall failed";
+    toast.error(err.response?.data?.detail || "Uninstall failed");
   } finally {
     uninstalling.value = false;
     extensionToUninstall.value = null;
@@ -148,14 +146,16 @@ async function toggleEnabled(ext: Extension) {
     });
 
     ext.is_enabled = !ext.is_enabled;
-    success.value = `Extension ${
-      ext.is_enabled ? "enabled" : "disabled"
-    }. Restart the server to apply changes.`;
-    setTimeout(() => {
-      success.value = null;
-    }, 3000);
+    toast.success(
+      `Extension ${
+        ext.is_enabled ? "enabled" : "disabled"
+      }. Restart the server to apply changes.`,
+      {
+        timeout: 4000,
+      }
+    );
   } catch (err: any) {
-    error.value = err.response?.data?.detail || "Failed to update extension";
+    toast.error(err.response?.data?.detail || "Failed to update extension");
   }
 }
 
@@ -177,15 +177,6 @@ function formatDate(dateStr: string): string {
       </div>
       <button @click="openInstallModal">Install Extension</button>
     </header>
-
-    <!-- Status Messages -->
-    <ins v-if="success" class="alert-success">
-      {{ success }}
-    </ins>
-
-    <del v-if="error" class="alert-error">
-      {{ error }}
-    </del>
 
     <!-- Loading State -->
     <article v-if="loading" aria-busy="true">Loading extensions...</article>
@@ -300,10 +291,6 @@ function formatDate(dateStr: string): string {
           :disabled="installing"
           helper="The repository must contain an extension.toml manifest."
         />
-
-        <small v-if="installError" class="text-error">
-          {{ installError }}
-        </small>
       </form>
       <template #footer>
         <button
@@ -490,28 +477,6 @@ button.outline.danger {
 button.outline.danger:hover {
   --pico-background-color: var(--tb-error);
   --pico-color: white;
-}
-
-/* Alert styles */
-ins.alert-success,
-del.alert-error {
-  display: block;
-  padding: var(--tb-spacing-sm) var(--tb-spacing-md);
-  border-radius: var(--tb-radius);
-  margin-bottom: var(--tb-spacing-lg);
-  text-decoration: none;
-}
-
-ins.alert-success {
-  background: var(--tb-success-bg);
-  color: var(--tb-success);
-  border: 1px solid var(--tb-success);
-}
-
-del.alert-error {
-  background: var(--tb-error-bg);
-  color: var(--tb-error);
-  border: 1px solid var(--tb-error);
 }
 
 .mt-3 {

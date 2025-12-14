@@ -5,17 +5,17 @@
  * Allows users to request a password reset email.
  */
 import { ref, onMounted } from "vue";
+import { useToast } from "vue-toastification";
 import { usePortalStore } from "../../stores/portal";
 import { api } from "../../api";
 import { usePreviewParams } from "../../composables/usePreviewParams";
 import Icon from "../../components/Icon.vue";
 
+const toast = useToast();
 const portalStore = usePortalStore();
 const { withPreviewParams } = usePreviewParams();
 
 const email = ref("");
-const errorMessage = ref("");
-const successMessage = ref("");
 const loading = ref(false);
 
 onMounted(async () => {
@@ -23,8 +23,6 @@ onMounted(async () => {
 });
 
 async function handleRequestReset() {
-  errorMessage.value = "";
-  successMessage.value = "";
   loading.value = true;
 
   try {
@@ -33,12 +31,12 @@ async function handleRequestReset() {
     });
 
     // Always show success message (security best practice)
-    successMessage.value =
-      "If that email exists, a password reset link has been sent.";
+    toast.success("If that email exists, a password reset link has been sent.");
     email.value = "";
   } catch (err: any) {
-    errorMessage.value =
-      err.response?.data?.detail || "Failed to request password reset";
+    toast.error(
+      err.response?.data?.detail || "Failed to request password reset"
+    );
   } finally {
     loading.value = false;
   }
@@ -82,18 +80,6 @@ async function handleRequestReset() {
             autocomplete="email"
           />
         </label>
-
-        <!-- Error message -->
-        <div v-if="errorMessage" class="error-message">
-          <Icon name="AlertCircle" :size="16" />
-          {{ errorMessage }}
-        </div>
-
-        <!-- Success message -->
-        <div v-if="successMessage" class="success-message">
-          <Icon name="CheckCircle" :size="16" />
-          {{ successMessage }}
-        </div>
 
         <button type="submit" :aria-busy="loading" :disabled="loading">
           {{ loading ? "" : "Send Reset Link" }}

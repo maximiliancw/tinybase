@@ -5,12 +5,14 @@
  * Allows users to set a new password using a reset token.
  */
 import { ref, onMounted } from "vue";
+import { useToast } from "vue-toastification";
 import { useRoute, useRouter } from "vue-router";
 import { api } from "../../api";
 import { usePortalStore } from "../../stores/portal";
 import { usePreviewParams } from "../../composables/usePreviewParams";
 import Icon from "../../components/Icon.vue";
 
+const toast = useToast();
 const route = useRoute();
 const router = useRouter();
 const portalStore = usePortalStore();
@@ -19,8 +21,6 @@ const { withPreviewParams } = usePreviewParams();
 const token = ref<string>("");
 const password = ref("");
 const confirmPassword = ref("");
-const errorMessage = ref("");
-const successMessage = ref("");
 const loading = ref(false);
 
 onMounted(async () => {
@@ -30,18 +30,16 @@ onMounted(async () => {
   token.value = route.params.token as string;
 
   if (!token.value) {
-    errorMessage.value = "Invalid reset token";
+    toast.error("Invalid reset token");
   }
 });
 
 async function handleResetPassword() {
-  errorMessage.value = "";
-  successMessage.value = "";
   loading.value = true;
 
   // Validate passwords match
   if (password.value !== confirmPassword.value) {
-    errorMessage.value = "Passwords do not match";
+    toast.error("Passwords do not match");
     loading.value = false;
     return;
   }
@@ -52,15 +50,14 @@ async function handleResetPassword() {
       password: password.value,
     });
 
-    successMessage.value = "Password reset successful! Redirecting to login...";
+    toast.success("Password reset successful! Redirecting to login...");
 
     // Redirect to login after 2 seconds
     setTimeout(() => {
       router.push(withPreviewParams("/auth/login"));
     }, 2000);
   } catch (err: any) {
-    errorMessage.value =
-      err.response?.data?.detail || "Failed to reset password";
+    toast.error(err.response?.data?.detail || "Failed to reset password");
   } finally {
     loading.value = false;
   }
@@ -114,18 +111,6 @@ async function handleResetPassword() {
             minlength="8"
           />
         </label>
-
-        <!-- Error message -->
-        <div v-if="errorMessage" class="error-message">
-          <Icon name="AlertCircle" :size="16" />
-          {{ errorMessage }}
-        </div>
-
-        <!-- Success message -->
-        <div v-if="successMessage" class="success-message">
-          <Icon name="CheckCircle" :size="16" />
-          {{ successMessage }}
-        </div>
 
         <button
           type="submit"

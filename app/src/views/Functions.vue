@@ -6,6 +6,7 @@
  * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, computed, h } from "vue";
+import { useToast } from "vue-toastification";
 import {
   useFunctionsStore,
   generateTemplateFromSchema,
@@ -15,6 +16,7 @@ import { useAuthStore } from "../stores/auth";
 import Modal from "../components/Modal.vue";
 import DataTable from "../components/DataTable.vue";
 
+const toast = useToast();
 const functionsStore = useFunctionsStore();
 const authStore = useAuthStore();
 
@@ -22,7 +24,6 @@ const showCallModal = ref(false);
 const selectedFunction = ref<FunctionInfo | null>(null);
 const callPayload = ref("{}");
 const callResult = ref<any>(null);
-const callError = ref<string | null>(null);
 const loadingSchema = ref(false);
 
 onMounted(async () => {
@@ -36,7 +37,6 @@ onMounted(async () => {
 async function openCallModal(fn: FunctionInfo) {
   selectedFunction.value = fn;
   callResult.value = null;
-  callError.value = null;
   showCallModal.value = true;
 
   // Fetch schema and generate template
@@ -59,7 +59,6 @@ async function openCallModal(fn: FunctionInfo) {
 async function handleCall() {
   if (!selectedFunction.value) return;
 
-  callError.value = null;
   callResult.value = null;
 
   try {
@@ -69,9 +68,25 @@ async function handleCall() {
       payload
     );
     callResult.value = result;
+    if (result.status === "succeeded") {
+      toast.success(
+        `Function "${selectedFunction.value.name}" executed successfully`
+      );
+    } else {
+      toast.error(
+        `Function "${selectedFunction.value.name}" failed: ${
+          result.error_message || "Unknown error"
+        }`
+      );
+    }
   } catch (err: any) {
-    callError.value =
-      err.response?.data?.detail || err.message || "Call failed";
+    const errorMsg = err.response?.data?.detail || err.message || "Call failed";
+    toast.error(errorMsg);
+    callResult.value = {
+      status: "failed",
+      error_type: "ExecutionError",
+      error_message: errorMsg,
+    };
   }
 }
 
@@ -106,8 +121,7 @@ const functionColumns = computed(() => {
     {
       key: "description",
       label: "Description",
-      render: (value: any) =>
-        h("small", { class: "text-muted" }, value || "-"),
+      render: (value: any) => h("small", { class: "text-muted" }, value || "-"),
     },
     {
       key: "auth",
@@ -125,7 +139,11 @@ const functionColumns = computed(() => {
         return h(
           "span",
           row.tags.map((tag: string) =>
-            h("mark", { "data-status": "neutral", style: "margin-right: 0.25rem" }, tag)
+            h(
+              "mark",
+              { "data-status": "neutral", style: "margin-right: 0.25rem" },
+              tag
+            )
           )
         );
       },
@@ -250,10 +268,6 @@ Loading schema...</textarea
           {{ callResult.error_message }}
         </p>
       </div>
-
-      <small v-if="callError" class="text-error">
-        {{ callError }}
-      </small>
     </Modal>
   </section>
 </template>

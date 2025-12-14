@@ -6,6 +6,7 @@
  * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, computed, h } from "vue";
+import { useToast } from "vue-toastification";
 import { useRoute } from "vue-router";
 import { useForm, Field } from "vee-validate";
 import { useUsersStore } from "../stores/users";
@@ -14,6 +15,7 @@ import Modal from "../components/Modal.vue";
 import FormField from "../components/FormField.vue";
 import DataTable from "../components/DataTable.vue";
 
+const toast = useToast();
 const route = useRoute();
 const usersStore = useUsersStore();
 
@@ -31,8 +33,11 @@ const { handleSubmit, resetForm } = useForm({
 const onSubmit = handleSubmit(async (values) => {
   const result = await usersStore.createUser(values);
   if (result) {
+    toast.success(`User "${values.email}" created successfully`);
     showCreateModal.value = false;
     resetForm();
+  } else {
+    toast.error(usersStore.error || "Failed to create user");
   }
 });
 
@@ -44,12 +49,26 @@ onMounted(async () => {
 });
 
 async function handleToggleAdmin(userId: string, currentStatus: boolean) {
-  await usersStore.updateUser(userId, { is_admin: !currentStatus });
+  const result = await usersStore.updateUser(userId, {
+    is_admin: !currentStatus,
+  });
+  if (result) {
+    toast.success(
+      `User ${!currentStatus ? "promoted to admin" : "removed from admin"}`
+    );
+  } else {
+    toast.error(usersStore.error || "Failed to update user");
+  }
 }
 
 async function handleDelete(userId: string) {
   if (confirm("Are you sure you want to delete this user?")) {
-    await usersStore.deleteUser(userId);
+    const result = await usersStore.deleteUser(userId);
+    if (result) {
+      toast.success("User deleted successfully");
+    } else {
+      toast.error(usersStore.error || "Failed to delete user");
+    }
   }
 }
 
@@ -143,10 +162,6 @@ const userColumns = computed(() => [
             Admin privileges
           </label>
         </Field>
-
-        <small v-if="usersStore.error" class="text-error">
-          {{ usersStore.error }}
-        </small>
       </form>
       <template #footer>
         <button

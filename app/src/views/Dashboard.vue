@@ -6,6 +6,7 @@
  * Features animated stat cards and refined layout with charts.
  */
 import { onMounted, ref } from "vue";
+import { useToast } from "vue-toastification";
 import { useCollectionsStore } from "../stores/collections";
 import { useFunctionsStore } from "../stores/functions";
 import { useUsersStore } from "../stores/users";
@@ -15,6 +16,7 @@ import CollectionSizesChart from "../components/CollectionSizesChart.vue";
 import FunctionStatsChart from "../components/FunctionStatsChart.vue";
 import Icon from "../components/Icon.vue";
 
+const toast = useToast();
 const collectionsStore = useCollectionsStore();
 const functionsStore = useFunctionsStore();
 const usersStore = useUsersStore();
@@ -26,8 +28,6 @@ const stats = ref({
   functions: 0,
   activeSchedules: 0,
 });
-
-const showAdminCreatedNotice = ref(authStore.adminCreated);
 
 // Metrics data
 const metrics = ref({
@@ -47,8 +47,14 @@ const metricsLoading = ref(false);
 const metricsError = ref<string | null>(null);
 
 onMounted(async () => {
-  // Clear the flag after showing
+  // Show toast if admin was created
   if (authStore.adminCreated) {
+    toast.success(
+      "🎉 Admin account created! No users existed, so an admin account was automatically created with your credentials.",
+      {
+        timeout: 5000,
+      }
+    );
     authStore.clearAdminCreated();
   }
 
@@ -93,30 +99,10 @@ async function fetchMetrics() {
     metricsLoading.value = false;
   }
 }
-
-function dismissNotice() {
-  showAdminCreatedNotice.value = false;
-}
 </script>
 
 <template>
   <section data-animate="fade-in">
-    <!-- Admin Created Notice -->
-    <article
-      v-if="showAdminCreatedNotice"
-      data-status="success"
-      class="notice mb-3"
-    >
-      <div class="notice-content">
-        <strong>🎉 Admin account created!</strong>
-        <p>
-          No users existed, so an admin account was automatically created with
-          your credentials.
-        </p>
-      </div>
-      <button class="secondary small" @click="dismissNotice">Dismiss</button>
-    </article>
-
     <header class="page-header">
       <hgroup>
         <h1>Dashboard</h1>

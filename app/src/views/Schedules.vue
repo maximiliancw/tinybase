@@ -6,6 +6,7 @@
  * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, watch, computed, h } from "vue";
+import { useToast } from "vue-toastification";
 import { useRoute } from "vue-router";
 import { useForm, Field } from "vee-validate";
 import {
@@ -17,13 +18,19 @@ import Modal from "../components/Modal.vue";
 import FormField from "../components/FormField.vue";
 import DataTable from "../components/DataTable.vue";
 
+const toast = useToast();
 const route = useRoute();
 const functionsStore = useFunctionsStore();
 
 const showCreateModal = ref(false);
 const loadingSchema = ref(false);
 
-const { handleSubmit, resetForm, watch: watchForm, setFieldValue } = useForm({
+const {
+  handleSubmit,
+  resetForm,
+  watch: watchForm,
+  setFieldValue,
+} = useForm({
   validationSchema: validationSchemas.createSchedule,
   initialValues: {
     name: "",
@@ -107,7 +114,7 @@ const onSubmit = handleSubmit(async (values) => {
   try {
     inputData = JSON.parse(values.input_data);
   } catch {
-    functionsStore.error = "Invalid JSON in input data";
+    toast.error("Invalid JSON in input data");
     return;
   }
 
@@ -119,6 +126,7 @@ const onSubmit = handleSubmit(async (values) => {
   });
 
   if (result) {
+    toast.success(`Schedule "${values.name}" created successfully`);
     showCreateModal.value = false;
     resetForm({
       values: {
@@ -134,18 +142,30 @@ const onSubmit = handleSubmit(async (values) => {
         input_data: "{}",
       },
     });
+  } else {
+    toast.error(functionsStore.error || "Failed to create schedule");
   }
 });
 
 async function handleToggleActive(scheduleId: string, currentStatus: boolean) {
-  await functionsStore.updateSchedule(scheduleId, {
+  const result = await functionsStore.updateSchedule(scheduleId, {
     is_active: !currentStatus,
   });
+  if (result) {
+    toast.success(`Schedule ${!currentStatus ? "activated" : "paused"}`);
+  } else {
+    toast.error(functionsStore.error || "Failed to update schedule");
+  }
 }
 
 async function handleDelete(scheduleId: string) {
   if (confirm("Are you sure you want to delete this schedule?")) {
-    await functionsStore.deleteSchedule(scheduleId);
+    const result = await functionsStore.deleteSchedule(scheduleId);
+    if (result) {
+      toast.success("Schedule deleted successfully");
+    } else {
+      toast.error(functionsStore.error || "Failed to delete schedule");
+    }
   }
 }
 
@@ -354,10 +374,6 @@ Loading schema...</textarea
             <small v-else>Data to pass to the function when executed</small>
           </label>
         </Field>
-
-        <small v-if="functionsStore.error" class="text-error">
-          {{ functionsStore.error }}
-        </small>
       </form>
       <template #footer>
         <button

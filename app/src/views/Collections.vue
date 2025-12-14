@@ -6,6 +6,7 @@
  * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, computed, h } from "vue";
+import { useToast } from "vue-toastification";
 import { useRoute } from "vue-router";
 import { useForm } from "vee-validate";
 import { useCollectionsStore } from "../stores/collections";
@@ -15,6 +16,7 @@ import Modal from "../components/Modal.vue";
 import FormField from "../components/FormField.vue";
 import DataTable from "../components/DataTable.vue";
 
+const toast = useToast();
 const route = useRoute();
 const collectionsStore = useCollectionsStore();
 const authStore = useAuthStore();
@@ -35,22 +37,27 @@ const { handleSubmit, resetForm } = useForm({
 const onSubmit = handleSubmit(async (values) => {
   try {
     const schema = JSON.parse(values.schemaText);
-    await collectionsStore.createCollection({
+    const result = await collectionsStore.createCollection({
       name: values.name,
       label: values.label,
       schema,
     });
-    showCreateModal.value = false;
-    resetForm({
-      values: {
-        name: "",
-        label: "",
-        schemaText: defaultSchemaText,
-      },
-    });
+    if (result) {
+      toast.success(`Collection "${values.name}" created successfully`);
+      showCreateModal.value = false;
+      resetForm({
+        values: {
+          name: "",
+          label: "",
+          schemaText: defaultSchemaText,
+        },
+      });
+    } else {
+      toast.error(collectionsStore.error || "Failed to create collection");
+    }
   } catch (err) {
     // JSON validation should catch this, but handle just in case
-    collectionsStore.error = "Invalid schema JSON";
+    toast.error("Invalid schema JSON");
   }
 });
 
@@ -67,7 +74,12 @@ async function handleDelete(name: string) {
       `Are you sure you want to delete collection "${name}"? This will delete all records.`
     )
   ) {
-    await collectionsStore.deleteCollection(name);
+    const result = await collectionsStore.deleteCollection(name);
+    if (result) {
+      toast.success(`Collection "${name}" deleted successfully`);
+    } else {
+      toast.error(collectionsStore.error || "Failed to delete collection");
+    }
   }
 }
 
@@ -184,10 +196,6 @@ const collectionColumns = computed(() => {
           :rows="10"
           style="font-family: monospace; font-size: 0.875rem"
         />
-
-        <small v-if="collectionsStore.error" class="text-error">
-          {{ collectionsStore.error }}
-        </small>
       </form>
       <template #footer>
         <button
