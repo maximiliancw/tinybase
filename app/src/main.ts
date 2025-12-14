@@ -30,7 +30,6 @@ const toastOptions: PluginOptions = {
   pauseOnHover: true,
   draggable: true,
   draggablePercent: 0.5,
-  showCloseButtonOnHover: true,
   hideProgressBar: false,
 };
 
