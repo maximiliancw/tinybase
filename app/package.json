@@ -26,7 +26,6 @@
   "devDependencies": {
     "@picocss/pico": "^2.0.6",
     "@vitejs/plugin-vue": "^5.1.4",
-    "vite": "^5.4.10",
-    "vite-plugin-vue-devtools": "^8.0.5"
+    "vite": "^5.4.10"
   }
 }
