@@ -309,7 +309,7 @@ class InstanceSettings(SQLModel, table=True):
     allow_public_registration: bool = Field(default=True)
 
     # Auth Portal settings
-    auth_portal_enabled: bool = Field(default=True)
+    auth_portal_enabled: bool = Field(default=False)
     auth_portal_logo_url: str | None = Field(default=None, max_length=500)
     auth_portal_primary_color: str | None = Field(default=None, max_length=50)
     auth_portal_background_image_url: str | None = Field(default=None, max_length=500)

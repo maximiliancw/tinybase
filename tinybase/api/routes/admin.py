@@ -473,6 +473,8 @@ class InstanceSettingsUpdate(BaseModel):
     auth_portal_logo_url: str | None = Field(default=None, max_length=500)
     auth_portal_primary_color: str | None = Field(default=None, max_length=50)
     auth_portal_background_image_url: str | None = Field(default=None, max_length=500)
+    auth_portal_login_redirect_url: str | None = Field(default=None, max_length=500)
+    auth_portal_register_redirect_url: str | None = Field(default=None, max_length=500)
 
 
 def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse:
@@ -623,6 +625,14 @@ def update_settings(
         settings.storage_secret_key = request.storage_secret_key
     if request.storage_region is not None:
         settings.storage_region = request.storage_region
+    # Determine if auth portal will be enabled after this update
+    # (either already enabled and not being disabled, or being enabled in this request)
+    auth_portal_will_be_enabled = (
+        request.auth_portal_enabled
+        if request.auth_portal_enabled is not None
+        else settings.auth_portal_enabled
+    )
+
     if request.auth_portal_enabled is not None:
         settings.auth_portal_enabled = request.auth_portal_enabled
     if request.auth_portal_logo_url is not None:
@@ -632,32 +642,36 @@ def update_settings(
     if request.auth_portal_background_image_url is not None:
         settings.auth_portal_background_image_url = request.auth_portal_background_image_url
     if request.auth_portal_login_redirect_url is not None:
-        # Validate that it's an absolute URL and not pointing to /admin
-        if not request.auth_portal_login_redirect_url.startswith(("http://", "https://")):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Login redirect URL must be an absolute URL (e.g., https://app.example.com/dashboard)",
-            )
-        # Prevent redirecting to /admin URLs (those are for TinyBase Admin UI)
-        if "/admin" in request.auth_portal_login_redirect_url:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Login redirect URL must not point to /admin URLs. Use your application's URL instead.",
-            )
+        # Only validate redirect URL format if auth portal is (or will be) enabled
+        if auth_portal_will_be_enabled:
+            # Validate that it's an absolute URL and not pointing to /admin
+            if not request.auth_portal_login_redirect_url.startswith(("http://", "https://")):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Login redirect URL must be an absolute URL (e.g., https://app.example.com/dashboard)",
+                )
+            # Prevent redirecting to /admin URLs (those are for TinyBase Admin UI)
+            if "/admin" in request.auth_portal_login_redirect_url:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Login redirect URL must not point to /admin URLs. Use your application's URL instead.",
+                )
         settings.auth_portal_login_redirect_url = request.auth_portal_login_redirect_url
     if request.auth_portal_register_redirect_url is not None:
-        # Validate that it's an absolute URL and not pointing to /admin
-        if not request.auth_portal_register_redirect_url.startswith(("http://", "https://")):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Register redirect URL must be an absolute URL (e.g., https://app.example.com/welcome)",
-            )
-        # Prevent redirecting to /admin URLs (those are for TinyBase Admin UI)
-        if "/admin" in request.auth_portal_register_redirect_url:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Register redirect URL must not point to /admin URLs. Use your application's URL instead.",
-            )
+        # Only validate redirect URL format if auth portal is (or will be) enabled
+        if auth_portal_will_be_enabled:
+            # Validate that it's an absolute URL and not pointing to /admin
+            if not request.auth_portal_register_redirect_url.startswith(("http://", "https://")):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Register redirect URL must be an absolute URL (e.g., https://app.example.com/welcome)",
+                )
+            # Prevent redirecting to /admin URLs (those are for TinyBase Admin UI)
+            if "/admin" in request.auth_portal_register_redirect_url:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Register redirect URL must not point to /admin URLs. Use your application's URL instead.",
+                )
         settings.auth_portal_register_redirect_url = request.auth_portal_register_redirect_url
 
     # If auth portal is enabled, require redirect URLs to be set
