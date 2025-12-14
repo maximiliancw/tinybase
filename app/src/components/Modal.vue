@@ -46,8 +46,7 @@ watch(
     } else {
       deactivate();
     }
-  },
-  { immediate: true }
+  }
 );
 
 function close() {

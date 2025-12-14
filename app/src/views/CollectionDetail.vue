@@ -83,7 +83,7 @@ async function handleCreateRecord() {
       toast.success("Record created successfully");
       showCreateModal.value = false;
       newRecordData.value = "{}";
-      await loadRecords();
+      await loadRecords(true);
     } else {
       toast.error(collectionsStore.error || "Failed to create record");
     }
@@ -100,7 +100,7 @@ async function handleDeleteRecord(recordId: string) {
     );
     if (result) {
       toast.success("Record deleted successfully");
-      await loadRecords();
+      await loadRecords(true);
     } else {
       toast.error(collectionsStore.error || "Failed to delete record");
     }
@@ -234,7 +234,7 @@ const recordColumns = computed(() => {
             :disabled="page === 1"
             @click="
               page--;
-              loadRecords();
+              loadRecords(true);
             "
           >
             Previous
@@ -248,7 +248,7 @@ const recordColumns = computed(() => {
             :disabled="page >= Math.ceil(total / pageSize)"
             @click="
               page++;
-              loadRecords();
+              loadRecords(true);
             "
           >
             Next
