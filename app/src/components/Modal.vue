@@ -5,7 +5,7 @@
  * Standardized modal component built on PicoCSS's dialog element.
  * Provides consistent structure and behavior across the application.
  */
-import { ref, watch } from "vue";
+import { ref, watch, nextTick } from "vue";
 import { onKeyStroke } from "@vueuse/core";
 import { useFocusTrap } from "@vueuse/integrations/useFocusTrap";
 
@@ -40,9 +40,18 @@ const { activate, deactivate } = useFocusTrap(modalRef, {
 // Activate/deactivate focus trap based on modal state
 watch(
   () => props.open,
-  (isOpen) => {
-    if (isOpen && modalRef.value) {
-      activate();
+  async (isOpen) => {
+    if (isOpen) {
+      // Wait for content to render before activating focus trap
+      await nextTick();
+      if (modalRef.value) {
+        try {
+          activate();
+        } catch (error) {
+          // Silently fail if focus trap can't be activated (e.g., no tabbable elements)
+          console.warn("Focus trap activation failed:", error);
+        }
+      }
     } else {
       deactivate();
     }

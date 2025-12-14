@@ -29,13 +29,9 @@ const action = computed(() => params.action as string | null);
 
 const showCreateModal = ref(false);
 const loadingSchema = ref(false);
+const functionSchema = ref<any>(null);
 
-const {
-  handleSubmit,
-  resetForm,
-  watch: watchForm,
-  setFieldValue,
-} = useForm({
+const { handleSubmit, resetForm, values, setFieldValue } = useForm({
   validationSchema: validationSchemas.createSchedule,
   initialValues: {
     name: "",
@@ -51,28 +47,60 @@ const {
   },
 });
 
-// Watch for function selection changes to fetch schema
-watchForm(
-  (values) => values.function_name,
-  async (functionName) => {
-    if (!functionName) {
-      setFieldValue("input_data", "{}");
-      return;
-    }
+// Computed property to get selected function info
+const selectedFunction = computed(() => {
+  if (!values.function_name) return null;
+  return (
+    functionsStore.functions.find((f) => f.name === values.function_name) ||
+    null
+  );
+});
 
-    loadingSchema.value = true;
-    try {
-      const schema = await functionsStore.fetchFunctionSchema(functionName);
-      if (schema?.input_schema) {
-        const template = generateTemplateFromSchema(schema.input_schema);
-        setFieldValue("input_data", JSON.stringify(template, null, 2));
-      } else {
-        setFieldValue("input_data", "{}");
-      }
-    } catch {
+// Function to fetch schema and generate template
+async function fetchSchemaAndGenerateTemplate(functionName: string) {
+  if (!functionName) {
+    functionSchema.value = null;
+    setFieldValue("input_data", "{}");
+    return;
+  }
+
+  loadingSchema.value = true;
+  try {
+    const schema = await functionsStore.fetchFunctionSchema(functionName);
+    functionSchema.value = schema;
+    if (schema?.input_schema) {
+      const template = generateTemplateFromSchema(schema.input_schema);
+      setFieldValue("input_data", JSON.stringify(template, null, 2));
+    } else {
       setFieldValue("input_data", "{}");
-    } finally {
-      loadingSchema.value = false;
+    }
+  } catch {
+    functionSchema.value = null;
+    setFieldValue("input_data", "{}");
+  } finally {
+    loadingSchema.value = false;
+  }
+}
+
+// Watch for function selection changes to fetch schema
+watch(
+  () => values.function_name,
+  async (functionName) => {
+    await fetchSchemaAndGenerateTemplate(functionName);
+  },
+  { immediate: false }
+);
+
+// Watch for modal opening/closing
+watch(
+  () => showCreateModal.value,
+  async (isOpen) => {
+    if (isOpen && values.function_name) {
+      // Fetch schema if function is already selected when modal opens
+      await fetchSchemaAndGenerateTemplate(values.function_name);
+    } else if (!isOpen) {
+      // Reset schema when modal closes
+      functionSchema.value = null;
     }
   }
 );
@@ -310,22 +338,31 @@ const scheduleColumns = computed(() => [
             {{ fn.name }}
           </option>
         </FormField>
+        <p
+          v-if="selectedFunction?.description"
+          class="text-muted"
+          style="margin-top: -20px"
+        >
+          <u>Description</u>: {{ selectedFunction.description }}
+        </p>
 
         <Field name="method" v-slot="{ field }">
           <fieldset>
             <legend>Schedule Type</legend>
-            <label>
-              <input type="radio" v-bind="field" value="interval" />
-              Interval
-            </label>
-            <label>
-              <input type="radio" v-bind="field" value="cron" />
-              Cron
-            </label>
-            <label>
-              <input type="radio" v-bind="field" value="once" />
-              Once
-            </label>
+            <div role="group">
+              <label>
+                <input type="radio" v-bind="field" value="interval" />
+                Interval
+              </label>
+              <label>
+                <input type="radio" v-bind="field" value="cron" />
+                Cron
+              </label>
+              <label>
+                <input type="radio" v-bind="field" value="once" />
+                Once
+              </label>
+            </div>
           </fieldset>
         </Field>
 
@@ -372,7 +409,7 @@ const scheduleColumns = computed(() => [
             <textarea
               v-if="loadingSchema"
               id="field-input_data"
-              rows="6"
+              rows="8"
               disabled
               aria-busy="true"
               class="code-editor"
@@ -383,7 +420,7 @@ Loading schema...</textarea
               v-else
               id="field-input_data"
               v-bind="field"
-              rows="6"
+              rows="8"
               class="code-editor"
               spellcheck="false"
               placeholder="{}"
@@ -392,7 +429,17 @@ Loading schema...</textarea
             <small v-if="meta.touched && errors[0]" class="text-error">
               {{ errors[0] }}
             </small>
-            <small v-else>Data to pass to the function when executed</small>
+            <small v-else-if="functionSchema?.input_schema">
+              Schema-based template generated. Modify as needed for your use
+              case.
+            </small>
+            <small v-else-if="values.function_name">
+              This function has no input schema. Use an empty object {} or
+              provide custom data.
+            </small>
+            <small v-else>
+              Select a function to generate input data template from its schema.
+            </small>
           </label>
         </Field>
       </form>
