@@ -95,11 +95,21 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function checkStorageStatus(): Promise<void> {
+    // Only check if user is authenticated
+    if (!isAuthenticated.value) {
+      storageEnabled.value = false;
+      return;
+    }
+
     try {
       const response = await api.get("/api/files/status");
       storageEnabled.value = response.data.enabled;
-    } catch (err) {
-      // If check fails, assume storage is disabled
+    } catch (err: any) {
+      // If check fails (including 401), assume storage is disabled
+      // Don't log 401 errors as they're expected when not authenticated
+      if (err.response?.status !== 401) {
+        console.error("Failed to check storage status:", err);
+      }
       storageEnabled.value = false;
     }
   }

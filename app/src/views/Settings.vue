@@ -12,7 +12,7 @@ import { useClipboard } from "@vueuse/core";
 import { api } from "../api";
 import { useAuthStore } from "../stores/auth";
 import { validationSchemas } from "../composables/useFormValidation";
-import { useTheme } from "../composables/useTheme";
+import { formatErrorMessage } from "../composables/useErrorHandling";
 import Modal from "../components/Modal.vue";
 import Icon from "../components/Icon.vue";
 import FormField from "../components/FormField.vue";
@@ -20,7 +20,6 @@ import FormField from "../components/FormField.vue";
 const toast = useToast();
 const authStore = useAuthStore();
 const { copy: copyToClipboard, copied } = useClipboard();
-const { isDark, toggleTheme } = useTheme();
 
 // Watch for clipboard copy success
 watch(copied, (isCopied) => {
@@ -78,7 +77,7 @@ const settings = reactive<InstanceSettings>({
   storage_endpoint: null,
   storage_bucket: null,
   storage_region: null,
-  auth_portal_enabled: true,
+  auth_portal_enabled: false,
   auth_portal_logo_url: null,
   auth_portal_primary_color: null,
   auth_portal_background_image_url: null,
@@ -146,35 +145,87 @@ watch(
   }
 );
 
-// Validate redirect URLs when saving if auth portal is enabled
-function validateAuthPortalSettings() {
-  if (settings.auth_portal_enabled) {
-    if (
-      !settings.auth_portal_login_redirect_url ||
-      (!settings.auth_portal_login_redirect_url.startsWith("http://") &&
-        !settings.auth_portal_login_redirect_url.startsWith("https://"))
-    ) {
-      throw new Error(
-        "Login redirect URL is required and must be an absolute URL when auth portal is enabled"
-      );
-    }
-    if (settings.auth_portal_login_redirect_url.includes("/admin")) {
-      throw new Error("Login redirect URL must not point to /admin URLs");
-    }
-    if (
-      !settings.auth_portal_register_redirect_url ||
-      (!settings.auth_portal_register_redirect_url.startsWith("http://") &&
-        !settings.auth_portal_register_redirect_url.startsWith("https://"))
-    ) {
-      throw new Error(
-        "Register redirect URL is required and must be an absolute URL when auth portal is enabled"
-      );
-    }
-    if (settings.auth_portal_register_redirect_url.includes("/admin")) {
-      throw new Error("Register redirect URL must not point to /admin URLs");
+// Setup vee-validate form with settings schema for validation
+const { handleSubmit, setValues, setFieldValue } = useForm({
+  validationSchema: validationSchemas.settings,
+  initialValues: settings,
+});
+
+// Use useField for redirect URL fields to get proper validation
+// These will automatically use the form's validation schema
+const {
+  value: loginRedirectUrl,
+  errorMessage: loginRedirectUrlError,
+  handleChange: handleLoginRedirectUrlChange,
+  meta: loginRedirectUrlMeta,
+} = useField("auth_portal_login_redirect_url", undefined, {
+  initialValue: settings.auth_portal_login_redirect_url || "",
+  syncVModel: false,
+});
+
+const {
+  value: registerRedirectUrl,
+  errorMessage: registerRedirectUrlError,
+  handleChange: handleRegisterRedirectUrlChange,
+  meta: registerRedirectUrlMeta,
+} = useField("auth_portal_register_redirect_url", undefined, {
+  initialValue: settings.auth_portal_register_redirect_url || "",
+  syncVModel: false,
+});
+
+// Sync field values with settings and form
+watch(loginRedirectUrl, (newValue) => {
+  settings.auth_portal_login_redirect_url = newValue || null;
+  setFieldValue("auth_portal_login_redirect_url", newValue || null);
+});
+
+watch(registerRedirectUrl, (newValue) => {
+  settings.auth_portal_register_redirect_url = newValue || null;
+  setFieldValue("auth_portal_register_redirect_url", newValue || null);
+});
+
+// Sync settings back to fields when loaded from API
+watch(
+  () => settings.auth_portal_login_redirect_url,
+  (newValue) => {
+    const stringValue = newValue || "";
+    if (stringValue !== loginRedirectUrl.value) {
+      loginRedirectUrl.value = stringValue;
+      setFieldValue("auth_portal_login_redirect_url", newValue || null);
     }
   }
-}
+);
+
+watch(
+  () => settings.auth_portal_register_redirect_url,
+  (newValue) => {
+    const stringValue = newValue || "";
+    if (stringValue !== registerRedirectUrl.value) {
+      registerRedirectUrl.value = stringValue;
+      setFieldValue("auth_portal_register_redirect_url", newValue || null);
+    }
+  }
+);
+
+// Update form values when settings change (especially auth_portal_enabled for conditional validation)
+watch(
+  () => settings.auth_portal_enabled,
+  (newValue) => {
+    setFieldValue("auth_portal_enabled", newValue);
+  }
+);
+
+// Update all form values when settings are loaded from API
+watch(
+  () => settings,
+  (newSettings) => {
+    setValues(newSettings);
+    loginRedirectUrl.value = newSettings.auth_portal_login_redirect_url || "";
+    registerRedirectUrl.value =
+      newSettings.auth_portal_register_redirect_url || "";
+  },
+  { deep: true }
+);
 
 // Generate preview URL with current (unsaved) settings
 const previewUrl = computed(() => {
@@ -213,7 +264,7 @@ async function fetchSettings() {
     const response = await api.get("/api/admin/settings");
     Object.assign(settings, response.data);
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Failed to load settings");
+    toast.error(formatErrorMessage(err, "Failed to load settings"));
   } finally {
     loading.value = false;
   }
@@ -254,7 +305,7 @@ const onCreateToken = handleTokenSubmit(async (values) => {
     showCreateTokenForm.value = false;
     toast.success("Application token created successfully");
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Failed to create token");
+    toast.error(formatErrorMessage(err, "Failed to create token"));
   } finally {
     creatingToken.value = false;
   }
@@ -277,7 +328,7 @@ async function revokeApplicationToken(tokenId: string) {
     }
     toast.success("Token revoked successfully");
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Failed to revoke token");
+    toast.error(formatErrorMessage(err, "Failed to revoke token"));
   }
 }
 
@@ -291,7 +342,7 @@ async function toggleTokenActive(tokenId: string, currentStatus: boolean) {
       `Token ${!currentStatus ? "activated" : "deactivated"} successfully`
     );
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Failed to update token");
+    toast.error(formatErrorMessage(err, "Failed to update token"));
   }
 }
 
@@ -303,46 +354,32 @@ function dismissNewToken() {
   newlyCreatedToken.value = null;
 }
 
-async function saveSettings() {
+const saveSettings = handleSubmit(async (values) => {
   saving.value = true;
 
   try {
-    // Validate auth portal settings
-    try {
-      validateAuthPortalSettings();
-    } catch (validationError: any) {
-      // Show validation error and prevent save
-      toast.error(
-        validationError.message || "Invalid auth portal configuration"
-      );
-      saving.value = false;
-      return;
-    }
-
     const payload: Record<string, any> = {
-      instance_name: settings.instance_name,
-      allow_public_registration: settings.allow_public_registration,
-      server_timezone: settings.server_timezone,
-      token_cleanup_interval: settings.token_cleanup_interval,
-      metrics_collection_interval: settings.metrics_collection_interval,
+      instance_name: values.instance_name,
+      allow_public_registration: values.allow_public_registration,
+      server_timezone: values.server_timezone,
+      token_cleanup_interval: values.token_cleanup_interval,
+      metrics_collection_interval: values.metrics_collection_interval,
       scheduler_function_timeout_seconds:
-        settings.scheduler_function_timeout_seconds,
-      scheduler_max_schedules_per_tick:
-        settings.scheduler_max_schedules_per_tick,
+        values.scheduler_function_timeout_seconds,
+      scheduler_max_schedules_per_tick: values.scheduler_max_schedules_per_tick,
       scheduler_max_concurrent_executions:
-        settings.scheduler_max_concurrent_executions,
-      storage_enabled: settings.storage_enabled,
-      storage_endpoint: settings.storage_endpoint,
-      storage_bucket: settings.storage_bucket,
-      storage_region: settings.storage_region,
-      auth_portal_enabled: settings.auth_portal_enabled,
-      auth_portal_logo_url: settings.auth_portal_logo_url,
-      auth_portal_primary_color: settings.auth_portal_primary_color,
-      auth_portal_background_image_url:
-        settings.auth_portal_background_image_url,
-      auth_portal_login_redirect_url: settings.auth_portal_login_redirect_url,
+        values.scheduler_max_concurrent_executions,
+      storage_enabled: values.storage_enabled,
+      storage_endpoint: values.storage_endpoint,
+      storage_bucket: values.storage_bucket,
+      storage_region: values.storage_region,
+      auth_portal_enabled: values.auth_portal_enabled,
+      auth_portal_logo_url: values.auth_portal_logo_url,
+      auth_portal_primary_color: values.auth_portal_primary_color,
+      auth_portal_background_image_url: values.auth_portal_background_image_url,
+      auth_portal_login_redirect_url: values.auth_portal_login_redirect_url,
       auth_portal_register_redirect_url:
-        settings.auth_portal_register_redirect_url,
+        values.auth_portal_register_redirect_url,
     };
 
     // Only include credentials if they're filled in
@@ -356,6 +393,9 @@ async function saveSettings() {
     const response = await api.patch("/api/admin/settings", payload);
     Object.assign(settings, response.data);
 
+    // Update form values after successful save
+    setValues(settings);
+
     // Clear credential fields after save
     storageAccessKey.value = "";
     storageSecretKey.value = "";
@@ -367,13 +407,12 @@ async function saveSettings() {
 
     toast.success("Settings saved successfully");
   } catch (err: any) {
-    const errorMessage =
-      err.response?.data?.detail || err.message || "Failed to save settings";
+    const errorMessage = formatErrorMessage(err, "Failed to save settings");
     toast.error(errorMessage);
   } finally {
     saving.value = false;
   }
-}
+});
 </script>
 
 <template>
@@ -403,18 +442,6 @@ async function saveSettings() {
             />
             <small>The name displayed in the admin UI and API responses.</small>
           </label>
-          <label>
-            <input
-              type="checkbox"
-              :checked="isDark"
-              @change="toggleTheme()"
-              role="switch"
-            />
-            Dark Mode
-          </label>
-          <small class="text-muted">
-            Toggle between light and dark theme. Your preference is saved.
-          </small>
           <label for="server_timezone">
             Server Timezone
             <select id="server_timezone" v-model="settings.server_timezone">
@@ -491,16 +518,41 @@ async function saveSettings() {
                   Login Redirect URL
                   <input
                     id="auth_portal_login_redirect_url"
-                    v-model="settings.auth_portal_login_redirect_url"
+                    :value="loginRedirectUrl"
+                    @input="(e) => handleLoginRedirectUrlChange((e.target as HTMLInputElement).value, true)"
+                    @blur="(e) => handleLoginRedirectUrlChange((e.target as HTMLInputElement).value, true)"
                     type="url"
                     placeholder="https://app.example.com/dashboard"
-                    pattern="https?://.+"
-                    required
+                    :aria-invalid="
+                      loginRedirectUrlMeta.touched &&
+                      !loginRedirectUrlMeta.valid
+                        ? 'true'
+                        : loginRedirectUrlMeta.touched &&
+                          loginRedirectUrlMeta.valid
+                        ? 'false'
+                        : undefined
+                    "
+                    :aria-describedby="
+                      loginRedirectUrlError
+                        ? 'login-redirect-error'
+                        : 'login-redirect-helper'
+                    "
                   />
-                  <small>
-                    Required: Absolute URL where users are redirected after
-                    successful login (e.g., https://app.example.com/dashboard).
-                    Must not point to /admin URLs.
+                  <small
+                    v-if="!loginRedirectUrlError"
+                    id="login-redirect-helper"
+                  >
+                    Required when auth portal is enabled: Absolute URL where
+                    users are redirected after successful login (e.g.,
+                    https://app.example.com/dashboard). Must not point to /admin
+                    URLs.
+                  </small>
+                  <small
+                    v-if="loginRedirectUrlError"
+                    id="login-redirect-error"
+                    class="text-error"
+                  >
+                    {{ loginRedirectUrlError }}
                   </small>
                 </label>
 
@@ -508,17 +560,41 @@ async function saveSettings() {
                   Registration Redirect URL
                   <input
                     id="auth_portal_register_redirect_url"
-                    v-model="settings.auth_portal_register_redirect_url"
+                    :value="registerRedirectUrl"
+                    @input="(e) => handleRegisterRedirectUrlChange((e.target as HTMLInputElement).value, true)"
+                    @blur="(e) => handleRegisterRedirectUrlChange((e.target as HTMLInputElement).value, true)"
                     type="url"
                     placeholder="https://app.example.com/welcome"
-                    pattern="https?://.+"
-                    required
+                    :aria-invalid="
+                      registerRedirectUrlMeta.touched &&
+                      !registerRedirectUrlMeta.valid
+                        ? 'true'
+                        : registerRedirectUrlMeta.touched &&
+                          registerRedirectUrlMeta.valid
+                        ? 'false'
+                        : undefined
+                    "
+                    :aria-describedby="
+                      registerRedirectUrlError
+                        ? 'register-redirect-error'
+                        : 'register-redirect-helper'
+                    "
                   />
-                  <small>
-                    Required: Absolute URL where users are redirected after
-                    successful registration (e.g.,
+                  <small
+                    v-if="!registerRedirectUrlError"
+                    id="register-redirect-helper"
+                  >
+                    Required when auth portal is enabled: Absolute URL where
+                    users are redirected after successful registration (e.g.,
                     https://app.example.com/welcome). Must not point to /admin
                     URLs.
+                  </small>
+                  <small
+                    v-if="registerRedirectUrlError"
+                    id="register-redirect-error"
+                    class="text-error"
+                  >
+                    {{ registerRedirectUrlError }}
                   </small>
                 </label>
               </div>
@@ -1205,4 +1281,7 @@ table tr:first-child th:last-child {
 }
 
 /* Button small variant - let PicoCSS handle sizing */
+.text-error {
+  color: var(--pico-form-element-invalid-border-color, var(--pico-del-color));
+}
 </style>

@@ -44,7 +44,10 @@ onMounted(async () => {
     await portalStore.fetchConfig();
   }
   await authStore.fetchInstanceInfo();
-  await authStore.checkStorageStatus();
+  // Only check storage status if user is authenticated
+  if (authStore.isAuthenticated) {
+    await authStore.checkStorageStatus();
+  }
 });
 
 function handleLogout() {

@@ -33,10 +33,10 @@ const scrollContainer = ref<HTMLElement>();
 
 onMounted(async () => {
   await collectionsStore.fetchCollection(collectionName.value);
-  await loadRecords();
+  await loadRecords(true); // Reset on initial load
 });
 
-async function loadRecords() {
+async function loadRecords(reset = false) {
   loadingMore.value = true;
   try {
     const result = await collectionsStore.fetchRecords(
@@ -44,7 +44,11 @@ async function loadRecords() {
       pageSize,
       (page.value - 1) * pageSize
     );
-    records.value = result.records;
+    if (reset) {
+      records.value = result.records;
+    } else {
+      records.value = [...records.value, ...result.records];
+    }
     total.value = result.total;
   } finally {
     loadingMore.value = false;
@@ -56,7 +60,7 @@ async function loadMore() {
     return;
   }
   page.value++;
-  await loadRecords();
+  await loadRecords(false); // Don't reset, append
 }
 
 // Infinite scroll

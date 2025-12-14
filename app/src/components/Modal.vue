@@ -6,7 +6,8 @@
  * Provides consistent structure and behavior across the application.
  */
 import { ref, watch } from "vue";
-import { onKeyStroke, useFocusTrap } from "@vueuse/core";
+import { onKeyStroke } from "@vueuse/core";
+import { useFocusTrap } from "@vueuse/integrations/useFocusTrap";
 
 interface Props {
   /** Whether the modal is open */
@@ -29,12 +30,25 @@ const emit = defineEmits<Emits>();
 
 const modalRef = ref<HTMLElement>();
 
-// Focus trap for accessibility
-useFocusTrap(modalRef, {
-  immediate: true,
+// Focus trap for accessibility - only active when modal is open
+const { activate, deactivate } = useFocusTrap(modalRef, {
+  immediate: false,
   escapeDeactivates: true,
   clickOutsideDeactivates: false,
 });
+
+// Activate/deactivate focus trap based on modal state
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen && modalRef.value) {
+      activate();
+    } else {
+      deactivate();
+    }
+  },
+  { immediate: true }
+);
 
 function close() {
   emit("update:open", false);

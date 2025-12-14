@@ -12,8 +12,10 @@
   },
   "dependencies": {
     "@vueuse/core": "^14.1.0",
+    "@vueuse/integrations": "^14.1.0",
     "axios": "^1.13.2",
     "chart.js": "^4.5.1",
+    "focus-trap": "^7",
     "lucide-vue-next": "^0.560.0",
     "pinia": "^2.2.4",
     "vee-validate": "^4.15.1",

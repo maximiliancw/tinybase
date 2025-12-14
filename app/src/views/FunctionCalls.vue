@@ -6,7 +6,7 @@
  * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, computed, h } from "vue";
-import { useTimeAgo, useDateFormat, useInfiniteScroll } from "@vueuse/core";
+import { useInfiniteScroll } from "@vueuse/core";
 import { useFunctionsStore } from "../stores/functions";
 import DataTable from "../components/DataTable.vue";
 
@@ -22,14 +22,17 @@ const filters = ref({
   trigger_type: "",
 });
 
+// Local ref for infinite scroll (appends instead of replacing)
+const displayedCalls = ref<any[]>([]);
+
 const scrollContainer = ref<HTMLElement>();
 
 onMounted(async () => {
-  await loadCalls();
+  await loadCalls(true); // Reset on initial load
   await functionsStore.fetchFunctions();
 });
 
-async function loadCalls() {
+async function loadCalls(reset = false) {
   loadingMore.value = true;
   try {
     const result = await functionsStore.fetchFunctionCalls({
@@ -37,6 +40,11 @@ async function loadCalls() {
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
     });
+    if (reset) {
+      displayedCalls.value = result.calls;
+    } else {
+      displayedCalls.value = [...displayedCalls.value, ...result.calls];
+    }
     total.value = result.total;
   } finally {
     loadingMore.value = false;
@@ -48,7 +56,7 @@ async function loadMore() {
     return;
   }
   page.value++;
-  await loadCalls();
+  await loadCalls(false); // Don't reset, append
 }
 
 // Infinite scroll
@@ -62,7 +70,7 @@ useInfiniteScroll(
 
 async function applyFilters() {
   page.value = 1;
-  await loadCalls();
+  await loadCalls(true); // Reset when filters change
 }
 
 function getStatusType(
@@ -214,7 +222,7 @@ const functionCallColumns = computed(() => [
     </article>
 
     <!-- Empty State -->
-    <article v-else-if="functionsStore.functionCalls.length === 0">
+    <article v-else-if="displayedCalls.length === 0">
       <div data-empty data-empty-icon="📜">
         <p>No function calls yet</p>
         <p>
@@ -228,7 +236,7 @@ const functionCallColumns = computed(() => [
     <!-- Function Calls Table -->
     <article v-else ref="scrollContainer">
       <DataTable
-        :data="functionsStore.functionCalls"
+        :data="displayedCalls"
         :columns="functionCallColumns"
         :paginated="false"
         search-placeholder="Search function calls..."
@@ -247,9 +255,7 @@ const functionCallColumns = computed(() => [
           Previous
         </button>
         <small class="text-muted">
-          Page {{ page }} of {{ Math.ceil(total / pageSize) }} ({{
-            total
-          }}
+          Page {{ page }} of {{ Math.ceil(total / pageSize) }} ({{ total }}
           total)
         </small>
         <button
