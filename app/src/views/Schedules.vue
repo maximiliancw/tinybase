@@ -8,6 +8,7 @@
 import { onMounted, ref, watch, computed, h } from "vue";
 import { useToast } from "vue-toastification";
 import { useRoute } from "vue-router";
+import { useUrlSearchParams } from "@vueuse/core";
 import { useForm, Field } from "vee-validate";
 import {
   useFunctionsStore,
@@ -21,6 +22,10 @@ import DataTable from "../components/DataTable.vue";
 const toast = useToast();
 const route = useRoute();
 const functionsStore = useFunctionsStore();
+
+// URL search params for action=create
+const params = useUrlSearchParams("history");
+const action = computed(() => params.action as string | null);
 
 const showCreateModal = ref(false);
 const loadingSchema = ref(false);
@@ -72,12 +77,22 @@ watchForm(
   }
 );
 
+// Watch for action=create in URL
+watch(
+  action,
+  (newAction) => {
+    if (newAction === "create") {
+      showCreateModal.value = true;
+      // Clear the action param after opening modal
+      params.action = undefined;
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(async () => {
   await functionsStore.fetchSchedules();
   await functionsStore.fetchFunctions();
-  if (route.query.action === "create") {
-    showCreateModal.value = true;
-  }
 });
 
 function buildSchedulePayload(values: any) {

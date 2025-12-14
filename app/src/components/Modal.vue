@@ -5,7 +5,8 @@
  * Standardized modal component built on PicoCSS's dialog element.
  * Provides consistent structure and behavior across the application.
  */
-import { watch, onUnmounted } from "vue";
+import { ref, watch } from "vue";
+import { onKeyStroke, useFocusTrap } from "@vueuse/core";
 
 interface Props {
   /** Whether the modal is open */
@@ -26,46 +27,31 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
+const modalRef = ref<HTMLElement>();
+
+// Focus trap for accessibility
+useFocusTrap(modalRef, {
+  immediate: true,
+  escapeDeactivates: true,
+  clickOutsideDeactivates: false,
+});
+
 function close() {
   emit("update:open", false);
   emit("close");
 }
 
 // Watch for ESC key to close modal
-let cleanup: (() => void) | null = null;
-
-watch(
-  () => props.open,
-  (isOpen) => {
-    if (cleanup) {
-      cleanup();
-      cleanup = null;
-    }
-
-    if (isOpen) {
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          close();
-        }
-      };
-      document.addEventListener("keydown", handleEscape);
-      cleanup = () => {
-        document.removeEventListener("keydown", handleEscape);
-      };
-    }
-  }
-);
-
-onUnmounted(() => {
-  if (cleanup) {
-    cleanup();
+onKeyStroke("Escape", () => {
+  if (props.open) {
+    close();
   }
 });
 </script>
 
 <template>
   <dialog :open="open">
-    <article>
+    <article ref="modalRef">
       <header v-if="title || $slots.header">
         <h3 v-if="title && !$slots.header">{{ title }}</h3>
         <slot v-else name="header" />

@@ -7,13 +7,24 @@
  */
 import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { useBreakpoints } from "@vueuse/core";
 import { useAuthStore } from "./stores/auth";
 import { usePortalStore } from "./stores/portal";
+import { useNetworkStatus } from "./composables/useNetworkStatus";
 import Icon from "./components/Icon.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const portalStore = usePortalStore();
+const { status: networkStatus } = useNetworkStatus();
+
+// Responsive breakpoints for sidebar behavior
+const breakpoints = useBreakpoints({
+  mobile: 0,
+  tablet: 768,
+  desktop: 1024,
+});
+const isMobile = breakpoints.smaller("tablet");
 
 const isAuthPortal = computed(() => {
   return router.currentRoute.value.meta?.isAuthPortal === true;
@@ -177,6 +188,24 @@ function handleLogout() {
         </button>
       </footer>
     </aside>
+
+    <!-- Network Status Banner -->
+    <div
+      v-if="networkStatus.message"
+      :data-status="networkStatus.type"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        padding: var(--tb-spacing-sm) var(--tb-spacing-md);
+        text-align: center;
+        font-size: 0.875rem;
+      "
+    >
+      {{ networkStatus.message }}
+    </div>
 
     <!-- Main Content Area -->
     <main>

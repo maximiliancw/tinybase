@@ -5,8 +5,9 @@
  * Overview page with key metrics and quick navigation.
  * Features animated stat cards and refined layout with charts.
  */
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useToast } from "vue-toastification";
+import { useTimeAgo, useDateFormat } from "@vueuse/core";
 import { useCollectionsStore } from "../stores/collections";
 import { useFunctionsStore } from "../stores/functions";
 import { useUsersStore } from "../stores/users";
@@ -45,6 +46,11 @@ const metrics = ref({
 });
 const metricsLoading = ref(false);
 const metricsError = ref<string | null>(null);
+
+// Time utilities for metrics timestamps
+const metricsCollectedAt = computed(() => metrics.value.collected_at);
+const timeAgo = useTimeAgo(metricsCollectedAt);
+const formattedDate = useDateFormat(metricsCollectedAt, "YYYY-MM-DD HH:mm:ss");
 
 onMounted(async () => {
   // Show toast if admin was created
@@ -181,7 +187,7 @@ async function fetchMetrics() {
         <header>
           <h3>Collection Sizes</h3>
           <small v-if="metrics.collected_at" class="text-muted">
-            Updated {{ new Date(metrics.collected_at).toLocaleString() }}
+            Updated {{ timeAgo.value }} ({{ formattedDate.value }})
           </small>
         </header>
 
@@ -211,7 +217,7 @@ async function fetchMetrics() {
         <header>
           <h3>Function Statistics</h3>
           <small v-if="metrics.collected_at" class="text-muted">
-            Updated {{ new Date(metrics.collected_at).toLocaleString() }}
+            Updated {{ timeAgo.value }} ({{ formattedDate.value }})
           </small>
         </header>
 

@@ -5,9 +5,10 @@
  * List and manage data collections.
  * Uses semantic HTML elements following PicoCSS conventions.
  */
-import { onMounted, ref, computed, h } from "vue";
+import { onMounted, ref, computed, h, watch } from "vue";
 import { useToast } from "vue-toastification";
 import { useRoute } from "vue-router";
+import { useUrlSearchParams } from "@vueuse/core";
 import { useForm } from "vee-validate";
 import { useCollectionsStore } from "../stores/collections";
 import { useAuthStore } from "../stores/auth";
@@ -20,6 +21,10 @@ const toast = useToast();
 const route = useRoute();
 const collectionsStore = useCollectionsStore();
 const authStore = useAuthStore();
+
+// URL search params for action=create
+const params = useUrlSearchParams("history");
+const action = computed(() => params.action as string | null);
 
 const showCreateModal = ref(false);
 const defaultSchemaText =
@@ -61,11 +66,21 @@ const onSubmit = handleSubmit(async (values) => {
   }
 });
 
+// Watch for action=create in URL
+watch(
+  action,
+  (newAction) => {
+    if (newAction === "create" && authStore.isAdmin) {
+      showCreateModal.value = true;
+      // Clear the action param after opening modal
+      params.action = undefined;
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(async () => {
   await collectionsStore.fetchCollections();
-  if (route.query.action === "create" && authStore.isAdmin) {
-    showCreateModal.value = true;
-  }
 });
 
 async function handleDelete(name: string) {

@@ -8,15 +8,26 @@
 import { onMounted, ref, reactive, watch, computed } from "vue";
 import { useToast } from "vue-toastification";
 import { useForm, useField } from "vee-validate";
+import { useClipboard } from "@vueuse/core";
 import { api } from "../api";
 import { useAuthStore } from "../stores/auth";
 import { validationSchemas } from "../composables/useFormValidation";
+import { useTheme } from "../composables/useTheme";
 import Modal from "../components/Modal.vue";
 import Icon from "../components/Icon.vue";
 import FormField from "../components/FormField.vue";
 
 const toast = useToast();
 const authStore = useAuthStore();
+const { copy: copyToClipboard, copied } = useClipboard();
+const { isDark, toggleTheme } = useTheme();
+
+// Watch for clipboard copy success
+watch(copied, (isCopied) => {
+  if (isCopied) {
+    toast.success("Token copied to clipboard");
+  }
+});
 
 interface InstanceSettings {
   instance_name: string;
@@ -285,8 +296,7 @@ async function toggleTokenActive(tokenId: string, currentStatus: boolean) {
 }
 
 function copyTokenToClipboard(tokenValue: string) {
-  navigator.clipboard.writeText(tokenValue);
-  toast.success("Token copied to clipboard");
+  copyToClipboard(tokenValue);
 }
 
 function dismissNewToken() {
@@ -393,6 +403,18 @@ async function saveSettings() {
             />
             <small>The name displayed in the admin UI and API responses.</small>
           </label>
+          <label>
+            <input
+              type="checkbox"
+              :checked="isDark"
+              @change="toggleTheme()"
+              role="switch"
+            />
+            Dark Mode
+          </label>
+          <small class="text-muted">
+            Toggle between light and dark theme. Your preference is saved.
+          </small>
           <label for="server_timezone">
             Server Timezone
             <select id="server_timezone" v-model="settings.server_timezone">

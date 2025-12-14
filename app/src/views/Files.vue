@@ -5,9 +5,16 @@
  * Admin page for managing file storage.
  * Allows uploading, downloading, and deleting files.
  */
-import { onMounted, ref, computed, h } from "vue";
+import { onMounted, ref, computed, h, watch } from "vue";
 import { useToast } from "vue-toastification";
 import { useForm, Field } from "vee-validate";
+import {
+  useLocalStorage,
+  useTimeAgo,
+  useDateFormat,
+  useFileDialog,
+  useDropZone,
+} from "@vueuse/core";
 import { api } from "../api";
 import { validationSchemas } from "../composables/useFormValidation";
 import Modal from "../components/Modal.vue";
@@ -27,11 +34,23 @@ const loading = ref(true);
 const uploading = ref(false);
 const storageEnabled = ref(false);
 
-// Track uploaded files in component state
-const files = ref<FileInfo[]>([]);
+// Track uploaded files in component state with localStorage persistence
+const files = useLocalStorage<FileInfo[]>("tinybase_files", []);
+
+// Keep only last 100 files in storage
+watch(
+  files,
+  (newFiles) => {
+    if (newFiles.length > 100) {
+      files.value = newFiles.slice(0, 100);
+    }
+  },
+  { deep: true }
+);
 
 // Upload modal
 const showUploadModal = ref(false);
+const dropZoneRef = ref<HTMLElement>();
 
 const { handleSubmit, resetForm, setFieldValue } = useForm({
   validationSchema: validationSchemas.uploadFile,
@@ -41,21 +60,33 @@ const { handleSubmit, resetForm, setFieldValue } = useForm({
   },
 });
 
+// File dialog
+const { open: openFileDialog, onChange: onFileDialogChange } = useFileDialog({
+  accept: "*",
+  multiple: false,
+});
+
+onFileDialogChange((selectedFiles) => {
+  if (selectedFiles && selectedFiles.length > 0) {
+    setFieldValue("file", selectedFiles[0]);
+  }
+});
+
+// Drop zone for drag-and-drop
+const { isOverDropZone } = useDropZone(dropZoneRef, {
+  onDrop: (files) => {
+    if (files && files.length > 0) {
+      setFieldValue("file", files[0]);
+    }
+  },
+});
+
 // Manual key input
 const manualKey = ref("");
 const showKeyModal = ref(false);
 
 onMounted(async () => {
   await checkStorageStatus();
-  // Load files from localStorage if available
-  const stored = localStorage.getItem("tinybase_files");
-  if (stored) {
-    try {
-      files.value = JSON.parse(stored);
-    } catch {
-      // Ignore parse errors
-    }
-  }
 });
 
 async function checkStorageStatus() {
@@ -84,6 +115,10 @@ function handleFileSelect(event: Event) {
   }
 }
 
+function handleFileDialogClick() {
+  openFileDialog();
+}
+
 const onSubmit = handleSubmit(async (values) => {
   uploading.value = true;
 
@@ -110,9 +145,8 @@ const onSubmit = handleSubmit(async (values) => {
       uploaded_at: new Date().toISOString(),
     };
 
-    // Add to tracked files
+    // Add to tracked files (useLocalStorage will auto-save)
     files.value.unshift(fileInfo);
-    saveFilesToStorage();
 
     showUploadModal.value = false;
     toast.success(`File "${fileInfo.filename}" uploaded successfully`);
@@ -122,12 +156,6 @@ const onSubmit = handleSubmit(async (values) => {
     uploading.value = false;
   }
 });
-
-function saveFilesToStorage() {
-  // Keep only last 100 files
-  const toStore = files.value.slice(0, 100);
-  localStorage.setItem("tinybase_files", JSON.stringify(toStore));
-}
 
 async function downloadFile(key: string) {
   try {
@@ -162,9 +190,8 @@ async function deleteFile(key: string) {
   try {
     await api.delete(`/api/files/${encodeURIComponent(key)}`);
 
-    // Remove from tracked files
+    // Remove from tracked files (useLocalStorage will auto-save)
     files.value = files.value.filter((f) => f.key !== key);
-    saveFilesToStorage();
 
     toast.success("File deleted successfully");
   } catch (err: any) {
@@ -228,7 +255,33 @@ function formatFileSize(bytes: number): string {
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString();
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  // Use a simple format for now - composables can't be called in render functions
+  const now = Date.now();
+  const diff = now - date.getTime();
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  let timeAgo = "";
+  if (days > 0) timeAgo = `${days} day${days > 1 ? "s" : ""} ago`;
+  else if (hours > 0) timeAgo = `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  else if (minutes > 0)
+    timeAgo = `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+  else timeAgo = "just now";
+
+  const formattedDate = date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  return `${timeAgo} (${formattedDate})`;
 }
 
 function openKeyModal() {
@@ -328,8 +381,34 @@ async function handleKeyAction(action: "download" | "delete") {
     <!-- Upload Modal -->
     <Modal v-model:open="showUploadModal" title="Upload File">
       <form id="upload-form" @submit="onSubmit">
+        <div
+          ref="dropZoneRef"
+          :class="{ 'drop-zone-active': isOverDropZone }"
+          style="
+            border: 2px dashed var(--tb-border);
+            border-radius: var(--tb-radius);
+            padding: var(--tb-spacing-lg);
+            text-align: center;
+            margin-bottom: var(--tb-spacing-md);
+            transition: all 0.2s;
+          "
+        >
+          <p v-if="!isOverDropZone">Drag and drop a file here, or</p>
+          <p v-else style="color: var(--tb-primary); font-weight: 600">
+            Drop file here
+          </p>
+          <button
+            type="button"
+            class="secondary"
+            @click="handleFileDialogClick"
+            :disabled="uploading"
+            style="margin-top: var(--tb-spacing-sm)"
+          >
+            Browse Files
+          </button>
+        </div>
         <Field name="file" v-slot="{ field, errors, meta }">
-          <label for="field-file">
+          <label for="field-file" style="display: none">
             File
             <input
               id="field-file"
@@ -342,6 +421,13 @@ async function handleKeyAction(action: "download" | "delete") {
               {{ errors[0] }}
             </small>
           </label>
+          <small
+            v-if="meta.touched && errors[0]"
+            class="text-error"
+            style="display: block; margin-top: var(--tb-spacing-xs)"
+          >
+            {{ errors[0] }}
+          </small>
         </Field>
 
         <FormField
@@ -458,5 +544,10 @@ code {
   background: var(--tb-surface-1);
   padding: 0.125rem 0.25rem;
   border-radius: var(--tb-radius);
+}
+
+.drop-zone-active {
+  border-color: var(--tb-primary) !important;
+  background: var(--tb-primary-focus);
 }
 </style>

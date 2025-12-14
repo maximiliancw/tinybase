@@ -11,6 +11,7 @@
  */
 import { computed, ref, watch } from "vue";
 import type { VNode } from "vue";
+import { refDebounced, useBreakpoints } from "@vueuse/core";
 import Icon from "./Icon.vue";
 
 interface ActionButton {
@@ -56,10 +57,21 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const searchQuery = ref("");
+const debouncedSearchQuery = refDebounced(searchQuery, 300);
 const currentPage = ref(1);
 
+// Responsive breakpoints
+const breakpoints = useBreakpoints({
+  mobile: 0,
+  tablet: 768,
+  desktop: 1024,
+});
+const isMobile = breakpoints.smaller("tablet");
+const isTablet = breakpoints.between("tablet", "desktop");
+const isDesktop = breakpoints.greaterOrEqual("desktop");
+
 // Reset to page 1 when search query changes
-watch(searchQuery, () => {
+watch(debouncedSearchQuery, () => {
   currentPage.value = 1;
 });
 
@@ -75,13 +87,13 @@ const searchableColumns = computed(() => {
   );
 });
 
-// Filter data based on search query
+// Filter data based on debounced search query
 const filteredData = computed(() => {
-  if (!props.searchable || !searchQuery.value.trim()) {
+  if (!props.searchable || !debouncedSearchQuery.value.trim()) {
     return props.data;
   }
 
-  const query = searchQuery.value.toLowerCase().trim();
+  const query = debouncedSearchQuery.value.toLowerCase().trim();
 
   return props.data.filter((row) => {
     return searchableColumns.value.some((column) => {
@@ -205,7 +217,9 @@ function isVNode(value: any): value is VNode {
             v-model="searchQuery"
           />
           <small
-            v-if="searchQuery.trim() && filteredData.length !== data.length"
+            v-if="
+              debouncedSearchQuery.trim() && filteredData.length !== data.length
+            "
             class="text-muted"
           >
             Showing {{ filteredData.length }} of {{ data.length }} results

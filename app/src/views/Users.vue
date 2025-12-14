@@ -5,9 +5,10 @@
  * Manage user accounts (admin only).
  * Uses semantic HTML elements following PicoCSS conventions.
  */
-import { onMounted, ref, computed, h } from "vue";
+import { onMounted, ref, computed, h, watch } from "vue";
 import { useToast } from "vue-toastification";
 import { useRoute } from "vue-router";
+import { useUrlSearchParams } from "@vueuse/core";
 import { useForm, Field } from "vee-validate";
 import { useUsersStore } from "../stores/users";
 import { validationSchemas } from "../composables/useFormValidation";
@@ -18,6 +19,10 @@ import DataTable from "../components/DataTable.vue";
 const toast = useToast();
 const route = useRoute();
 const usersStore = useUsersStore();
+
+// URL search params for action=create
+const params = useUrlSearchParams("history");
+const action = computed(() => params.action as string | null);
 
 const showCreateModal = ref(false);
 
@@ -41,11 +46,21 @@ const onSubmit = handleSubmit(async (values) => {
   }
 });
 
+// Watch for action=create in URL
+watch(
+  action,
+  (newAction) => {
+    if (newAction === "create") {
+      showCreateModal.value = true;
+      // Clear the action param after opening modal
+      params.action = undefined;
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(async () => {
   await usersStore.fetchUsers();
-  if (route.query.action === "create") {
-    showCreateModal.value = true;
-  }
 });
 
 async function handleToggleAdmin(userId: string, currentStatus: boolean) {

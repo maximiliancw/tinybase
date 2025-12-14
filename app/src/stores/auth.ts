@@ -7,6 +7,7 @@
 
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
+import { useLocalStorage } from "@vueuse/core";
 import { api } from "../api";
 
 export interface User {
@@ -18,7 +19,7 @@ export interface User {
 
 export const useAuthStore = defineStore("auth", () => {
   // State
-  const token = ref<string | null>(localStorage.getItem("tinybase_token"));
+  const token = useLocalStorage<string | null>("tinybase_token", null);
   const user = ref<User | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -41,7 +42,6 @@ export const useAuthStore = defineStore("auth", () => {
       const data = response.data;
 
       token.value = data.token;
-      localStorage.setItem("tinybase_token", data.token);
 
       // Check if admin was auto-created
       if (data.admin_created) {
@@ -78,7 +78,6 @@ export const useAuthStore = defineStore("auth", () => {
   function logout(): void {
     token.value = null;
     user.value = null;
-    localStorage.removeItem("tinybase_token");
   }
 
   function clearAdminCreated(): void {

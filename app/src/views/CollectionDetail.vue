@@ -8,6 +8,7 @@
 import { onMounted, ref, computed, h } from "vue";
 import { useToast } from "vue-toastification";
 import { useRoute } from "vue-router";
+import { useInfiniteScroll } from "@vueuse/core";
 import { useCollectionsStore, type Record } from "../stores/collections";
 import { useAuthStore } from "../stores/auth";
 import Modal from "../components/Modal.vue";
@@ -23,9 +24,12 @@ const records = ref<Record[]>([]);
 const total = ref(0);
 const page = ref(1);
 const pageSize = 20;
+const loadingMore = ref(false);
 
 const showCreateModal = ref(false);
 const newRecordData = ref("{}");
+
+const scrollContainer = ref<HTMLElement>();
 
 onMounted(async () => {
   await collectionsStore.fetchCollection(collectionName.value);
@@ -33,14 +37,36 @@ onMounted(async () => {
 });
 
 async function loadRecords() {
-  const result = await collectionsStore.fetchRecords(
-    collectionName.value,
-    pageSize,
-    (page.value - 1) * pageSize
-  );
-  records.value = result.records;
-  total.value = result.total;
+  loadingMore.value = true;
+  try {
+    const result = await collectionsStore.fetchRecords(
+      collectionName.value,
+      pageSize,
+      (page.value - 1) * pageSize
+    );
+    records.value = result.records;
+    total.value = result.total;
+  } finally {
+    loadingMore.value = false;
+  }
 }
+
+async function loadMore() {
+  if (loadingMore.value || page.value * pageSize >= total.value) {
+    return;
+  }
+  page.value++;
+  await loadRecords();
+}
+
+// Infinite scroll
+useInfiniteScroll(
+  scrollContainer,
+  () => {
+    loadMore();
+  },
+  { distance: 10 }
+);
 
 async function handleCreateRecord() {
   try {
@@ -189,7 +215,7 @@ const recordColumns = computed(() => {
       </div>
 
       <!-- Records Table -->
-      <div v-else>
+      <div v-else ref="scrollContainer">
         <DataTable
           :data="records"
           :columns="recordColumns"
