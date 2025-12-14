@@ -50,11 +50,36 @@ function handleLogout() {
   >
     <!-- Sidebar Navigation -->
     <aside v-if="showSidebar" class="sidebar">
-      <header>
-        <div class="logo">
-          <Icon name="Box" :size="24" />
+      <header
+        style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: var(--tb-spacing-md);
+            width: 100%;
+          "
+        >
+          <div class="logo">
+            <Icon name="Box" :size="24" />
+          </div>
+          <h1>{{ authStore.instanceName }}</h1>
         </div>
-        <h1>{{ authStore.instanceName }}</h1>
+        <div style="width: 100%; margin-top: var(--tb-spacing-lg)">
+          <small class="text-muted">
+            Logged in as
+            <b>{{ authStore.user?.email }}</b>
+            <mark v-if="authStore.isAdmin" data-status="info" class="badge">
+              Admin
+            </mark>
+          </small>
+        </div>
       </header>
 
       <nav aria-label="Main navigation">
@@ -141,23 +166,15 @@ function handleLogout() {
             </router-link>
           </li>
         </ul>
-
-        <ul>
-          <li>
-            <a href="#" @click.prevent="handleLogout">
-              <span class="nav-icon">
-                <Icon name="Logout" :size="20" />
-              </span>
-              Logout
-            </a>
-          </li>
-        </ul>
       </nav>
 
       <footer v-if="authStore.user">
-        <small class="text-muted">Logged in as</small>
-        <small class="user-email">{{ authStore.user.email }}</small>
-        <mark v-if="authStore.isAdmin" data-status="info">Admin</mark>
+        <button class="secondary small outline" @click.prevent="handleLogout">
+          <span class="nav-icon">
+            <Icon name="Logout" :size="20" />
+          </span>
+          Logout
+        </button>
       </footer>
     </aside>
 
