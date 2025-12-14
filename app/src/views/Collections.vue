@@ -148,9 +148,6 @@ const collectionColumns = computed(() => {
         <h1>Collections</h1>
         <p>Manage your data collections</p>
       </hgroup>
-      <button v-if="authStore.isAdmin" @click="showCreateModal = true">
-        + New Collection
-      </button>
     </header>
 
     <!-- Loading State -->
@@ -184,6 +181,17 @@ const collectionColumns = computed(() => {
         :columns="collectionColumns"
         :page-size="20"
         search-placeholder="Search collections..."
+        :header-action="
+          authStore.isAdmin
+            ? {
+                label: '+ New Collection',
+                action: () => {
+                  showCreateModal = true;
+                },
+                variant: 'primary',
+              }
+            : undefined
+        "
       />
     </article>
 

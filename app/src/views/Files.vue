@@ -308,9 +308,6 @@ async function handleKeyAction(action: "download" | "delete") {
       </hgroup>
       <div class="header-actions">
         <button class="secondary" @click="openKeyModal">Access by Key</button>
-        <button v-if="storageEnabled" @click="openUploadModal">
-          Upload File
-        </button>
       </div>
     </header>
 
@@ -352,6 +349,17 @@ async function handleKeyAction(action: "download" | "delete") {
           :columns="fileColumns"
           :page-size="20"
           search-placeholder="Search files..."
+          :header-action="
+            storageEnabled
+              ? {
+                  label: 'Upload File',
+                  action: () => {
+                    openUploadModal();
+                  },
+                  variant: 'primary',
+                }
+              : undefined
+          "
         />
       </article>
 

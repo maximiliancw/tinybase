@@ -177,7 +177,6 @@ const recordColumns = computed(() => {
           Collection: <code>{{ collectionName }}</code>
         </p>
       </hgroup>
-      <button @click="showCreateModal = true">+ New Record</button>
     </header>
 
     <!-- Schema Info -->
@@ -225,6 +224,13 @@ const recordColumns = computed(() => {
           :columns="recordColumns"
           :paginated="false"
           search-placeholder="Search records..."
+          :header-action="{
+            label: '+ New Record',
+            action: () => {
+              showCreateModal = true;
+            },
+            variant: 'primary',
+          }"
         />
 
         <!-- Server-side Pagination -->

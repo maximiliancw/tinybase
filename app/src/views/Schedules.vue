@@ -256,7 +256,6 @@ const scheduleColumns = computed(() => [
         <h1>Schedules</h1>
         <p>Manage function schedules</p>
       </hgroup>
-      <button @click="showCreateModal = true">+ New Schedule</button>
     </header>
 
     <!-- Loading State -->
@@ -286,6 +285,13 @@ const scheduleColumns = computed(() => [
         :columns="scheduleColumns"
         :page-size="20"
         search-placeholder="Search schedules..."
+        :header-action="{
+          label: '+ New Schedule',
+          action: () => {
+            showCreateModal = true;
+          },
+          variant: 'primary',
+        }"
       />
     </article>
 
