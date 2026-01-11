@@ -131,3 +131,6 @@ exclude_lines = [
     "@abstractmethod",
 ]
 
+[tool.uv.sources]
+tinybase-sdk = { path = "./tinybase-sdk" }
+
