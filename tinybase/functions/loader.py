@@ -2,223 +2,134 @@
 Function module loader.
 
 Handles loading user-defined functions from the functions package directory.
-Supports uv's single-file script feature with inline dependencies using uv run --script.
+Uses uv run --script to extract metadata from functions running in isolated environments.
 """
 
-import importlib.util
+import json
 import logging
-import re
 import subprocess
-import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from tinybase.functions.core import FunctionMeta, get_global_registry
+from tinybase.utils import AuthLevel
 
-def _has_uv_inline_dependencies(file_path: Path) -> bool:
-    """
-    Check if a file has uv inline script dependencies.
-    
-    Looks for the dependency block format:
-    # /// script
-    # dependencies = [...]
-    # ///
-    
-    Args:
-        file_path: Path to the Python file
-    
-    Returns:
-        True if inline dependencies are found, False otherwise
-    """
+logger = logging.getLogger(__name__)
+
+
+def extract_function_metadata(file_path: Path) -> dict | None:
+    """Run script with --metadata to extract function info."""
     try:
-        content = file_path.read_text(encoding="utf-8")
-        # Pattern to match uv inline dependency block
-        pattern = r'# ///\s*script\s*\n(.*?)# ///'
-        match = re.search(pattern, content, re.DOTALL)
-        return match is not None
-    except Exception:
-        return False
-
-
-def _load_with_uv_dependencies(file_path: Path) -> bool:
-    """
-    Load a function file that has uv inline script dependencies.
-    
-    Extracts dependencies from the inline metadata block and installs them
-    using uv pip install to the current Python environment, then imports
-    the module normally.
-    
-    This approach ensures dependencies are available in the current process
-    when we import the module, which is necessary for the @register decorator
-    to work correctly with the global registry.
-    
-    Args:
-        file_path: Path to the Python file to load
-    
-    Returns:
-        True if the file was loaded successfully, False otherwise
-    """
-    logger = logging.getLogger(__name__)
-    
-    try:
-        # Extract dependencies from the inline metadata block
-        # Format: # /// script\n# dependencies = [...]\n# ///
-        
-        # Extract dependencies from the file
-        content = file_path.read_text(encoding="utf-8")
-        pattern = r'# ///\s*script\s*\n(.*?)# ///'
-        match = re.search(pattern, content, re.DOTALL)
-        
-        if not match:
-            return False
-        
-        deps_block = match.group(1)
-        deps_pattern = r'dependencies\s*=\s*\[(.*?)\]'
-        deps_match = re.search(deps_pattern, deps_block, re.DOTALL)
-        
-        if not deps_match:
-            return False
-        
-        deps_str = deps_match.group(1)
-        # Parse dependencies
-        deps = []
-        deps_str = re.sub(r'#.*$', '', deps_str, flags=re.MULTILINE)
-        
-        current_dep = ""
-        in_quotes = False
-        quote_char = None
-        
-        for char in deps_str:
-            if char in ('"', "'") and not in_quotes:
-                in_quotes = True
-                quote_char = char
-                current_dep += char
-            elif char == quote_char and in_quotes:
-                in_quotes = False
-                quote_char = None
-                current_dep += char
-            elif char == ',' and not in_quotes:
-                dep = current_dep.strip().strip('"\'')
-                if dep:
-                    deps.append(dep)
-                current_dep = ""
-            else:
-                current_dep += char
-        
-        if current_dep.strip():
-            dep = current_dep.strip().strip('"\'')
-            if dep:
-                deps.append(dep)
-        
-        if not deps:
-            return False
-        
-        # Install dependencies using uv pip install to the current environment
-        # uv will automatically detect the current Python environment (venv or system)
-        # This ensures they're available when we import the module
-        cmd = ["uv", "pip", "install"] + deps
         result = subprocess.run(
-            cmd,
+            ["uv", "run", "--script", str(file_path), "--metadata"],
             capture_output=True,
             text=True,
-            check=False,
+            timeout=60,  # Allow time for dependency installation
         )
-        
-        if result.returncode != 0:
-            logger.error(
-                f"Failed to install dependencies for {file_path.name}: "
-                f"{result.stderr}"
-            )
-            return False
-        
-        # Now import the module normally (dependencies are installed)
-        return _load_module_directly(file_path)
-        
+        if result.returncode == 0:
+            return json.loads(result.stdout)
+        else:
+            logger.error(f"Metadata extraction failed for {file_path}: {result.stderr}")
     except Exception as e:
-        logger.error(f"Error loading {file_path} with uv dependencies: {e}")
-        return False
+        logger.error(f"Failed to extract metadata from {file_path}: {e}")
+    return None
 
 
-def _load_module_directly(file_path: Path) -> bool:
+def prewarm_function_dependencies(file_path: Path) -> bool:
     """
-    Load a Python module directly without special dependency handling.
-    
-    Args:
-        file_path: Path to the Python file to load
-    
-    Returns:
-        True if the file was loaded successfully, False otherwise
+    Pre-install dependencies for a function to reduce first-call latency.
+
+    Uses `uv sync --script` to install dependencies in the function's isolated environment.
+    This is called at startup for all functions to ensure dependencies are ready.
     """
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    # Create a unique module name based on file path
-    module_name = f"tinybase_functions_{file_path.stem}"
-    
-    # Remove existing module if it was previously loaded
-    if module_name in sys.modules:
-        del sys.modules[module_name]
-    
     try:
-        # Load the module from file
-        spec = importlib.util.spec_from_file_location(module_name, file_path)
-        if spec is None or spec.loader is None:
+        result = subprocess.run(
+            ["uv", "sync", "--script", str(file_path)],
+            capture_output=True,
+            text=True,
+            timeout=120,  # Allow time for dependency installation
+        )
+        if result.returncode == 0:
+            logger.debug(f"Pre-warmed dependencies for {file_path.name}")
+            return True
+        else:
+            logger.warning(f"Failed to pre-warm {file_path.name}: {result.stderr}")
             return False
-        
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[module_name] = module
-        spec.loader.exec_module(module)
-        
-        return True
     except Exception as e:
-        logger.error(f"Error loading functions from {file_path}: {e}")
+        logger.warning(f"Error pre-warming {file_path}: {e}")
         return False
 
 
-def load_functions_from_file(file_path: str | Path) -> bool:
+def load_functions_from_directory(dir_path: Path) -> int:
     """
-    Load functions from a single Python file.
-    
-    The file is imported as a module, which triggers any @register
-    decorators to register their functions with the global registry.
-    
-    Supports uv's single-file script feature by detecting inline dependencies
-    and installing them using uv pip install before loading the module.
-    
-    Args:
-        file_path: Path to the Python file to load
-    
-    Returns:
-        True if the file was loaded successfully, False otherwise
+    Load all functions from directory via subprocess metadata extraction.
+
+    Process:
+    1. Extract metadata from each function file (parallel)
+    2. Register functions in the global registry
+    3. Pre-warm dependencies for all functions (parallel) to reduce latency
     """
-    file_path = Path(file_path)
-    
-    if not file_path.exists():
-        return False
-    
-    if not file_path.suffix == ".py":
-        return False
-    
-    # Check for uv inline dependencies
-    if _has_uv_inline_dependencies(file_path):
-        # Use uv to handle dependencies
-        return _load_with_uv_run_script(file_path)
-    else:
-        # No inline dependencies, load directly
-        return _load_module_directly(file_path)
+    registry = get_global_registry()
+    loaded = 0
+    function_files = [f for f in dir_path.glob("*.py") if not f.name.startswith("_")]
+
+    # Step 1: Extract metadata (parallel for faster startup)
+    metadata_map = {}
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        future_to_file = {
+            executor.submit(extract_function_metadata, py_file): py_file
+            for py_file in function_files
+        }
+
+        for future in as_completed(future_to_file):
+            py_file = future_to_file[future]
+            try:
+                metadata = future.result()
+                if metadata:
+                    metadata_map[py_file] = metadata
+            except Exception as e:
+                logger.error(f"Error extracting metadata from {py_file}: {e}")
+
+    # Step 2: Register functions
+    for py_file, metadata in metadata_map.items():
+        meta = FunctionMeta(
+            name=metadata["name"],
+            description=metadata.get("description"),
+            auth=AuthLevel(metadata.get("auth", "auth")),
+            tags=metadata.get("tags", []),
+            input_schema=metadata.get("input_schema"),
+            output_schema=metadata.get("output_schema"),
+            file_path=str(py_file),
+        )
+        registry.register(meta)
+        loaded += 1
+
+    # Step 3: Pre-warm dependencies (parallel, non-blocking)
+    logger.info(f"Pre-warming dependencies for {len(metadata_map)} function(s)...")
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [
+            executor.submit(prewarm_function_dependencies, py_file)
+            for py_file in metadata_map.keys()
+        ]
+        # Don't wait - let it run in background
+        # Functions will still work if pre-warming isn't complete
+
+    return loaded
 
 
 def ensure_functions_package(dir_path: Path) -> bool:
     """
     Ensure the functions directory exists and has an __init__.py file.
-    
+
     Args:
         dir_path: Path to the functions directory
-    
+
     Returns:
         True if the package is ready, False otherwise
     """
     # Create directory if it doesn't exist
     dir_path.mkdir(parents=True, exist_ok=True)
-    
+
     # Create __init__.py if it doesn't exist
     init_file = dir_path / "__init__.py"
     if not init_file.exists():
@@ -232,64 +143,30 @@ def ensure_functions_package(dir_path: Path) -> bool:
             "Example:\n"
             "    # /// script\n"
             "    # dependencies = [\n"
+            "    #   \"tinybase-sdk\",\n"
             "    #   \"requests>=2.31.0\",\n"
             "    # ]\n"
             "    # ///\n"
             '"""\n'
         )
-    
+
     return True
-
-
-def load_functions_from_directory(dir_path: str | Path) -> int:
-    """
-    Load functions from all Python files in the functions package directory.
-    
-    Ensures the directory is a proper Python package (has __init__.py).
-    Recursively searches for .py files and loads them as modules.
-    Files starting with underscore (_) are skipped.
-    
-    Args:
-        dir_path: Path to the functions directory
-    
-    Returns:
-        Number of files successfully loaded
-    """
-    dir_path = Path(dir_path)
-    
-    # Ensure the directory exists and is a package
-    if not ensure_functions_package(dir_path):
-        return 0
-    
-    loaded_count = 0
-    
-    # Find all Python files
-    for py_file in dir_path.rglob("*.py"):
-        # Skip __init__.py and private modules
-        if py_file.name.startswith("_"):
-            continue
-        
-        if load_functions_from_file(py_file):
-            loaded_count += 1
-    
-    return loaded_count
 
 
 def load_functions_from_settings() -> int:
     """
     Load functions from the functions package directory.
-    
+
     The functions_path setting specifies the directory containing function files.
     Each function should be in its own file within this package.
-    
+
     Returns:
         Total number of files loaded
     """
     from tinybase.config import settings
-    
+
     config = settings()
-    
+
     # Load from functions package directory only
     functions_path = Path(config.functions_path)
     return load_functions_from_directory(functions_path)
-
