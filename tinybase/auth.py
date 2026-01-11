@@ -9,6 +9,7 @@ import logging
 import secrets
 from datetime import datetime, timedelta
 from typing import Annotated
+from uuid import UUID
 
 import bcrypt
 from fastapi import Depends, HTTPException, status
