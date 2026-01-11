@@ -222,16 +222,16 @@ if __name__ == "__main__":
                         mock_result.stderr = ""
                         mock_subprocess.return_value = mock_result
 
-                            result = execute_function(
-                                meta=meta,
-                                payload=payload,
-                                session=session,
-                                user_id=None,
-                                is_admin=False,
-                                trigger_type=TriggerType.MANUAL,
-                            )
+                        result = execute_function(
+                            meta=meta,
+                            payload=payload,
+                            session=session,
+                            user_id=None,
+                            is_admin=False,
+                            trigger_type=TriggerType.MANUAL,
+                        )
 
-                        # Check that a call record was created
+                    # Check that a call record was created
                     from sqlmodel import select
 
                     call = session.exec(
