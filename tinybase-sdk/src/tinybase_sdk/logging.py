@@ -59,13 +59,20 @@ class StructuredLogger:
 
     def _log(self, level: str, message: str, **kwargs: Any) -> None:
         """Internal logging method with context."""
+        # Extract exc_info and stack_info if present (logging module handles these specially)
+        exc_info = kwargs.pop("exc_info", None)
+        stack_info = kwargs.pop("stack_info", None)
+        stacklevel = kwargs.pop("stacklevel", 1)
+
         extra = {
             "function_name": self.function_name,
             "request_id": self.request_id,
             "user_id": self.user_id,
             **kwargs,
         }
-        getattr(self.logger, level.lower())(message, extra=extra)
+        getattr(self.logger, level.lower())(
+            message, extra=extra, exc_info=exc_info, stack_info=stack_info, stacklevel=stacklevel
+        )
 
     def debug(self, message: str, **kwargs: Any) -> None:
         """Log debug message."""
