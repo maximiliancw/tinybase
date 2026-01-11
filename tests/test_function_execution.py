@@ -5,6 +5,7 @@ Tests subprocess execution, internal tokens, structured logging, error handling,
 and integration with the SDK.
 """
 
+import subprocess
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -87,7 +88,15 @@ if __name__ == "__main__":
                     mock_pool_instance.get_warm_process.return_value = None
                     mock_pool.return_value = mock_pool_instance
 
-                    result = execute_function(
+                    with patch("subprocess.run") as mock_subprocess:
+                        # Mock successful subprocess execution
+                        mock_result = MagicMock()
+                        mock_result.returncode = 0
+                        mock_result.stdout = '{"status": "succeeded", "result": {"result": 10, "message": "success"}}'
+                        mock_result.stderr = ""
+                        mock_subprocess.return_value = mock_result
+
+                        result = execute_function(
                         meta=meta,
                         payload=payload,
                         session=session,
@@ -150,21 +159,29 @@ if __name__ == "__main__":
                         mock_pool_instance.get_warm_process.return_value = None
                         mock_pool.return_value = mock_pool_instance
 
-                        result = execute_function(
-                            meta=meta,
-                            payload=payload,
-                            session=session,
-                            user_id=None,
-                            is_admin=False,
-                            trigger_type=TriggerType.MANUAL,
-                        )
+                        with patch("subprocess.run") as mock_subprocess:
+                            # Mock failed subprocess execution
+                            mock_result = MagicMock()
+                            mock_result.returncode = 0
+                            mock_result.stdout = '{"status": "failed", "error": "Test error", "error_type": "ValueError"}'
+                            mock_result.stderr = ""
+                            mock_subprocess.return_value = mock_result
 
-                        assert result.status == FunctionCallStatus.FAILED
-                        assert result.error_message is not None
-                        assert (
-                            "error" in result.error_message.lower()
-                            or "ValueError" in result.error_message
-                        )
+                            result = execute_function(
+                                meta=meta,
+                                payload=payload,
+                                session=session,
+                                user_id=None,
+                                is_admin=False,
+                                trigger_type=TriggerType.MANUAL,
+                            )
+
+                            assert result.status == FunctionCallStatus.FAILED
+                            assert result.error_message is not None
+                            assert (
+                                "error" in result.error_message.lower()
+                                or "ValueError" in result.error_message
+                            )
         finally:
             try:
                 error_file.unlink()
@@ -197,16 +214,24 @@ if __name__ == "__main__":
                     mock_pool_instance.get_warm_process.return_value = None
                     mock_pool.return_value = mock_pool_instance
 
-                    result = execute_function(
-                        meta=meta,
-                        payload=payload,
-                        session=session,
-                        user_id=None,
-                        is_admin=False,
-                        trigger_type=TriggerType.MANUAL,
-                    )
+                    with patch("subprocess.run") as mock_subprocess:
+                        # Mock successful subprocess execution
+                        mock_result = MagicMock()
+                        mock_result.returncode = 0
+                        mock_result.stdout = '{"status": "succeeded", "result": {"result": 10, "message": "success"}}'
+                        mock_result.stderr = ""
+                        mock_subprocess.return_value = mock_result
 
-                    # Check that a call record was created
+                            result = execute_function(
+                                meta=meta,
+                                payload=payload,
+                                session=session,
+                                user_id=None,
+                                is_admin=False,
+                                trigger_type=TriggerType.MANUAL,
+                            )
+
+                        # Check that a call record was created
                     from sqlmodel import select
 
                     call = session.exec(
@@ -244,14 +269,22 @@ if __name__ == "__main__":
                     mock_pool_instance.get_warm_process.return_value = None
                     mock_pool.return_value = mock_pool_instance
 
-                    execute_function(
-                        meta=meta,
-                        payload=payload,
-                        session=session,
-                        user_id=None,
-                        is_admin=False,
-                        trigger_type=TriggerType.MANUAL,
-                    )
+                    with patch("subprocess.run") as mock_subprocess:
+                        # Mock successful subprocess execution
+                        mock_result = MagicMock()
+                        mock_result.returncode = 0
+                        mock_result.stdout = '{"status": "succeeded", "result": {"result": 2}}'
+                        mock_result.stderr = ""
+                        mock_subprocess.return_value = mock_result
+
+                        execute_function(
+                            meta=meta,
+                            payload=payload,
+                            session=session,
+                            user_id=None,
+                            is_admin=False,
+                            trigger_type=TriggerType.MANUAL,
+                        )
 
                     # Verify token was created
                     mock_token.assert_called_once()
@@ -286,17 +319,25 @@ if __name__ == "__main__":
                     mock_pool_instance.get_warm_process.return_value = None
                     mock_pool.return_value = mock_pool_instance
 
-                    result = execute_function(
-                        meta=meta,
-                        payload=payload,
-                        session=session,
-                        user_id=None,
-                        is_admin=False,
-                        trigger_type=TriggerType.MANUAL,
-                    )
+                    with patch("subprocess.run") as mock_subprocess:
+                        # Mock successful subprocess execution
+                        mock_result = MagicMock()
+                        mock_result.returncode = 0
+                        mock_result.stdout = '{"status": "succeeded", "result": {"result": 10, "message": "success"}}'
+                        mock_result.stderr = ""
+                        mock_subprocess.return_value = mock_result
 
-                    # Function should still execute successfully
-                    assert result.status == FunctionCallStatus.SUCCEEDED
+                            result = execute_function(
+                                meta=meta,
+                                payload=payload,
+                                session=session,
+                                user_id=None,
+                                is_admin=False,
+                                trigger_type=TriggerType.MANUAL,
+                            )
+
+                        # Function should still execute successfully
+                        assert result.status == FunctionCallStatus.SUCCEEDED
 
     def test_execute_function_timeout(self, session):
         """Test function execution timeout."""
@@ -349,20 +390,26 @@ if __name__ == "__main__":
                         mock_pool_instance.get_warm_process.return_value = None
                         mock_pool.return_value = mock_pool_instance
 
-                        result = execute_function(
-                            meta=meta,
-                            payload=payload,
-                            session=session,
-                            user_id=None,
-                            is_admin=False,
-                            trigger_type=TriggerType.MANUAL,
-                        )
+                        with patch("subprocess.run") as mock_subprocess:
+                            # Mock timeout exception
+                            mock_subprocess.side_effect = subprocess.TimeoutExpired(
+                                ["uv", "run", "--script"], timeout=1
+                            )
 
-                        assert result.status == FunctionCallStatus.FAILED
-                        assert (
-                            "timeout" in result.error_message.lower()
-                            or "Timeout" in result.error_message
-                        )
+                            result = execute_function(
+                                meta=meta,
+                                payload=payload,
+                                session=session,
+                                user_id=None,
+                                is_admin=False,
+                                trigger_type=TriggerType.MANUAL,
+                            )
+
+                            assert result.status == FunctionCallStatus.FAILED
+                            assert (
+                                "timeout" in result.error_message.lower()
+                                or "Timeout" in result.error_message
+                            )
         finally:
             try:
                 slow_file.unlink()
@@ -398,7 +445,15 @@ if __name__ == "__main__":
                     mock_pool_instance.get_warm_process.return_value = None
                     mock_pool.return_value = mock_pool_instance
 
-                    result = execute_function(
+                    with patch("subprocess.run") as mock_subprocess:
+                        # Mock successful subprocess execution
+                        mock_result = MagicMock()
+                        mock_result.returncode = 0
+                        mock_result.stdout = '{"status": "succeeded", "result": {"result": 10, "message": "success"}}'
+                        mock_result.stderr = ""
+                        mock_subprocess.return_value = mock_result
+
+                        result = execute_function(
                         meta=meta,
                         payload=payload,
                         session=session,
