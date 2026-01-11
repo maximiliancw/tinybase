@@ -35,7 +35,9 @@ class TestCLIMetadataExtraction:
             sys.argv = ["script.py", "--metadata"]
             sys.stdout = StringIO()
 
-            run()
+            with pytest.raises(SystemExit) as exc_info:
+                run()
+            assert exc_info.value.code == 0
 
             output = sys.stdout.getvalue()
             metadata = json.loads(output)

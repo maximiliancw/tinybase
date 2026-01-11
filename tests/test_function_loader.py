@@ -6,6 +6,7 @@ Tests metadata extraction, parallel loading, and pre-warming.
 
 import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -52,15 +53,23 @@ if __name__ == "__main__":
             function_file = Path(f.name)
 
         try:
-            metadata = extract_function_metadata(function_file)
+            with patch("subprocess.run") as mock_subprocess:
+                # Mock successful metadata extraction
+                mock_result = MagicMock()
+                mock_result.returncode = 0
+                mock_result.stdout = '{"name": "test_function", "description": "Test", "auth": "auth", "tags": ["test"], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                mock_result.stderr = ""
+                mock_subprocess.return_value = mock_result
 
-            assert metadata is not None
-            assert metadata["name"] == "test_function"
-            assert metadata["description"] == "Test"
-            assert metadata["auth"] == "auth"
-            assert metadata["tags"] == ["test"]
-            assert metadata["input_schema"] is not None
-            assert metadata["output_schema"] is not None
+                metadata = extract_function_metadata(function_file)
+
+                assert metadata is not None
+                assert metadata["name"] == "test_function"
+                assert metadata["description"] == "Test"
+                assert metadata["auth"] == "auth"
+                assert metadata["tags"] == ["test"]
+                assert metadata["input_schema"] is not None
+                assert metadata["output_schema"] is not None
         finally:
             try:
                 function_file.unlink()
@@ -75,9 +84,17 @@ if __name__ == "__main__":
             invalid_file = Path(f.name)
 
         try:
-            metadata = extract_function_metadata(invalid_file)
-            # Should return None for invalid files
-            assert metadata is None
+            with patch("subprocess.run") as mock_subprocess:
+                # Mock failed subprocess execution
+                mock_result = MagicMock()
+                mock_result.returncode = 1
+                mock_result.stdout = ""
+                mock_result.stderr = "Syntax error"
+                mock_subprocess.return_value = mock_result
+
+                metadata = extract_function_metadata(invalid_file)
+                # Should return None for invalid files
+                assert metadata is None
         finally:
             try:
                 invalid_file.unlink()
@@ -92,9 +109,17 @@ if __name__ == "__main__":
             no_function_file = Path(f.name)
 
         try:
-            metadata = extract_function_metadata(no_function_file)
-            # Should return None if no function is registered
-            assert metadata is None
+            with patch("subprocess.run") as mock_subprocess:
+                # Mock subprocess that exits with code 1 (no function registered)
+                mock_result = MagicMock()
+                mock_result.returncode = 1
+                mock_result.stdout = ""
+                mock_result.stderr = "No function registered"
+                mock_subprocess.return_value = mock_result
+
+                metadata = extract_function_metadata(no_function_file)
+                # Should return None if no function is registered
+                assert metadata is None
         finally:
             try:
                 no_function_file.unlink()
@@ -125,10 +150,16 @@ if __name__ == "__main__":
             function_file = Path(f.name)
 
         try:
-            # Pre-warming should complete (may take time for first run)
-            result = prewarm_function_dependencies(function_file)
-            # Result may be True or False depending on whether dependencies are already installed
-            assert isinstance(result, bool)
+            with patch("subprocess.run") as mock_subprocess:
+                # Mock successful dependency pre-warming
+                mock_result = MagicMock()
+                mock_result.returncode = 0
+                mock_result.stdout = ""
+                mock_result.stderr = ""
+                mock_subprocess.return_value = mock_result
+
+                result = prewarm_function_dependencies(function_file)
+                assert result is True
         finally:
             try:
                 function_file.unlink()
@@ -181,18 +212,44 @@ if __name__ == "__main__":
             ignored_file = dir_path / "_private.py"
             ignored_file.write_text("print('ignored')")
 
-            # Load functions
-            loaded_count = load_functions_from_directory(dir_path)
+            # Mock subprocess calls for metadata extraction
+            with patch("subprocess.run") as mock_subprocess:
 
-            # Should load 2 functions (ignoring _private.py)
-            assert loaded_count == 2
+                def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                    mock_result = MagicMock()
+                    # Check if this is metadata extraction (--metadata flag)
+                    if isinstance(cmd, list) and "--metadata" in cmd:
+                        # Determine which function based on file path (last item in cmd)
+                        file_path = str(cmd[-1])
+                        if "func1" in file_path:
+                            mock_result.stdout = '{"name": "function_one", "description": "First function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                        elif "func2" in file_path:
+                            mock_result.stdout = '{"name": "function_two", "description": "Second function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                        else:
+                            mock_result.stdout = "{}"
+                        mock_result.returncode = 0
+                        mock_result.stderr = ""
+                    else:
+                        # For prewarm (uv sync)
+                        mock_result.returncode = 0
+                        mock_result.stdout = ""
+                        mock_result.stderr = ""
+                    return mock_result
 
-            # Verify functions are registered
-            registry = get_global_registry()
-            assert registry.get("function_one") is not None
-            assert registry.get("function_two") is not None
-            assert registry.get("function_one").description == "First function"
-            assert registry.get("function_two").description == "Second function"
+                mock_subprocess.side_effect = mock_subprocess_side_effect
+
+                # Load functions
+                loaded_count = load_functions_from_directory(dir_path)
+
+                # Should load 2 functions (ignoring _private.py)
+                assert loaded_count == 2
+
+                # Verify functions are registered
+                registry = get_global_registry()
+                assert registry.get("function_one") is not None
+                assert registry.get("function_two") is not None
+                assert registry.get("function_one").description == "First function"
+                assert registry.get("function_two").description == "Second function"
 
     def test_load_functions_from_empty_directory(self):
         """Test loading from empty directory."""
@@ -230,13 +287,39 @@ if __name__ == "__main__":
             invalid_file = dir_path / "invalid.py"
             invalid_file.write_text("invalid syntax {")
 
-            # Should load the valid function and skip the invalid one
-            loaded_count = load_functions_from_directory(dir_path)
+            # Mock subprocess calls
+            with patch("subprocess.run") as mock_subprocess:
 
-            assert loaded_count == 1
+                def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                    mock_result = MagicMock()
+                    if isinstance(cmd, list) and "--metadata" in cmd:
+                        file_path = str(cmd[-1])
+                        if "valid" in file_path:
+                            mock_result.stdout = '{"name": "valid_function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                            mock_result.returncode = 0
+                        else:
+                            # Invalid file fails
+                            mock_result.returncode = 1
+                            mock_result.stderr = "Syntax error"
+                        mock_result.stdout = (
+                            mock_result.stdout if mock_result.returncode == 0 else ""
+                        )
+                    else:
+                        # For prewarm
+                        mock_result.returncode = 0
+                        mock_result.stdout = ""
+                        mock_result.stderr = ""
+                    return mock_result
 
-            registry = get_global_registry()
-            assert registry.get("valid_function") is not None
+                mock_subprocess.side_effect = mock_subprocess_side_effect
+
+                # Should load the valid function and skip the invalid one
+                loaded_count = load_functions_from_directory(dir_path)
+
+                assert loaded_count == 1
+
+                registry = get_global_registry()
+                assert registry.get("valid_function") is not None
 
     def test_ensure_functions_package(self):
         """Test ensuring functions package exists."""
@@ -292,12 +375,40 @@ if __name__ == "__main__":
     run()
 """)
 
-            # Load functions (should use parallel extraction)
-            loaded_count = load_functions_from_directory(dir_path)
+            # Mock subprocess calls
+            with patch("subprocess.run") as mock_subprocess:
 
-            assert loaded_count == 5
+                def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                    mock_result = MagicMock()
+                    if isinstance(cmd, list) and "--metadata" in cmd:
+                        file_path = str(cmd[-1])
+                        # Extract function number from path
+                        func_num = None
+                        for j in range(5):
+                            if f"func{j}" in file_path:
+                                func_num = j
+                                break
+                        if func_num is not None:
+                            mock_result.stdout = f'{{"name": "function_{func_num}", "description": "Function {func_num}", "auth": "auth", "tags": [], "input_schema": {{"type": "object"}}, "output_schema": {{"type": "object"}}}}'
+                            mock_result.returncode = 0
+                        else:
+                            mock_result.returncode = 1
+                        mock_result.stderr = ""
+                    else:
+                        # For prewarm
+                        mock_result.returncode = 0
+                        mock_result.stdout = ""
+                        mock_result.stderr = ""
+                    return mock_result
 
-            # Verify all functions are registered
-            registry = get_global_registry()
-            for i in range(5):
-                assert registry.get(f"function_{i}") is not None
+                mock_subprocess.side_effect = mock_subprocess_side_effect
+
+                # Load functions (should use parallel extraction)
+                loaded_count = load_functions_from_directory(dir_path)
+
+                assert loaded_count == 5
+
+                # Verify all functions are registered
+                registry = get_global_registry()
+                for i in range(5):
+                    assert registry.get(f"function_{i}") is not None
