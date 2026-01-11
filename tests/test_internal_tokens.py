@@ -10,7 +10,7 @@ from uuid import uuid4
 import pytest
 from sqlmodel import Session, select
 
-from tinybase.auth import create_internal_token, get_auth_token
+from tinybase.auth import create_internal_token
 from tinybase.db.core import create_db_and_tables, get_engine
 from tinybase.db.models import AuthToken
 from tinybase.utils import utcnow
@@ -146,7 +146,7 @@ class TestInternalTokens:
         assert token.user_id is None  # Scheduled functions have no user
 
     def test_internal_token_can_be_validated(self, session):
-        """Test that internal token can be validated via get_auth_token."""
+        """Test that internal token can be validated."""
         user_id = uuid4()
 
         token_str = create_internal_token(
@@ -156,12 +156,15 @@ class TestInternalTokens:
             expires_minutes=5,
         )
 
-        # Token should be valid
-        validated_token = get_auth_token(session, token_str)
+        # Token should be valid - query directly
+        validated_token = session.exec(
+            select(AuthToken).where(AuthToken.token == token_str)
+        ).first()
 
         assert validated_token is not None
         assert validated_token.user_id == user_id
         assert validated_token.token == token_str
+        assert not validated_token.is_expired()
 
     def test_internal_token_multiple_tokens(self, session):
         """Test creating multiple internal tokens."""
@@ -184,8 +187,8 @@ class TestInternalTokens:
         assert token1 != token2
 
         # Both should be valid
-        validated1 = get_auth_token(session, token1)
-        validated2 = get_auth_token(session, token2)
+        validated1 = session.exec(select(AuthToken).where(AuthToken.token == token1)).first()
+        validated2 = session.exec(select(AuthToken).where(AuthToken.token == token2)).first()
 
         assert validated1 is not None
         assert validated2 is not None
@@ -212,8 +215,8 @@ class TestInternalTokens:
         )
 
         # Both tokens should be valid
-        validated1 = get_auth_token(session, token1)
-        validated2 = get_auth_token(session, token2)
+        validated1 = session.exec(select(AuthToken).where(AuthToken.token == token1)).first()
+        validated2 = session.exec(select(AuthToken).where(AuthToken.token == token2)).first()
 
         assert validated1 is not None
         assert validated2 is not None
