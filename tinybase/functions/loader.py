@@ -104,13 +104,18 @@ def load_functions_from_directory(dir_path: Path) -> int:
         registry.register(meta)
         loaded += 1
 
-    # Step 3: Pre-warm dependencies (parallel, non-blocking)
+    # Step 3: Pre-warm dependencies and add to cold start pool
     logger.info(f"Pre-warming dependencies for {len(metadata_map)} function(s)...")
+    from tinybase.functions.pool import get_pool
+
+    pool = get_pool()
     with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = [
-            executor.submit(prewarm_function_dependencies, py_file)
-            for py_file in metadata_map.keys()
-        ]
+        futures = []
+        for py_file in metadata_map.keys():
+            # Pre-warm dependencies
+            futures.append(executor.submit(prewarm_function_dependencies, py_file))
+            # Add to cold start pool
+            pool.prewarm_function(py_file)
         # Don't wait - let it run in background
         # Functions will still work if pre-warming isn't complete
 

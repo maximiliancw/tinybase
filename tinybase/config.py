@@ -102,6 +102,16 @@ class Settings(BaseSettings):
         default="json",
         description="Logging format: 'json' for structured logs, 'text' for human-readable",
     )
+    function_cold_start_pool_size: int = Field(
+        default=3,
+        ge=0,
+        description="Number of warm function processes to keep in pool (0 = disabled)",
+    )
+    function_cold_start_ttl_seconds: int = Field(
+        default=300,
+        ge=0,
+        description="Time to keep warm processes alive after last use (0 = disabled)",
+    )
 
     # Scheduler settings
     scheduler_enabled: bool = Field(default=True, description="Enable the background scheduler")

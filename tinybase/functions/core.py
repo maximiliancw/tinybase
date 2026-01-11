@@ -282,6 +282,12 @@ def execute_function(
     capture_logs = getattr(config, "function_logging_enabled", True)
     logs: list[dict[str, Any]] = []
 
+    # Check cold start pool for warm process (optimization)
+    from tinybase.functions.pool import get_pool
+
+    pool = get_pool()
+    warm_process = pool.get_warm_process(Path(meta.file_path))
+
     try:
         timeout_seconds = getattr(config, "scheduler_function_timeout_seconds", 1800)
         subprocess_result = subprocess.run(
@@ -291,6 +297,13 @@ def execute_function(
             text=True,
             timeout=timeout_seconds,
         )
+
+        # Return warm process to pool for reuse
+        if warm_process:
+            pool.return_warm_process(Path(meta.file_path), warm_process)
+        else:
+            # Mark as warm for future calls
+            pool.prewarm_function(Path(meta.file_path))
 
         # Parse structured logs from stderr if logging is enabled
         if capture_logs and subprocess_result.stderr:

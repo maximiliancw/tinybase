@@ -87,6 +87,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Starting scheduler...")
     await start_scheduler()
 
+    # Start function process pool for cold start optimization
+    from tinybase.functions.pool import get_pool
+
+    pool = get_pool()
+    pool.start()
+
     # Mark application as ready
     app.state.ready = True
     logger.info("TinyBase server started successfully")
@@ -101,6 +107,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await run_shutdown_hooks()
 
     await stop_scheduler()
+
+    # Stop function process pool
+    from tinybase.functions.pool import get_pool
+
+    pool = get_pool()
+    pool.stop()
+
     logger.info("TinyBase server stopped")
 
 
