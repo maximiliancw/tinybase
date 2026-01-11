@@ -4,12 +4,9 @@ Integration tests for end-to-end function execution workflow.
 Tests the complete flow from function registration to execution via API.
 """
 
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 from tests.utils import get_admin_token, get_user_token
 
@@ -19,7 +16,7 @@ class TestFunctionIntegration:
 
     def test_end_to_end_function_execution(self, client):
         """Test complete function execution workflow."""
-        admin_token = get_admin_token(client)
+        get_admin_token(client)
 
         # Create a function file
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -27,7 +24,7 @@ class TestFunctionIntegration:
 
             # Create function file
             func_file = functions_dir / "test_func.py"
-            func_file.write_text('''# /// script
+            func_file.write_text("""# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -43,7 +40,7 @@ def test_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-''')
+""")
 
             # Set functions path in config
             with patch("tinybase.config.settings") as mock_settings:
@@ -87,7 +84,7 @@ if __name__ == "__main__":
             functions_dir = Path(tmpdir)
 
             func_file = functions_dir / "history_test.py"
-            func_file.write_text('''# /// script
+            func_file.write_text("""# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -102,7 +99,7 @@ def test_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-''')
+""")
 
             with patch("tinybase.config.settings") as mock_settings:
                 mock_config = mock_settings.return_value
@@ -150,7 +147,7 @@ if __name__ == "__main__":
 
             # Create public function
             public_file = functions_dir / "public_func.py"
-            public_file.write_text('''# /// script
+            public_file.write_text("""# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -165,11 +162,11 @@ def public_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-''')
+""")
 
             # Create auth function
             auth_file = functions_dir / "auth_func.py"
-            auth_file.write_text('''# /// script
+            auth_file.write_text("""# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -184,11 +181,11 @@ def auth_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-''')
+""")
 
             # Create admin function
             admin_file = functions_dir / "admin_func.py"
-            admin_file.write_text('''# /// script
+            admin_file.write_text("""# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -203,7 +200,7 @@ def admin_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-''')
+""")
 
             with patch("tinybase.config.settings") as mock_settings:
                 mock_config = mock_settings.return_value
@@ -252,7 +249,7 @@ if __name__ == "__main__":
             functions_dir = Path(tmpdir)
 
             error_file = functions_dir / "error_func.py"
-            error_file.write_text('''# /// script
+            error_file.write_text("""# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -267,7 +264,7 @@ def error_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-''')
+""")
 
             with patch("tinybase.config.settings") as mock_settings:
                 mock_config = mock_settings.return_value
@@ -299,7 +296,7 @@ if __name__ == "__main__":
             functions_dir = Path(tmpdir)
 
             pydantic_file = functions_dir / "pydantic_func.py"
-            pydantic_file.write_text('''# /// script
+            pydantic_file.write_text("""# /// script
 # dependencies = [
 #   "tinybase-sdk",
 #   "pydantic>=2.0.0",
@@ -327,7 +324,7 @@ def pydantic_func(client, payload: InputModel) -> OutputModel:
 
 if __name__ == "__main__":
     run()
-''')
+""")
 
             with patch("tinybase.config.settings") as mock_settings:
                 mock_config = mock_settings.return_value

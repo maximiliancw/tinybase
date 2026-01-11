@@ -19,10 +19,9 @@ class TestCLIMetadataExtraction:
 
     def test_metadata_extraction_success(self, monkeypatch):
         """Test successful metadata extraction."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_function", description="Test", tags=["test"])
         def test_func(client, payload: dict) -> dict:
@@ -53,10 +52,9 @@ class TestCLIMetadataExtraction:
 
     def test_metadata_extraction_no_function(self, monkeypatch):
         """Test metadata extraction when no function is registered."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         original_argv = sys.argv
         original_exit = sys.exit
@@ -89,10 +87,9 @@ class TestCLIExecution:
 
     def test_execution_success_basic_types(self, monkeypatch):
         """Test successful execution with basic types."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func")
         def test_func(client, payload: dict) -> dict:
@@ -137,11 +134,10 @@ class TestCLIExecution:
 
     def test_execution_success_pydantic_model(self, monkeypatch):
         """Test successful execution with Pydantic models."""
+        import tinybase_sdk.decorator as decorator_module
         from pydantic import BaseModel
-        from tinybase_sdk.decorator import _registered_function
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         class InputModel(BaseModel):
             name: str
@@ -195,10 +191,9 @@ class TestCLIExecution:
 
     def test_execution_no_input_parameter(self, monkeypatch):
         """Test execution with no input parameter."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func")
         def test_func(client) -> dict:
@@ -243,10 +238,9 @@ class TestCLIExecution:
 
     def test_execution_error_handling(self, monkeypatch):
         """Test error handling during execution."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func")
         def test_func(client, payload: dict) -> dict:
@@ -292,10 +286,9 @@ class TestCLIExecution:
 
     def test_execution_no_function_registered(self, monkeypatch):
         """Test execution when no function is registered."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         original_argv = sys.argv
         original_stdin = sys.stdin
@@ -346,10 +339,9 @@ class TestCLIExecution:
 
     def test_execution_client_not_generated(self, monkeypatch):
         """Test execution when client is not generated."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func")
         def test_func(client, payload: dict) -> dict:
@@ -407,10 +399,9 @@ class TestCLIExecution:
 
     def test_execution_with_logging_enabled(self, monkeypatch):
         """Test execution with structured logging enabled."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func")
         def test_func(client, payload: dict) -> dict:
@@ -461,10 +452,9 @@ class TestCLIExecution:
 
     def test_execution_result_serialization(self, monkeypatch):
         """Test various result serialization formats."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         # Test with list result
         @register(name="test_func_list")

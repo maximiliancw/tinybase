@@ -6,8 +6,6 @@ Tests FunctionContext dataclass.
 
 from uuid import UUID, uuid4
 
-import pytest
-
 from tinybase_sdk.context import FunctionContext
 
 

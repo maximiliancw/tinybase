@@ -298,21 +298,21 @@ def create_internal_token(
 ) -> str:
     """
     Create a short-lived internal token for subprocess HTTP callbacks.
-    
+
     This token allows function subprocesses to make authenticated HTTP requests
     back to the TinyBase API. The token has the same permissions as the calling user.
-    
+
     Args:
         session: Database session.
         user_id: ID of the user (None for scheduled/system calls).
         is_admin: Whether the user has admin privileges.
         expires_minutes: Token expiration time in minutes (default: 5).
-    
+
     Returns:
         The token string to use for authentication.
     """
     expires_at = utcnow() + timedelta(minutes=expires_minutes)
-    
+
     # Create a temporary user if needed (for scheduled functions)
     if user_id is None:
         # For scheduled functions, we don't have a user
@@ -328,7 +328,7 @@ def create_internal_token(
             token=generate_token(),
             expires_at=expires_at,
         )
-    
+
     session.add(token)
     session.commit()
     session.refresh(token)

@@ -5,7 +5,6 @@ Tests subprocess execution, internal tokens, structured logging, error handling,
 and integration with the SDK.
 """
 
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -17,12 +16,9 @@ from tinybase.db.core import get_engine
 from tinybase.db.models import FunctionCall, FunctionCallStatus
 from tinybase.functions.core import (
     FunctionMeta,
-    FunctionRegistry,
     execute_function,
-    get_global_registry,
-    reset_global_registry,
 )
-from tinybase.utils import AuthLevel, TriggerType, utcnow
+from tinybase.utils import AuthLevel, TriggerType
 
 
 class TestFunctionExecution:
@@ -31,7 +27,7 @@ class TestFunctionExecution:
     @pytest.fixture
     def session(self):
         """Create a test database session."""
-        from tinybase.db.core import create_db_and_tables, get_engine
+        from tinybase.db.core import create_db_and_tables
 
         create_db_and_tables()
         engine = get_engine()
@@ -42,7 +38,7 @@ class TestFunctionExecution:
     def test_function_file(self):
         """Create a temporary function file for testing."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            function_code = '''# /// script
+            function_code = """# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -57,7 +53,7 @@ def test_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-'''
+"""
             f.write(function_code)
             f.flush()
             yield Path(f.name)
@@ -112,7 +108,7 @@ if __name__ == "__main__":
         """Test function execution with error."""
         # Create a function that raises an error
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            function_code = '''# /// script
+            function_code = """# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -127,7 +123,7 @@ def error_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-'''
+"""
             f.write(function_code)
             f.flush()
             error_file = Path(f.name)
@@ -168,7 +164,10 @@ if __name__ == "__main__":
 
                         assert result.status == FunctionCallStatus.FAILED
                         assert result.error_message is not None
-                        assert "error" in result.error_message.lower() or "ValueError" in result.error_message
+                        assert (
+                            "error" in result.error_message.lower()
+                            or "ValueError" in result.error_message
+                        )
         finally:
             try:
                 error_file.unlink()
@@ -306,7 +305,7 @@ if __name__ == "__main__":
         """Test function execution timeout."""
         # Create a function that hangs
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            function_code = '''# /// script
+            function_code = """# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -323,7 +322,7 @@ def slow_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-'''
+"""
             f.write(function_code)
             f.flush()
             slow_file = Path(f.name)
@@ -363,7 +362,10 @@ if __name__ == "__main__":
                         )
 
                         assert result.status == FunctionCallStatus.FAILED
-                        assert "timeout" in result.error_message.lower() or "Timeout" in result.error_message
+                        assert (
+                            "timeout" in result.error_message.lower()
+                            or "Timeout" in result.error_message
+                        )
         finally:
             try:
                 slow_file.unlink()

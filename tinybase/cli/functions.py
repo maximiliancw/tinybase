@@ -19,32 +19,24 @@ functions_app = typer.Typer(
 
 @functions_app.command("new")
 def functions_new(
-    name: Annotated[
-        str,
-        typer.Argument(help="Function name (snake_case)")
-    ],
+    name: Annotated[str, typer.Argument(help="Function name (snake_case)")],
     description: Annotated[
-        str,
-        typer.Option("--description", help="Function description")
+        str, typer.Option("--description", help="Function description")
     ] = "TODO: Add description",
     functions_dir: Annotated[
-        Path,
-        typer.Option("--dir", help="Functions directory (default: from config)")
+        Path, typer.Option("--dir", help="Functions directory (default: from config)")
     ] = Path("./functions"),
 ) -> None:
     """
     Create a new function with boilerplate code.
-    
+
     Creates a new function file in the functions/ package directory.
     """
     # Validate function name
     if not re.match(r"^[a-z][a-z0-9_]*$", name):
-        typer.echo(
-            "Error: Function name must be lowercase with underscores (snake_case)",
-            err=True
-        )
+        typer.echo("Error: Function name must be lowercase with underscores (snake_case)", err=True)
         raise typer.Exit(1)
-    
+
     # Use config functions_path if available, otherwise use provided dir
     try:
         config = settings()
@@ -52,12 +44,12 @@ def functions_new(
     except Exception:
         # If config can't be loaded, use provided dir or default
         functions_dir = functions_dir.resolve()
-    
+
     # Ensure functions directory exists
     if not functions_dir.exists():
         functions_dir.mkdir(parents=True)
         typer.echo(f"Created functions directory: {functions_dir}")
-    
+
     # Ensure __init__.py exists
     init_file = functions_dir / "__init__.py"
     if not init_file.exists():
@@ -69,14 +61,14 @@ def functions_new(
             "Each function file can use uv's single-file script feature to define inline dependencies.\n"
             '"""\n'
         )
-    
+
     # Create function file
     func_file = functions_dir / f"{name}.py"
-    
+
     if func_file.exists():
         typer.echo(f"Error: Function file already exists: {func_file}", err=True)
         raise typer.Exit(1)
-    
+
     # Check if function name is already registered (by checking other files)
     for py_file in functions_dir.glob("*.py"):
         if py_file.name.startswith("_"):
@@ -84,20 +76,17 @@ def functions_new(
         try:
             content = py_file.read_text()
             if f'name="{name}"' in content:
-                typer.echo(
-                    f"Error: Function '{name}' already exists in {py_file.name}",
-                    err=True
-                )
+                typer.echo(f"Error: Function '{name}' already exists in {py_file.name}", err=True)
                 raise typer.Exit(1)
         except Exception:
             pass
-    
+
     # Generate boilerplate
     camel_name = snake_to_camel(name)
     boilerplate = create_function_boilerplate(name, description)
-    
+
     func_file.write_text(boilerplate)
-    
+
     typer.echo(f"Created function '{name}' in {func_file}")
     typer.echo(f"  Edit the {camel_name}Input and {camel_name}Output classes to define your schema")
 
@@ -105,13 +94,12 @@ def functions_new(
 @functions_app.command("deploy")
 def functions_deploy(
     env: Annotated[
-        str,
-        typer.Option("--env", "-e", help="Environment name from tinybase.toml")
+        str, typer.Option("--env", "-e", help="Environment name from tinybase.toml")
     ] = "production",
 ) -> None:
     """
     Deploy functions to a remote TinyBase server.
-    
+
     Reads environment configuration from tinybase.toml and uploads
     the function code to the specified server.
     """
@@ -120,10 +108,9 @@ def functions_deploy(
     # 1. Read environment config from tinybase.toml
     # 2. Package the function files
     # 3. Upload to the remote server
-    
+
     typer.echo(f"Deploying functions to environment: {env}")
     typer.echo("")
     typer.echo("Note: Remote deployment is not yet implemented.")
     typer.echo("For now, deploy your functions manually by copying them to the server.")
     raise typer.Exit(1)
-

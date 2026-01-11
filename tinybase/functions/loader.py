@@ -148,8 +148,8 @@ def ensure_functions_package(dir_path: Path) -> bool:
             "Example:\n"
             "    # /// script\n"
             "    # dependencies = [\n"
-            "    #   \"tinybase-sdk\",\n"
-            "    #   \"requests>=2.31.0\",\n"
+            '    #   "tinybase-sdk",\n'
+            '    #   "requests>=2.31.0",\n'
             "    # ]\n"
             "    # ///\n"
             '"""\n'

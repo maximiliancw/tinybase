@@ -9,9 +9,9 @@ Provides endpoints for:
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, status
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
-from tinybase.auth import CurrentAdminUser, CurrentUser, CurrentUserOptional, DbSession
+from tinybase.auth import CurrentAdminUser, CurrentUserOptional, DbSession
 from tinybase.functions.core import execute_function, get_global_registry
 from tinybase.utils import AuthLevel, FunctionCallStatus, TriggerType
 
@@ -25,7 +25,7 @@ router = APIRouter(prefix="/functions", tags=["Functions"])
 
 class FunctionInfo(BaseModel):
     """Public function information."""
-    
+
     name: str = Field(description="Function name")
     description: str | None = Field(default=None, description="Function description")
     auth: AuthLevel = Field(description="Auth requirement")
@@ -34,7 +34,7 @@ class FunctionInfo(BaseModel):
 
 class FunctionCallResponse(BaseModel):
     """Function call response."""
-    
+
     call_id: str = Field(description="Unique call ID")
     status: FunctionCallStatus = Field(description="Execution status")
     result: Any = Field(default=None, description="Function result (if succeeded)")
@@ -57,7 +57,7 @@ class FunctionCallResponse(BaseModel):
 def list_functions(user: CurrentUserOptional) -> list[FunctionInfo]:
     """
     List all available functions.
-    
+
     Returns functions filtered by the user's access level:
     - Anonymous users: only "public" functions
     - Authenticated users: "public" and "auth" functions
@@ -65,7 +65,7 @@ def list_functions(user: CurrentUserOptional) -> list[FunctionInfo]:
     """
     registry = get_global_registry()
     functions = registry.all()
-    
+
     result = []
     for meta in functions.values():
         # Filter based on auth level
@@ -80,14 +80,16 @@ def list_functions(user: CurrentUserOptional) -> list[FunctionInfo]:
             # Only admins can see admin functions
             if user is None or not user.is_admin:
                 continue
-        
-        result.append(FunctionInfo(
-            name=meta.name,
-            description=meta.description,
-            auth=meta.auth,
-            tags=meta.tags,
-        ))
-    
+
+        result.append(
+            FunctionInfo(
+                name=meta.name,
+                description=meta.description,
+                auth=meta.auth,
+                tags=meta.tags,
+            )
+        )
+
     return result
 
 
@@ -106,20 +108,20 @@ def call_function(
 ) -> FunctionCallResponse:
     """
     Call a registered function.
-    
+
     The function is invoked with the provided payload, validated against
     the function's input model. A FunctionCall record is created to track
     the execution.
     """
     registry = get_global_registry()
     meta = registry.get(function_name)
-    
+
     if meta is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Function '{function_name}' not found",
         )
-    
+
     # Check authentication
     if meta.auth == AuthLevel.AUTH and user is None:
         raise HTTPException(
@@ -127,7 +129,7 @@ def call_function(
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     if meta.auth == AuthLevel.ADMIN:
         if user is None:
             raise HTTPException(
@@ -140,10 +142,10 @@ def call_function(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Admin access required",
             )
-    
+
     # Input validation will be done in the subprocess by the SDK
     # We just pass the payload through here
-    
+
     # Execute the function
     result = execute_function(
         meta=meta,
@@ -154,13 +156,13 @@ def call_function(
         trigger_type=TriggerType.MANUAL,
         request=request,
     )
-    
+
     # Handle failed execution
     if result.status == "failed":
         # Return error response but with 200 status
         # The actual error is in the response body
         pass
-    
+
     return FunctionCallResponse(
         call_id=result.call_id,
         status=result.status,
@@ -178,7 +180,7 @@ def call_function(
 
 class AdminFunctionInfo(FunctionInfo):
     """Extended function information for admins."""
-    
+
     module: str = Field(description="Python module name")
     file_path: str = Field(description="Source file path")
     last_loaded_at: str = Field(description="When function was last loaded")
@@ -189,7 +191,7 @@ class AdminFunctionInfo(FunctionInfo):
 
 class FunctionSchemaResponse(BaseModel):
     """Function schema information."""
-    
+
     name: str = Field(description="Function name")
     has_input_model: bool = Field(description="Whether function has input validation")
     has_output_model: bool = Field(description="Whether function has output schema")
@@ -209,19 +211,19 @@ def get_function_schema(
 ) -> FunctionSchemaResponse:
     """
     Get the JSON schema for a function's input and output models.
-    
+
     Returns the Pydantic model JSON schemas, which can be used to
     generate form UIs or validate input before calling.
     """
     registry = get_global_registry()
     meta = registry.get(function_name)
-    
+
     if meta is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Function '{function_name}' not found",
         )
-    
+
     # Check authentication
     if meta.auth == AuthLevel.AUTH and user is None:
         raise HTTPException(
@@ -229,7 +231,7 @@ def get_function_schema(
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     if meta.auth == AuthLevel.ADMIN:
         if user is None:
             raise HTTPException(
@@ -242,7 +244,7 @@ def get_function_schema(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Admin access required",
             )
-    
+
     return FunctionSchemaResponse(
         name=meta.name,
         has_input_model=meta.input_schema is not None,
@@ -261,12 +263,12 @@ def get_function_schema(
 def list_functions_admin(_admin: CurrentAdminUser) -> list[AdminFunctionInfo]:
     """
     List all functions with detailed information (admin only).
-    
+
     Returns extended metadata including module, file path, and timestamps.
     """
     registry = get_global_registry()
     functions = registry.all()
-    
+
     return [
         AdminFunctionInfo(
             name=meta.name,
@@ -282,4 +284,3 @@ def list_functions_admin(_admin: CurrentAdminUser) -> list[AdminFunctionInfo]:
         )
         for meta in functions.values()
     ]
-

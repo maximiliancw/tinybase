@@ -138,8 +138,12 @@ class PortalConfigResponse(BaseModel):
     primary_color: str | None = Field(default=None, description="Primary color")
     background_image_url: str | None = Field(default=None, description="Background image URL")
     registration_enabled: bool = Field(description="Whether registration is enabled")
-    login_redirect_url: str | None = Field(default=None, description="Default redirect URL after login")
-    register_redirect_url: str | None = Field(default=None, description="Default redirect URL after registration")
+    login_redirect_url: str | None = Field(
+        default=None, description="Default redirect URL after login"
+    )
+    register_redirect_url: str | None = Field(
+        default=None, description="Default redirect URL after registration"
+    )
 
 
 # =============================================================================

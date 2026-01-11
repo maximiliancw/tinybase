@@ -100,10 +100,9 @@ class TestRegisterDecorator:
     def test_register_basic_function(self):
         """Test registering a basic function with minimal metadata."""
         # Reset registry
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_function")
         def test_func(client, payload: dict):
@@ -119,10 +118,9 @@ class TestRegisterDecorator:
 
     def test_register_with_description(self):
         """Test registering with description."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func", description="A test function")
         def test_func(client, payload: dict):
@@ -133,10 +131,9 @@ class TestRegisterDecorator:
 
     def test_register_with_auth_level(self):
         """Test registering with different auth levels."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="public_func", auth="public")
         def public_func(client, payload: dict):
@@ -156,10 +153,9 @@ class TestRegisterDecorator:
 
     def test_register_with_tags(self):
         """Test registering with tags."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func", tags=["test", "example"])
         def test_func(client, payload: dict):
@@ -170,10 +166,9 @@ class TestRegisterDecorator:
 
     def test_register_with_basic_type_hints(self):
         """Test registering with basic type hints."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func")
         def test_func(client, payload: str) -> str:
@@ -185,10 +180,9 @@ class TestRegisterDecorator:
 
     def test_register_with_list_type_hints(self):
         """Test registering with list type hints."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func")
         def test_func(client, payload: list[str]) -> list[int]:
@@ -206,10 +200,9 @@ class TestRegisterDecorator:
 
     def test_register_with_pydantic_model(self):
         """Test registering with Pydantic models."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         class InputModel(BaseModel):
             name: str
@@ -236,10 +229,9 @@ class TestRegisterDecorator:
 
     def test_register_with_no_input(self):
         """Test registering function with no input parameter."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func")
         def test_func(client) -> dict:
@@ -251,10 +243,9 @@ class TestRegisterDecorator:
 
     def test_register_with_no_output_type_hint(self):
         """Test registering function with no return type hint."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func")
         def test_func(client, payload: dict):
@@ -265,10 +256,9 @@ class TestRegisterDecorator:
 
     def test_register_preserves_callable(self):
         """Test that the decorator preserves the original function."""
-        from tinybase_sdk.decorator import _registered_function
+        import tinybase_sdk.decorator as decorator_module
 
-        global _registered_function
-        _registered_function = None
+        decorator_module._registered_function = None
 
         @register(name="test_func")
         def test_func(client, payload: dict):

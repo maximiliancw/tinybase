@@ -6,11 +6,10 @@ Tests metadata extraction, parallel loading, and pre-warming.
 
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tinybase.functions.core import FunctionMeta, get_global_registry, reset_global_registry
+from tinybase.functions.core import get_global_registry, reset_global_registry
 from tinybase.functions.loader import (
     ensure_functions_package,
     extract_function_metadata,
@@ -32,7 +31,7 @@ class TestFunctionLoader:
     def test_extract_function_metadata_success(self):
         """Test successful metadata extraction."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            function_code = '''# /// script
+            function_code = """# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -47,7 +46,7 @@ def test_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-'''
+"""
             f.write(function_code)
             f.flush()
             function_file = Path(f.name)
@@ -105,7 +104,7 @@ if __name__ == "__main__":
     def test_prewarm_function_dependencies(self):
         """Test pre-warming function dependencies."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            function_code = '''# /// script
+            function_code = """# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -120,7 +119,7 @@ def test_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-'''
+"""
             f.write(function_code)
             f.flush()
             function_file = Path(f.name)
@@ -143,7 +142,7 @@ if __name__ == "__main__":
 
             # Create function files
             func1_file = dir_path / "func1.py"
-            func1_file.write_text('''# /// script
+            func1_file.write_text("""# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -158,10 +157,10 @@ def func1(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-''')
+""")
 
             func2_file = dir_path / "func2.py"
-            func2_file.write_text('''# /// script
+            func2_file.write_text("""# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -176,7 +175,7 @@ def func2(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-''')
+""")
 
             # Create a file that should be ignored
             ignored_file = dir_path / "_private.py"
@@ -211,7 +210,7 @@ if __name__ == "__main__":
 
             # Create one valid and one invalid function file
             valid_file = dir_path / "valid.py"
-            valid_file.write_text('''# /// script
+            valid_file.write_text("""# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -226,7 +225,7 @@ def valid_func(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-''')
+""")
 
             invalid_file = dir_path / "invalid.py"
             invalid_file.write_text("invalid syntax {")
@@ -276,7 +275,7 @@ if __name__ == "__main__":
             # Create multiple function files
             for i in range(5):
                 func_file = dir_path / f"func{i}.py"
-                func_file.write_text(f'''# /// script
+                func_file.write_text(f"""# /// script
 # dependencies = [
 #   "tinybase-sdk",
 # ]
@@ -291,7 +290,7 @@ def func{i}(client, payload: dict) -> dict:
 
 if __name__ == "__main__":
     run()
-''')
+""")
 
             # Load functions (should use parallel extraction)
             loaded_count = load_functions_from_directory(dir_path)

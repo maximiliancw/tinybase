@@ -41,9 +41,7 @@ class TestInternalTokens:
         assert len(token_str) > 0
 
         # Verify token exists in database
-        token = session.exec(
-            select(AuthToken).where(AuthToken.token == token_str)
-        ).first()
+        token = session.exec(select(AuthToken).where(AuthToken.token == token_str)).first()
 
         assert token is not None
         assert token.user_id is None
@@ -61,9 +59,7 @@ class TestInternalTokens:
         )
 
         # Verify token has user_id
-        token = session.exec(
-            select(AuthToken).where(AuthToken.token == token_str)
-        ).first()
+        token = session.exec(select(AuthToken).where(AuthToken.token == token_str)).first()
 
         assert token is not None
         assert token.user_id == user_id
@@ -80,9 +76,7 @@ class TestInternalTokens:
         )
 
         # Token should be created (admin flag is passed but stored in token context)
-        token = session.exec(
-            select(AuthToken).where(AuthToken.token == token_str)
-        ).first()
+        token = session.exec(select(AuthToken).where(AuthToken.token == token_str)).first()
 
         assert token is not None
         assert token.user_id == user_id
@@ -96,9 +90,7 @@ class TestInternalTokens:
             expires_minutes=10,
         )
 
-        token = session.exec(
-            select(AuthToken).where(AuthToken.token == token_str)
-        ).first()
+        token = session.exec(select(AuthToken).where(AuthToken.token == token_str)).first()
 
         assert token is not None
         # Expiration should be approximately 10 minutes from now
@@ -114,9 +106,7 @@ class TestInternalTokens:
             is_admin=False,
         )
 
-        token = session.exec(
-            select(AuthToken).where(AuthToken.token == token_str)
-        ).first()
+        token = session.exec(select(AuthToken).where(AuthToken.token == token_str)).first()
 
         assert token is not None
         # Should expire in approximately 5 minutes
@@ -133,9 +123,7 @@ class TestInternalTokens:
             expires_minutes=1,
         )
 
-        token = session.exec(
-            select(AuthToken).where(AuthToken.token == token_str)
-        ).first()
+        token = session.exec(select(AuthToken).where(AuthToken.token == token_str)).first()
 
         assert token is not None
         # Should expire in approximately 1 minute
@@ -152,9 +140,7 @@ class TestInternalTokens:
             expires_minutes=5,
         )
 
-        token = session.exec(
-            select(AuthToken).where(AuthToken.token == token_str)
-        ).first()
+        token = session.exec(select(AuthToken).where(AuthToken.token == token_str)).first()
 
         assert token is not None
         assert token.user_id is None  # Scheduled functions have no user

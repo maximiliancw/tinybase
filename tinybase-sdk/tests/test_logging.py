@@ -8,9 +8,6 @@ import json
 import logging
 import sys
 from io import StringIO
-from unittest.mock import patch
-
-import pytest
 
 from tinybase_sdk.logging import JSONFormatter, StructuredLogger
 

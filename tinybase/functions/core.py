@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from sqlmodel import Session
 
 from tinybase.db.models import FunctionCall
-from tinybase.utils import utcnow, FunctionCallStatus, TriggerType, AuthLevel
+from tinybase.utils import AuthLevel, FunctionCallStatus, TriggerType, utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class FunctionMeta(BaseModel):
     """
     Metadata for a registered function.
-    
+
     Attributes:
         name: Unique function name (used in URLs and scheduling)
         description: Human-readable description
@@ -39,7 +39,7 @@ class FunctionMeta(BaseModel):
         file_path: File path where the function is defined
         last_loaded_at: When the function was last loaded/registered
     """
-    
+
     name: str
     description: str | None = None
     auth: AuthLevel = AuthLevel.AUTH
@@ -48,7 +48,7 @@ class FunctionMeta(BaseModel):
     output_schema: dict[str, Any] | None = None
     file_path: str = ""
     last_loaded_at: datetime | None = None
-    
+
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         if self.last_loaded_at is None:
@@ -58,64 +58,64 @@ class FunctionMeta(BaseModel):
 class FunctionRegistry:
     """
     Central registry for TinyBase functions.
-    
+
     Manages the registration, lookup, and execution of server-side functions.
     Functions are registered using the @register decorator and can be invoked
     via HTTP or the scheduler.
     """
-    
+
     def __init__(self) -> None:
         """Initialize an empty registry."""
         self._functions: dict[str, FunctionMeta] = {}
-    
+
     def register(self, meta: FunctionMeta) -> None:
         """
         Register a function with its metadata.
-        
+
         Args:
             meta: Function metadata including the callable
         """
         self._functions[meta.name] = meta
-    
+
     def get(self, name: str) -> FunctionMeta | None:
         """
         Get metadata for a function by name.
-        
+
         Args:
             name: Function name
-        
+
         Returns:
             FunctionMeta or None if not found
         """
         return self._functions.get(name)
-    
+
     def all(self) -> dict[str, FunctionMeta]:
         """
         Get all registered functions.
-        
+
         Returns:
             Dictionary mapping function names to metadata
         """
         return self._functions.copy()
-    
+
     def names(self) -> list[str]:
         """
         Get all registered function names.
-        
+
         Returns:
             List of function names
         """
         return list(self._functions.keys())
-    
+
     def unregister(self, name: str) -> None:
         """
         Remove a function from the registry.
-        
+
         Args:
             name: Function name to remove
         """
         self._functions.pop(name, None)
-    
+
     def clear(self) -> None:
         """Clear all registered functions."""
         self._functions.clear()
@@ -148,7 +148,7 @@ def reset_global_registry() -> None:
 
 class FunctionCallResult(BaseModel):
     """Result of a function execution."""
-    
+
     call_id: str
     status: FunctionCallStatus
     result: Any = None
@@ -160,7 +160,7 @@ class FunctionCallResult(BaseModel):
 def _run_async_hook(coro: Any) -> None:
     """Run an async hook, handling existing event loops gracefully."""
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
         # We're in an async context, schedule it
         asyncio.ensure_future(coro)
     except RuntimeError:
@@ -401,4 +401,3 @@ def execute_function(
         error_type=error_type,
         duration_ms=duration_ms,
     )
-
