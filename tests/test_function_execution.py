@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
         payload = {"value": 5}
 
-        with patch("tinybase.functions.core.settings") as mock_settings:
+        with patch("tinybase.config.settings") as mock_settings:
             mock_config = MagicMock()
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
             payload = {}
 
-            with patch("tinybase.functions.core.settings") as mock_settings:
+            with patch("tinybase.config.settings") as mock_settings:
                 mock_config = MagicMock()
                 mock_config.server_port = 8000
                 mock_config.function_logging_enabled = False
@@ -185,7 +185,7 @@ if __name__ == "__main__":
 
         payload = {"value": 3}
 
-        with patch("tinybase.functions.core.settings") as mock_settings:
+        with patch("tinybase.config.settings") as mock_settings:
             mock_config = MagicMock()
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
@@ -232,7 +232,7 @@ if __name__ == "__main__":
 
         payload = {"value": 1}
 
-        with patch("tinybase.functions.core.settings") as mock_settings:
+        with patch("tinybase.config.settings") as mock_settings:
             mock_config = MagicMock()
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
@@ -272,7 +272,7 @@ if __name__ == "__main__":
 
         payload = {"value": 2}
 
-        with patch("tinybase.functions.core.settings") as mock_settings:
+        with patch("tinybase.config.settings") as mock_settings:
             mock_config = MagicMock()
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = True
@@ -337,7 +337,7 @@ if __name__ == "__main__":
 
             payload = {}
 
-            with patch("tinybase.functions.core.settings") as mock_settings:
+            with patch("tinybase.config.settings") as mock_settings:
                 mock_config = MagicMock()
                 mock_config.server_port = 8000
                 mock_config.function_logging_enabled = False
@@ -386,7 +386,7 @@ if __name__ == "__main__":
         payload = {"value": 4}
         user_id = uuid4()
 
-        with patch("tinybase.functions.core.settings") as mock_settings:
+        with patch("tinybase.config.settings") as mock_settings:
             mock_config = MagicMock()
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
