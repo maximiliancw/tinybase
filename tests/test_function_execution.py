@@ -327,17 +327,17 @@ if __name__ == "__main__":
                         mock_result.stderr = ""
                         mock_subprocess.return_value = mock_result
 
-                            result = execute_function(
-                                meta=meta,
-                                payload=payload,
-                                session=session,
-                                user_id=None,
-                                is_admin=False,
-                                trigger_type=TriggerType.MANUAL,
-                            )
+                        result = execute_function(
+                            meta=meta,
+                            payload=payload,
+                            session=session,
+                            user_id=None,
+                            is_admin=False,
+                            trigger_type=TriggerType.MANUAL,
+                        )
 
-                        # Function should still execute successfully
-                        assert result.status == FunctionCallStatus.SUCCEEDED
+                    # Function should still execute successfully
+                    assert result.status == FunctionCallStatus.SUCCEEDED
 
     def test_execute_function_timeout(self, session):
         """Test function execution timeout."""
