@@ -14,10 +14,7 @@ from sqlmodel import Session
 
 from tinybase.db.core import get_engine
 from tinybase.db.models import FunctionCall, FunctionCallStatus
-from tinybase.functions.core import (
-    FunctionMeta,
-    execute_function,
-)
+from tinybase.functions.core import FunctionMeta, execute_function
 from tinybase.utils import AuthLevel, TriggerType
 
 
@@ -82,10 +79,10 @@ if __name__ == "__main__":
             mock_config.scheduler_function_timeout_seconds = 30
             mock_settings.return_value = mock_config
 
-            with patch("tinybase.functions.core.create_internal_token") as mock_token:
+            with patch("tinybase.auth.create_internal_token") as mock_token:
                 mock_token.return_value = "internal-token-123"
 
-                with patch("tinybase.functions.core.get_pool") as mock_pool:
+                with patch("tinybase.functions.pool.get_pool") as mock_pool:
                     mock_pool_instance = MagicMock()
                     mock_pool_instance.get_warm_process.return_value = None
                     mock_pool.return_value = mock_pool_instance
@@ -145,10 +142,10 @@ if __name__ == "__main__":
                 mock_config.scheduler_function_timeout_seconds = 30
                 mock_settings.return_value = mock_config
 
-                with patch("tinybase.functions.core.create_internal_token") as mock_token:
+                with patch("tinybase.auth.create_internal_token") as mock_token:
                     mock_token.return_value = "internal-token-123"
 
-                    with patch("tinybase.functions.core.get_pool") as mock_pool:
+                    with patch("tinybase.functions.pool.get_pool") as mock_pool:
                         mock_pool_instance = MagicMock()
                         mock_pool_instance.get_warm_process.return_value = None
                         mock_pool.return_value = mock_pool_instance
@@ -192,10 +189,10 @@ if __name__ == "__main__":
             mock_config.scheduler_function_timeout_seconds = 30
             mock_settings.return_value = mock_config
 
-            with patch("tinybase.functions.core.create_internal_token") as mock_token:
+            with patch("tinybase.auth.create_internal_token") as mock_token:
                 mock_token.return_value = "internal-token-123"
 
-                with patch("tinybase.functions.core.get_pool") as mock_pool:
+                with patch("tinybase.functions.pool.get_pool") as mock_pool:
                     mock_pool_instance = MagicMock()
                     mock_pool_instance.get_warm_process.return_value = None
                     mock_pool.return_value = mock_pool_instance
@@ -239,10 +236,10 @@ if __name__ == "__main__":
             mock_config.scheduler_function_timeout_seconds = 30
             mock_settings.return_value = mock_config
 
-            with patch("tinybase.functions.core.create_internal_token") as mock_token:
+            with patch("tinybase.auth.create_internal_token") as mock_token:
                 mock_token.return_value = "internal-token-456"
 
-                with patch("tinybase.functions.core.get_pool") as mock_pool:
+                with patch("tinybase.functions.pool.get_pool") as mock_pool:
                     mock_pool_instance = MagicMock()
                     mock_pool_instance.get_warm_process.return_value = None
                     mock_pool.return_value = mock_pool_instance
@@ -281,10 +278,10 @@ if __name__ == "__main__":
             mock_config.scheduler_function_timeout_seconds = 30
             mock_settings.return_value = mock_config
 
-            with patch("tinybase.functions.core.create_internal_token") as mock_token:
+            with patch("tinybase.auth.create_internal_token") as mock_token:
                 mock_token.return_value = "internal-token-123"
 
-                with patch("tinybase.functions.core.get_pool") as mock_pool:
+                with patch("tinybase.functions.pool.get_pool") as mock_pool:
                     mock_pool_instance = MagicMock()
                     mock_pool_instance.get_warm_process.return_value = None
                     mock_pool.return_value = mock_pool_instance
@@ -344,10 +341,10 @@ if __name__ == "__main__":
                 mock_config.scheduler_function_timeout_seconds = 1  # Short timeout
                 mock_settings.return_value = mock_config
 
-                with patch("tinybase.functions.core.create_internal_token") as mock_token:
+                with patch("tinybase.auth.create_internal_token") as mock_token:
                     mock_token.return_value = "internal-token-123"
 
-                    with patch("tinybase.functions.core.get_pool") as mock_pool:
+                    with patch("tinybase.functions.pool.get_pool") as mock_pool:
                         mock_pool_instance = MagicMock()
                         mock_pool_instance.get_warm_process.return_value = None
                         mock_pool.return_value = mock_pool_instance
@@ -393,10 +390,10 @@ if __name__ == "__main__":
             mock_config.scheduler_function_timeout_seconds = 30
             mock_settings.return_value = mock_config
 
-            with patch("tinybase.functions.core.create_internal_token") as mock_token:
+            with patch("tinybase.auth.create_internal_token") as mock_token:
                 mock_token.return_value = "internal-token-123"
 
-                with patch("tinybase.functions.core.get_pool") as mock_pool:
+                with patch("tinybase.functions.pool.get_pool") as mock_pool:
                     mock_pool_instance = MagicMock()
                     mock_pool_instance.get_warm_process.return_value = None
                     mock_pool.return_value = mock_pool_instance
