@@ -91,6 +91,17 @@ class Settings(BaseSettings):
         default="./functions",
         description="Directory path for function modules (must be a Python package)",
     )
+    function_logging_enabled: bool = Field(
+        default=True, description="Enable structured logging for functions"
+    )
+    function_logging_level: str = Field(
+        default="INFO",
+        description="Default logging level for functions (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+    )
+    function_logging_format: str = Field(
+        default="json",
+        description="Logging format: 'json' for structured logs, 'text' for human-readable",
+    )
 
     # Scheduler settings
     scheduler_enabled: bool = Field(default=True, description="Enable the background scheduler")

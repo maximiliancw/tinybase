@@ -4,6 +4,7 @@ import json
 import sys
 
 from tinybase_sdk.decorator import get_registered_function
+from tinybase_sdk.logging import StructuredLogger
 
 
 def run():
@@ -29,8 +30,24 @@ def run():
     context_data = input_data["context"]
     payload_data = input_data["payload"]
 
+    # Initialize structured logger if enabled
+    logging_enabled = context_data.get("logging_enabled", True)
+    if logging_enabled:
+        logger = StructuredLogger(
+            function_name=context_data.get("function_name", "unknown"),
+            request_id=context_data.get("request_id", "unknown"),
+            user_id=context_data.get("user_id"),
+            level=context_data.get("logging_level", "INFO"),
+            format_type=context_data.get("logging_format", "json"),
+        )
+    else:
+        # Create a no-op logger
+        logger = None
+
     func = get_registered_function()
     if not func:
+        if logger:
+            logger.error("No function registered")
         print(json.dumps({"error": "No function registered"}), file=sys.stderr)
         sys.exit(1)
 
@@ -53,6 +70,12 @@ def run():
 
     # Validate and execute
     try:
+        if logger:
+            logger.debug(
+                "Starting function execution",
+                payload_keys=list(payload_data.keys()) if isinstance(payload_data, dict) else None,
+            )
+
         input_type = func["input_type"]
 
         # Handle different input types
@@ -67,6 +90,9 @@ def run():
             # Basic type - use as-is (FastAPI will handle validation)
             result = func["callable"](client, payload_data)
 
+        if logger:
+            logger.info("Function execution completed successfully")
+
         # Serialize result
         if hasattr(result, "model_dump"):
             # Pydantic model
@@ -80,6 +106,13 @@ def run():
 
         print(json.dumps({"status": "succeeded", "result": output}))
     except Exception as e:
+        if logger:
+            logger.error(
+                "Function execution failed",
+                error=str(e),
+                error_type=type(e).__name__,
+                exc_info=True,
+            )
         print(
             json.dumps(
                 {

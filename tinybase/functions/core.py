@@ -262,6 +262,14 @@ def execute_function(
         "function_name": meta.name,
     }
 
+    # Add logging configuration if enabled
+    if getattr(config, "function_logging_enabled", True):
+        context_data["logging_enabled"] = True
+        context_data["logging_level"] = getattr(config, "function_logging_level", "INFO")
+        context_data["logging_format"] = getattr(config, "function_logging_format", "json")
+    else:
+        context_data["logging_enabled"] = False
+
     input_json = json.dumps({"context": context_data, "payload": payload_dict})
 
     # Execute in subprocess
@@ -269,6 +277,10 @@ def execute_function(
     error_message = None
     error_type = None
     status = FunctionCallStatus.SUCCEEDED
+
+    # Capture logs from stderr if logging is enabled
+    capture_logs = getattr(config, "function_logging_enabled", True)
+    logs: list[dict[str, Any]] = []
 
     try:
         timeout_seconds = getattr(config, "scheduler_function_timeout_seconds", 1800)
@@ -279,6 +291,25 @@ def execute_function(
             text=True,
             timeout=timeout_seconds,
         )
+
+        # Parse structured logs from stderr if logging is enabled
+        if capture_logs and subprocess_result.stderr:
+            for line in subprocess_result.stderr.strip().split("\n"):
+                if line.strip():
+                    try:
+                        log_entry = json.loads(line)
+                        logs.append(log_entry)
+                    except json.JSONDecodeError:
+                        # Not JSON, might be a regular error message
+                        if line.strip():
+                            logs.append(
+                                {
+                                    "level": "ERROR",
+                                    "message": line,
+                                    "function": meta.name,
+                                    "request_id": str(request_id),
+                                }
+                            )
 
         if subprocess_result.returncode != 0:
             # Subprocess failed
@@ -322,6 +353,20 @@ def execute_function(
     function_call.error_type = error_type
     session.add(function_call)
     session.commit()
+
+    # Log structured logs if captured
+    if capture_logs and logs:
+        for log_entry in logs:
+            log_level = log_entry.get("level", "INFO").upper()
+            log_message = log_entry.get("message", "")
+            if log_level == "ERROR" or log_level == "CRITICAL":
+                logger.error(f"[{meta.name}] {log_message}", extra=log_entry)
+            elif log_level == "WARNING":
+                logger.warning(f"[{meta.name}] {log_message}", extra=log_entry)
+            elif log_level == "DEBUG":
+                logger.debug(f"[{meta.name}] {log_message}", extra=log_entry)
+            else:
+                logger.info(f"[{meta.name}] {log_message}", extra=log_entry)
 
     # Run function complete hooks (after execution)
     complete_event = FunctionCompleteEvent(
