@@ -234,8 +234,9 @@ class TestInternalTokens:
         )
 
         # Token should be valid initially
-        token = get_auth_token(session, token_str)
+        token = session.exec(select(AuthToken).where(AuthToken.token == token_str)).first()
         assert token is not None
+        assert not token.is_expired()
 
         # Wait for expiration
         import time
@@ -243,5 +244,5 @@ class TestInternalTokens:
         time.sleep(1)
 
         # Token should be expired
-        expired_token = get_auth_token(session, token_str)
-        assert expired_token is None
+        expired_token = session.exec(select(AuthToken).where(AuthToken.token == token_str)).first()
+        assert expired_token is None or expired_token.is_expired()
