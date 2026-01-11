@@ -14,13 +14,22 @@ A TinyBase function is:
 
 ## Defining Functions
 
-Functions are defined in individual files within the `functions/` package directory. Each function should live in its own file, allowing you to use uv's single-file script feature for inline dependencies.
+Functions are defined in individual files within the `functions/` package directory using the TinyBase SDK. Each function should live in its own file, allowing you to use uv's single-file script feature for inline dependencies.
+
+Functions execute in isolated subprocess environments, providing better isolation and automatic dependency management.
 
 ### Basic Structure
 
 ```python title="functions/my_function.py"
+# /// script
+# dependencies = [
+#   "tinybase-sdk",
+# ]
+# ///
+
 from pydantic import BaseModel
-from tinybase.functions import Context, register
+from tinybase_sdk import register
+from tinybase_sdk.cli import run
 
 
 class MyInput(BaseModel):
@@ -39,25 +48,30 @@ class MyOutput(BaseModel):
     name="my_function",           # Unique name (used in URLs)
     description="What it does",    # For documentation
     auth="auth",                   # Access level
-    input_model=MyInput,           # Input validation
-    output_model=MyOutput,         # Output schema
     tags=["category"],             # For grouping
 )
-def my_function(ctx: Context, payload: MyInput) -> MyOutput:
+def my_function(client, payload: MyInput) -> MyOutput:
     """Implementation goes here."""
+    # Use client to make API calls back to TinyBase if needed
     return MyOutput(result=f"Got {payload.param1}", success=True)
+
+
+if __name__ == "__main__":
+    run()
 ```
 
 ### The @register Decorator
+
+The SDK's `@register` decorator automatically extracts type hints from your function signature to generate JSON schemas for input and output validation.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `name` | `str` | Unique function identifier |
 | `description` | `str` | Human-readable description |
 | `auth` | `str` | Access level: `"public"`, `"auth"`, `"admin"` |
-| `input_model` | `type[BaseModel]` | Pydantic model for input |
-| `output_model` | `type[BaseModel]` | Pydantic model for output |
 | `tags` | `list[str]` | Categorization tags |
+
+**Note:** Input and output schemas are automatically generated from Python type hints. You can use Pydantic models or basic types (str, int, dict, list, etc.).
 
 ### Authentication Levels
 
@@ -67,54 +81,49 @@ def my_function(ctx: Context, payload: MyInput) -> MyOutput:
 | `auth` | Any authenticated user |
 | `admin` | Admin users only |
 
-## The Context Object
+## The Client Object
 
-Every function receives a `Context` object with execution information:
+Every function receives a `Client` object that provides authenticated access to the TinyBase API:
 
 ```python
-@dataclass
-class Context:
-    # Execution metadata
-    function_name: str              # Name of this function
-    trigger_type: str               # "manual" or "schedule"
-    trigger_id: UUID | None         # Schedule ID if scheduled
-    request_id: UUID                # Unique execution ID
+from tinybase_sdk.client import Client
+
+# Client is automatically created and passed to your function
+def my_function(client: Client, payload: MyInput) -> MyOutput:
+    # Use client to make API calls
+    response = client.get("/api/collections")
+    collections = response.json()
     
-    # User information
-    user_id: UUID | None            # Current user (None for public/scheduled)
-    is_admin: bool                  # Admin status
-    
-    # Utilities
-    now: datetime                   # Current UTC time
-    db: Session                     # Database session
-    request: Request | None         # FastAPI request (manual triggers only)
+    return MyOutput(result="ok")
 ```
 
-### Using Context
+The client is pre-configured with:
+- Base URL pointing to the TinyBase API
+- Authentication token with the same permissions as the calling user
+- Automatic request/response handling
+
+### Structured Logging
+
+Functions can use structured logging for better observability:
 
 ```python
-@register(name="context_demo", auth="auth", ...)
-def context_demo(ctx: Context, payload: Input) -> Output:
-    # Access user info
-    if ctx.user_id:
-        print(f"Called by user: {ctx.user_id}")
+from tinybase_sdk import register, StructuredLogger
+
+@register(name="logged_function")
+def logged_function(client, payload: dict) -> dict:
+    # Logger is automatically available if logging is enabled
+    # Logs are sent to stderr in JSON format
+    logger = StructuredLogger(
+        function_name="logged_function",
+        request_id="...",  # Automatically provided
+        user_id="...",     # Automatically provided
+    )
     
-    # Check admin status
-    if ctx.is_admin:
-        # Do admin-only things
-        pass
+    logger.info("Processing request", extra_data=payload)
+    logger.debug("Debug information")
+    logger.error("Error occurred", exc_info=True)
     
-    # Database operations
-    users = ctx.db.exec(select(User)).all()
-    
-    # Check trigger type
-    if ctx.trigger_type == "schedule":
-        print(f"Running scheduled task: {ctx.trigger_id}")
-    
-    # Get current time
-    print(f"Execution time: {ctx.now}")
-    
-    return Output(...)
+    return {"result": "ok"}
 ```
 
 ## Input and Output Models
@@ -216,54 +225,40 @@ Response:
 }
 ```
 
-## Database Operations
+## API Operations
 
-Access the database through `ctx.db`:
+Access TinyBase resources through the `client` object:
 
 ```python
-from sqlmodel import select
-from tinybase.db.models import User, Record, Collection
-
-
-@register(name="user_stats", auth="admin", ...)
-def user_stats(ctx: Context, payload: Input) -> Output:
-    # Query users
-    users = ctx.db.exec(select(User)).all()
-    admin_count = sum(1 for u in users if u.is_admin)
+@register(name="user_stats", auth="admin")
+def user_stats(client, payload: dict) -> dict:
+    # Get collections
+    collections_response = client.get("/api/collections")
+    collections = collections_response.json()
     
-    # Query records
-    records = ctx.db.exec(select(Record)).all()
+    # Get users (admin endpoint)
+    users_response = client.get("/api/admin/users")
+    users = users_response.json()
     
-    # Use the CollectionService for collections
-    from tinybase.collections.service import CollectionService
-    service = CollectionService(ctx.db)
-    collections = service.list_collections()
-    
-    return Output(
-        total_users=len(users),
-        admin_users=admin_count,
-        total_records=len(records),
-        collections=len(collections)
-    )
+    return {
+        "total_users": len(users),
+        "total_collections": len(collections)
+    }
 ```
 
 ### Creating Records
 
 ```python
-@register(name="create_item", auth="auth", ...)
-def create_item(ctx: Context, payload: CreateInput) -> CreateOutput:
-    from tinybase.collections.service import CollectionService
-    
-    service = CollectionService(ctx.db)
-    collection = service.get_collection_by_name("items")
-    
-    record = service.create_record(
-        collection,
-        data={"title": payload.title, "value": payload.value},
-        owner_id=ctx.user_id
+@register(name="create_item", auth="auth")
+def create_item(client, payload: CreateInput) -> CreateOutput:
+    # Create a record via API
+    response = client.post(
+        "/api/collections/items/records",
+        json={"data": {"title": payload.title, "value": payload.value}}
     )
     
-    return CreateOutput(id=str(record.id))
+    record = response.json()
+    return CreateOutput(id=record["id"])
 ```
 
 ## Error Handling
@@ -328,11 +323,18 @@ Use the CLI to create new functions:
 tinybase functions new calculate_tax -d "Calculate tax for an order"
 ```
 
-This creates a new file `functions/calculate_tax.py`:
+This creates a new file `functions/calculate_tax.py` using the SDK format:
 
 ```python title="functions/calculate_tax.py"
+# /// script
+# dependencies = [
+#   "tinybase-sdk",
+# ]
+# ///
+
 from pydantic import BaseModel
-from tinybase.functions import Context, register
+from tinybase_sdk import register
+from tinybase_sdk.cli import run
 
 
 class CalculateTaxInput(BaseModel):
@@ -351,17 +353,19 @@ class CalculateTaxOutput(BaseModel):
     name="calculate_tax",
     description="Calculate tax for an order",
     auth="auth",
-    input_model=CalculateTaxInput,
-    output_model=CalculateTaxOutput,
     tags=[],
 )
-def calculate_tax(ctx: Context, payload: CalculateTaxInput) -> CalculateTaxOutput:
+def calculate_tax(client, payload: CalculateTaxInput) -> CalculateTaxOutput:
     """
     Calculate tax for an order
     
     TODO: Implement function logic
     """
     return CalculateTaxOutput()
+
+
+if __name__ == "__main__":
+    run()
 ```
 
 ## Organizing Functions
@@ -398,18 +402,20 @@ def create_order(ctx: Context, payload: CreateOrderInput) -> ...:
 
 ### Using uv's Single-File Script Feature
 
-Each function file can use uv's single-file script feature to define inline dependencies. This allows you to use third-party libraries without manually managing dependencies:
+Each function file uses uv's single-file script feature to define inline dependencies. This allows you to use third-party libraries without manually managing dependencies:
 
 ```python title="functions/send_email.py"
 # /// script
 # dependencies = [
+#   "tinybase-sdk",
 #   "requests>=2.31.0",
 #   "python-dotenv>=1.0.0",
 # ]
 # ///
 
 from pydantic import BaseModel
-from tinybase.functions import Context, register
+from tinybase_sdk import register
+from tinybase_sdk.cli import run
 import requests
 
 
@@ -428,11 +434,9 @@ class SendEmailOutput(BaseModel):
     name="send_email",
     description="Send an email using an external service",
     auth="auth",
-    input_model=SendEmailInput,
-    output_model=SendEmailOutput,
     tags=["communication"],
 )
-def send_email(ctx: Context, payload: SendEmailInput) -> SendEmailOutput:
+def send_email(client, payload: SendEmailInput) -> SendEmailOutput:
     """Send email using requests library."""
     response = requests.post(
         "https://api.example.com/send",
@@ -442,9 +446,13 @@ def send_email(ctx: Context, payload: SendEmailInput) -> SendEmailOutput:
         success=response.status_code == 200,
         message_id=response.json().get("id") if response.ok else None,
     )
+
+
+if __name__ == "__main__":
+    run()
 ```
 
-When TinyBase loads this function, it will automatically detect and install the dependencies using `uv pip install`. This makes it easy to use third-party libraries without managing a global dependency list.
+When TinyBase loads this function, it will automatically detect and install the dependencies using `uv`. Functions execute in isolated subprocess environments, ensuring dependency isolation and better security.
 
 ## Best Practices
 

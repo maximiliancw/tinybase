@@ -52,12 +52,24 @@ ptw -- tests/
 ```
 tests/
 ├── __init__.py
-├── conftest.py          # Shared fixtures
+├── conftest.py                    # Shared fixtures
 ├── test_access_control.py
 ├── test_basic.py
 ├── test_collections.py
-├── test_functions.py
+├── test_function_execution.py     # Function execution via subprocess
+├── test_function_integration.py   # End-to-end function workflows
+├── test_function_loader.py        # Function metadata extraction
+├── test_function_pool.py          # Cold start optimization
+├── test_functions.py              # Basic function tests
+├── test_internal_tokens.py        # Internal token generation
 └── test_settings.py
+
+tinybase-sdk/tests/                # SDK package tests
+├── __init__.py
+├── test_cli.py                    # CLI runner tests
+├── test_context.py                # Context dataclass tests
+├── test_decorator.py              # Decorator and type conversion tests
+└── test_logging.py                # Structured logging tests
 ```
 
 ## Fixtures
@@ -299,60 +311,88 @@ class TestAuthAPI:
 
 ### Function Tests
 
-Test registered functions:
+Test registered functions using the SDK:
 
 ```python
-"""Tests for function registration and execution."""
+"""Tests for function execution."""
+
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+
+from tinybase.functions.core import FunctionMeta, execute_function
+from tinybase.utils import AuthLevel, TriggerType
+
+
+class TestFunctionExecution:
+    """Tests for function execution."""
+    
+    def test_execute_function_success(self, session):
+        """Test successful function execution."""
+        # Create a temporary function file
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            function_code = """# /// script
+# dependencies = ["tinybase-sdk"]
+# ///
+from tinybase_sdk import register
+from tinybase_sdk.cli import run
+
+@register(name="test_function")
+def test_func(client, payload: dict) -> dict:
+    return {"result": payload.get("value", 0) * 2}
+
+if __name__ == "__main__":
+    run()
+"""
+            f.write(function_code)
+            f.flush()
+            function_file = Path(f.name)
+        
+        try:
+            meta = FunctionMeta(
+                name="test_function",
+                auth=AuthLevel.AUTH,
+                file_path=str(function_file),
+            )
+            
+            result = execute_function(
+                meta=meta,
+                payload={"value": 5},
+                session=session,
+            )
+            
+            assert result.status == FunctionCallStatus.SUCCEEDED
+            assert result.result["result"] == 10
+        finally:
+            function_file.unlink()
+```
+
+### SDK Tests
+
+Test the TinyBase SDK components:
+
+```python
+"""Tests for SDK decorator."""
 
 from pydantic import BaseModel
-
-from tinybase.functions import Context, register
-from tinybase.functions.core import get_global_registry
+from tinybase_sdk.decorator import get_registered_function, register
 
 
-class AddInput(BaseModel):
-    x: int
-    y: int
-
-
-class AddOutput(BaseModel):
-    sum: int
-
-
-@register(
-    name="test_add",
-    description="Test function",
-    auth="public",
-    input_model=AddInput,
-    output_model=AddOutput,
-)
-def test_add(ctx: Context, payload: AddInput) -> AddOutput:
-    return AddOutput(sum=payload.x + payload.y)
-
-
-class TestFunctionRegistration:
-    """Tests for function registration."""
+class TestDecorator:
+    """Test the @register decorator."""
     
-    def test_function_registered(self):
-        """Test that decorated function is registered."""
-        registry = get_global_registry()
-        meta = registry.get("test_add")
+    def test_register_basic_function(self):
+        """Test registering a basic function."""
+        import tinybase_sdk.decorator as decorator_module
+        decorator_module._registered_function = None
         
-        assert meta is not None
-        assert meta.name == "test_add"
-        assert meta.auth.value == "public"
-    
-    def test_function_execution(self, client):
-        """Test executing function via API."""
-        response = client.post("/api/functions/test_add", json={
-            "x": 5,
-            "y": 3,
-        })
+        @register(name="test_function")
+        def test_func(client, payload: dict) -> dict:
+            return {"result": "ok"}
         
-        assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "succeeded"
-        assert data["result"]["sum"] == 8
+        func = get_registered_function()
+        assert func["name"] == "test_function"
+        assert func["input_schema"] is not None
 ```
 
 ## Testing Patterns
