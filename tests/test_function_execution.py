@@ -97,13 +97,13 @@ if __name__ == "__main__":
                         mock_subprocess.return_value = mock_result
 
                         result = execute_function(
-                        meta=meta,
-                        payload=payload,
-                        session=session,
-                        user_id=None,
-                        is_admin=False,
-                        trigger_type=TriggerType.MANUAL,
-                    )
+                            meta=meta,
+                            payload=payload,
+                            session=session,
+                            user_id=None,
+                            is_admin=False,
+                            trigger_type=TriggerType.MANUAL,
+                        )
 
                     assert result.status == FunctionCallStatus.SUCCEEDED
                     assert result.result is not None
@@ -454,13 +454,13 @@ if __name__ == "__main__":
                         mock_subprocess.return_value = mock_result
 
                         result = execute_function(
-                        meta=meta,
-                        payload=payload,
-                        session=session,
-                        user_id=user_id,
-                        is_admin=True,
-                        trigger_type=TriggerType.MANUAL,
-                    )
+                            meta=meta,
+                            payload=payload,
+                            session=session,
+                            user_id=user_id,
+                            is_admin=True,
+                            trigger_type=TriggerType.MANUAL,
+                        )
 
                     assert result.status == FunctionCallStatus.SUCCEEDED
 
