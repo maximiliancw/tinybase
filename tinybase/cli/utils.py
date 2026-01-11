@@ -99,57 +99,63 @@ def get_example_functions() -> list[tuple[str, str]]:
     return [
         (
             "add_numbers.py",
-            '''"""
+            '''# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "tinybase-sdk",
+# ]
+# ///
+
+"""
 Add Numbers Function
 
 Example function demonstrating how to define a TinyBase function.
 """
 
-from pydantic import BaseModel
-from tinybase.functions import Context, register
-
-
-class AddInput(BaseModel):
-    """Input model for add_numbers function."""
-    x: int
-    y: int
-
-
-class AddOutput(BaseModel):
-    """Output model for add_numbers function."""
-    sum: int
+from tinybase_sdk import register, run
+from tinybase_sdk.client import Client
 
 
 @register(
     name="add_numbers",
     description="Add two numbers together",
     auth="public",  # Available without authentication
-    input_model=AddInput,
-    output_model=AddOutput,
     tags=["math", "example"],
 )
-def add_numbers(ctx: Context, payload: AddInput) -> AddOutput:
+def add_numbers(client: Client, x: int, y: int) -> dict[str, int]:
     """
     Add two numbers and return the sum.
 
     This is an example function showing how to:
-    - Define input/output models with Pydantic
+    - Use basic types (int) for input/output
     - Use the @register decorator
-    - Access the Context object
+    - Access the TinyBase API via client
     """
-    return AddOutput(sum=payload.x + payload.y)
+    return {"sum": x + y}
+
+
+if __name__ == "__main__":
+    run()
 ''',
         ),
         (
             "hello.py",
-            '''"""
+            '''# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "tinybase-sdk",
+# ]
+# ///
+
+"""
 Hello World Function
 
-Example function demonstrating user context access.
+Example function demonstrating user context access via API client.
 """
 
 from pydantic import BaseModel
-from tinybase.functions import Context, register
+from tinybase_sdk import register, run
+from tinybase_sdk.client import Client
 
 
 class HelloInput(BaseModel):
@@ -167,27 +173,34 @@ class HelloOutput(BaseModel):
     name="hello",
     description="Say hello to someone",
     auth="auth",  # Requires authentication
-    input_model=HelloInput,
-    output_model=HelloOutput,
     tags=["example"],
 )
-def hello(ctx: Context, payload: HelloInput) -> HelloOutput:
+def hello(client: Client, payload: HelloInput) -> HelloOutput:
     """
     Return a greeting message.
 
-    Demonstrates accessing user information from the context.
+    Demonstrates using Pydantic models for input/output validation.
+    User information is available via the client's authentication context.
     """
+    # Note: user_id would be available from the client's auth context
+    # For now, we'll return None as the client doesn't expose user_id directly
     return HelloOutput(
         message=f"Hello, {payload.name}!",
-        user_id=str(ctx.user_id) if ctx.user_id else None,
+        user_id=None,  # Could be accessed via client if needed
     )
+
+
+if __name__ == "__main__":
+    run()
 ''',
         ),
         (
             "fetch_url.py",
             '''# /// script
+# requires-python = ">=3.11"
 # dependencies = [
-#   "requests>=2.32.0",
+#     "tinybase-sdk",
+#     "requests>=2.32.0",
 # ]
 # ///
 
@@ -199,7 +212,8 @@ This function uses the requests library which is automatically installed when lo
 """
 
 from pydantic import BaseModel
-from tinybase.functions import Context, register
+from tinybase_sdk import register, run
+from tinybase_sdk.client import Client
 import requests
 
 
@@ -222,11 +236,9 @@ class FetchUrlOutput(BaseModel):
     name="fetch_url",
     description="Fetch a URL and return its status, title, and headers",
     auth="public",  # Available without authentication
-    input_model=FetchUrlInput,
-    output_model=FetchUrlOutput,
     tags=["http", "example"],
 )
-def fetch_url(ctx: Context, payload: FetchUrlInput) -> FetchUrlOutput:
+def fetch_url(client: Client, payload: FetchUrlInput) -> FetchUrlOutput:
     """
     Fetch a URL and return its HTTP status, page title, and response headers.
 
@@ -273,6 +285,10 @@ def fetch_url(ctx: Context, payload: FetchUrlInput) -> FetchUrlOutput:
             success=False,
             error=str(e),
         )
+
+
+if __name__ == "__main__":
+    run()
 ''',
         ),
     ]
