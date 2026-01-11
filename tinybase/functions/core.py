@@ -8,19 +8,17 @@ Provides:
 """
 
 import asyncio
-import inspect
+import json
 import logging
-import traceback
-from inspect import iscoroutinefunction
+import subprocess
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 from sqlmodel import Session
 
 from tinybase.db.models import FunctionCall
-from tinybase.functions.context import Context
 from tinybase.utils import utcnow, FunctionCallStatus, TriggerType, AuthLevel
 
 logger = logging.getLogger(__name__)
@@ -183,42 +181,43 @@ def execute_function(
     request: Any = None,
 ) -> FunctionCallResult:
     """
-    Execute a registered function and record the call.
-    
+    Execute a registered function via subprocess and record the call.
+
     This function:
     1. Creates a FunctionCall record with status "running"
     2. Runs on_function_call hooks
-    3. Builds the Context object
-    4. Validates and converts the input payload
-    5. Calls the underlying function
-    6. Updates the FunctionCall with results
-    7. Runs on_function_complete hooks
-    8. Returns the result or error information
-    
+    3. Creates internal token for subprocess HTTP callbacks
+    4. Executes function in subprocess via uv run --script
+    5. Updates the FunctionCall with results
+    6. Runs on_function_complete hooks
+    7. Returns the result or error information
+
     Args:
         meta: Function metadata
-        payload: Input data (dict or Pydantic model)
+        payload: Input data (dict)
         session: Database session
         user_id: ID of the user invoking the function
         is_admin: Whether the user has admin privileges
         trigger_type: How the function was triggered
         trigger_id: Schedule ID if scheduled
-        request: FastAPI Request object (for manual triggers)
-    
+        request: FastAPI Request object (for manual triggers, unused in subprocess)
+
     Returns:
         FunctionCallResult with execution status and result/error
     """
+    from tinybase.auth import create_internal_token
+    from tinybase.config import settings
     from tinybase.extensions.hooks import (
         FunctionCallEvent,
         FunctionCompleteEvent,
         run_function_call_hooks,
         run_function_complete_hooks,
     )
-    
+
     # Generate request ID for this execution
     request_id = uuid4()
     now = utcnow()
-    
+
     # Create function call record
     function_call = FunctionCall(
         id=request_id,
@@ -231,95 +230,90 @@ def execute_function(
     )
     session.add(function_call)
     session.commit()
-    
+
     # Run function call hooks (before execution)
     payload_dict = payload if isinstance(payload, dict) else {}
     if isinstance(payload, BaseModel):
         payload_dict = payload.model_dump()
-    
+
     call_event = FunctionCallEvent(
         function_name=meta.name,
         user_id=user_id,
         payload=payload_dict,
     )
     _run_async_hook(run_function_call_hooks(call_event))
-    
-    # Build context
-    ctx = Context(
-        function_name=meta.name,
-        trigger_type=trigger_type,
-        trigger_id=trigger_id,
-        request_id=request_id,
+
+    # Create internal token for subprocess to call back
+    config = settings()
+    internal_token = create_internal_token(
+        session=session,
         user_id=user_id,
         is_admin=is_admin,
-        now=now,
-        db=session,
-        request=request,
+        expires_minutes=5,
     )
-    
-    # Validate input if model is specified
-    validated_payload = None
-    if meta.input_model is not None:
-        if isinstance(payload, dict):
-            validated_payload = meta.input_model.model_validate(payload)
-        elif isinstance(payload, meta.input_model):
-            validated_payload = payload
-        else:
-            validated_payload = meta.input_model.model_validate(payload)
-    
-    # Execute the function
+
+    # Build context for subprocess (JSON-serializable)
+    context_data = {
+        "api_base_url": f"http://127.0.0.1:{config.server_port}/api",
+        "auth_token": internal_token,
+        "user_id": str(user_id) if user_id else None,
+        "is_admin": is_admin,
+        "request_id": str(request_id),
+        "function_name": meta.name,
+    }
+
+    input_json = json.dumps({"context": context_data, "payload": payload_dict})
+
+    # Execute in subprocess
     result = None
     error_message = None
     error_type = None
     status = FunctionCallStatus.SUCCEEDED
-    
+
     try:
-        if meta.callable is None:
-            raise ValueError(f"Function '{meta.name}' has no callable")
-        
-        # Call with or without payload based on input model
-        if validated_payload is not None:
-            raw_result = meta.callable(ctx, validated_payload)
-        elif meta.input_model is not None:
-            # Input model specified but no payload - use defaults
-            raw_result = meta.callable(ctx, meta.input_model())
+        timeout_seconds = getattr(config, "scheduler_function_timeout_seconds", 1800)
+        subprocess_result = subprocess.run(
+            ["uv", "run", "--script", meta.file_path],
+            input=input_json,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+
+        if subprocess_result.returncode != 0:
+            # Subprocess failed
+            status = FunctionCallStatus.FAILED
+            error_message = subprocess_result.stderr or "Function execution failed"
+            error_type = "SubprocessError"
         else:
-            # No input model - call with just context
-            raw_result = meta.callable(ctx)
-        
-        # Handle async functions
-        if asyncio.iscoroutine(raw_result):
-            # If we're already in an async context, await directly
-            # Otherwise, run in event loop
+            # Parse JSON output
             try:
-                loop = asyncio.get_running_loop()
-                # We're in an async context, need to run in executor
-                # Since we can't await from sync, schedule it
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, raw_result)
-                    result = future.result()
-            except RuntimeError:
-                # No running loop, we can use asyncio.run directly
-                result = asyncio.run(raw_result)
-        else:
-            result = raw_result
-        
-        # Convert result to dict if it's a Pydantic model
-        if isinstance(result, BaseModel):
-            result = result.model_dump()
-        
+                output = json.loads(subprocess_result.stdout)
+                if output.get("status") == "succeeded":
+                    result = output.get("result")
+                else:
+                    status = FunctionCallStatus.FAILED
+                    error_message = output.get("error", "Unknown error")
+                    error_type = output.get("error_type", "Error")
+            except json.JSONDecodeError as e:
+                status = FunctionCallStatus.FAILED
+                error_message = f"Failed to parse function output: {e}"
+                error_type = "JSONDecodeError"
+
+    except subprocess.TimeoutExpired:
+        status = FunctionCallStatus.FAILED
+        error_message = "Function execution timed out"
+        error_type = "TimeoutError"
     except Exception as e:
         status = FunctionCallStatus.FAILED
         error_message = str(e)
         error_type = type(e).__name__
-        # Log the full traceback for debugging
-        traceback.print_exc()
-    
+        logger.exception(f"Error executing function {meta.name}")
+
     # Calculate duration
     finished_at = utcnow()
     duration_ms = int((finished_at - now).total_seconds() * 1000)
-    
+
     # Update function call record
     function_call.status = status
     function_call.finished_at = finished_at
@@ -328,7 +322,7 @@ def execute_function(
     function_call.error_type = error_type
     session.add(function_call)
     session.commit()
-    
+
     # Run function complete hooks (after execution)
     complete_event = FunctionCompleteEvent(
         function_name=meta.name,
@@ -339,7 +333,7 @@ def execute_function(
         error_type=error_type,
     )
     _run_async_hook(run_function_complete_hooks(complete_event))
-    
+
     return FunctionCallResult(
         call_id=str(request_id),
         status=status,
