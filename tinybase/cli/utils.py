@@ -45,43 +45,52 @@ static_dir = "builtin"
 
 def create_function_boilerplate(name: str, description: str) -> str:
     """Generate boilerplate code for a new function."""
-    camel_name = snake_to_camel(name)
+    return f'''# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "tinybase-sdk",
+# ]
+# ///
 
-    return f'''"""
+"""
 {description}
 """
 
-from pydantic import BaseModel
-from tinybase.functions import Context, register
-
-
-class {camel_name}Input(BaseModel):
-    """Input model for {name} function."""
-    # TODO: Define input fields
-    pass
-
-
-class {camel_name}Output(BaseModel):
-    """Output model for {name} function."""
-    # TODO: Define output fields
-    pass
+from tinybase_sdk import register, run
+from tinybase_sdk.client import Client
 
 
 @register(
     name="{name}",
     description="{description}",
     auth="auth",
-    input_model={camel_name}Input,
-    output_model={camel_name}Output,
-    tags=[],
 )
-def {name}(ctx: Context, payload: {camel_name}Input) -> {camel_name}Output:
+def {name}(client: Client, payload: dict) -> dict:
     """
     {description}
 
     TODO: Implement function logic
+
+    You can use basic types (str, int, dict, list) or Pydantic models.
+    Example with basic types:
+        def {name}(client: Client, name: str, age: int) -> dict[str, str]:
+            return {{"greeting": f"Hello {{name}}, you are {{age}}"}}
+
+    Example with Pydantic:
+        from pydantic import BaseModel
+
+        class Input(BaseModel):
+            name: str
+            age: int
+
+        def {name}(client: Client, payload: Input) -> dict:
+            return {{"greeting": f"Hello {{payload.name}}"}}
     """
-    return {camel_name}Output()
+    return {{}}
+
+
+if __name__ == "__main__":
+    run()
 '''
 
 
