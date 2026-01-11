@@ -1,8 +1,7 @@
 """Function registration decorator for TinyBase SDK."""
 
-from pydantic import BaseModel
-from typing import Callable, Any, get_type_hints, get_origin, get_args
 import inspect
+from typing import Any, Callable, get_args, get_origin, get_type_hints
 
 # Global registry for this script
 _registered_function: dict | None = None
@@ -51,6 +50,7 @@ def register(
     tags: list[str] | None = None,
 ):
     """Register a function with metadata."""
+
     def decorator(func: Callable) -> Callable:
         global _registered_function
 
@@ -100,6 +100,7 @@ def register(
             "output_type": output_model,
         }
         return func
+
     return decorator
 
 

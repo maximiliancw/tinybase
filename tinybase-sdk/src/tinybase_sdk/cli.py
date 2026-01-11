@@ -2,7 +2,7 @@
 
 import json
 import sys
-from typing import Any
+
 from tinybase_sdk.decorator import get_registered_function
 
 
