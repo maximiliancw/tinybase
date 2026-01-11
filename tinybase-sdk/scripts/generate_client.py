@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 """Regenerate OpenAPI client from TinyBase API spec."""
-import subprocess
+
 import shutil
+import subprocess
 import sys
 import time
-import requests
 from pathlib import Path
+
+import requests
 
 
 def main():
