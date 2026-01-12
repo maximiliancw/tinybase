@@ -505,4 +505,4 @@ def test_portal_config(client):
     assert "registration_enabled" in data
     assert "logo_url" in data
     assert "primary_color" in data
-    assert "background_color" in data
+    assert "background_image_url" in data

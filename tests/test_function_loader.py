@@ -53,7 +53,7 @@ if __name__ == "__main__":
             function_file = Path(f.name)
 
         try:
-            with patch("subprocess.run") as mock_subprocess:
+            with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
                 # Mock successful metadata extraction
                 mock_result = MagicMock()
                 mock_result.returncode = 0
@@ -84,7 +84,7 @@ if __name__ == "__main__":
             invalid_file = Path(f.name)
 
         try:
-            with patch("subprocess.run") as mock_subprocess:
+            with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
                 # Mock failed subprocess execution
                 mock_result = MagicMock()
                 mock_result.returncode = 1
@@ -109,7 +109,7 @@ if __name__ == "__main__":
             no_function_file = Path(f.name)
 
         try:
-            with patch("subprocess.run") as mock_subprocess:
+            with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
                 # Mock subprocess that exits with code 1 (no function registered)
                 mock_result = MagicMock()
                 mock_result.returncode = 1
@@ -150,7 +150,7 @@ if __name__ == "__main__":
             function_file = Path(f.name)
 
         try:
-            with patch("subprocess.run") as mock_subprocess:
+            with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
                 # Mock successful dependency pre-warming
                 mock_result = MagicMock()
                 mock_result.returncode = 0
@@ -213,43 +213,46 @@ if __name__ == "__main__":
             ignored_file.write_text("print('ignored')")
 
             # Mock subprocess calls for metadata extraction
-            with patch("subprocess.run") as mock_subprocess:
+            with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
+                with patch("tinybase.functions.pool.get_pool") as mock_get_pool:
+                    mock_pool = MagicMock()
+                    mock_get_pool.return_value = mock_pool
 
-                def mock_subprocess_side_effect(cmd, *args, **kwargs):
-                    mock_result = MagicMock()
-                    # Check if this is metadata extraction (--metadata flag)
-                    if isinstance(cmd, list) and "--metadata" in cmd:
-                        # Determine which function based on file path (last item in cmd)
-                        file_path = str(cmd[-1])
-                        if "func1" in file_path:
-                            mock_result.stdout = '{"name": "function_one", "description": "First function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
-                        elif "func2" in file_path:
-                            mock_result.stdout = '{"name": "function_two", "description": "Second function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                    def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                        mock_result = MagicMock()
+                        # Check if this is metadata extraction (--metadata flag)
+                        if isinstance(cmd, list) and "--metadata" in cmd:
+                            # Determine which function based on file path (last item in cmd)
+                            file_path = str(cmd[-1])
+                            if "func1" in file_path:
+                                mock_result.stdout = '{"name": "function_one", "description": "First function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                            elif "func2" in file_path:
+                                mock_result.stdout = '{"name": "function_two", "description": "Second function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                            else:
+                                mock_result.stdout = "{}"
+                            mock_result.returncode = 0
+                            mock_result.stderr = ""
                         else:
-                            mock_result.stdout = "{}"
-                        mock_result.returncode = 0
-                        mock_result.stderr = ""
-                    else:
-                        # For prewarm (uv sync)
-                        mock_result.returncode = 0
-                        mock_result.stdout = ""
-                        mock_result.stderr = ""
-                    return mock_result
+                            # For prewarm (uv sync)
+                            mock_result.returncode = 0
+                            mock_result.stdout = ""
+                            mock_result.stderr = ""
+                        return mock_result
 
-                mock_subprocess.side_effect = mock_subprocess_side_effect
+                    mock_subprocess.side_effect = mock_subprocess_side_effect
 
-                # Load functions
-                loaded_count = load_functions_from_directory(dir_path)
+                    # Load functions
+                    loaded_count = load_functions_from_directory(dir_path)
 
-                # Should load 2 functions (ignoring _private.py)
-                assert loaded_count == 2
+                    # Should load 2 functions (ignoring _private.py)
+                    assert loaded_count == 2
 
-                # Verify functions are registered
-                registry = get_global_registry()
-                assert registry.get("function_one") is not None
-                assert registry.get("function_two") is not None
-                assert registry.get("function_one").description == "First function"
-                assert registry.get("function_two").description == "Second function"
+                    # Verify functions are registered
+                    registry = get_global_registry()
+                    assert registry.get("function_one") is not None
+                    assert registry.get("function_two") is not None
+                    assert registry.get("function_one").description == "First function"
+                    assert registry.get("function_two").description == "Second function"
 
     def test_load_functions_from_empty_directory(self):
         """Test loading from empty directory."""
@@ -288,46 +291,49 @@ if __name__ == "__main__":
             invalid_file.write_text("invalid syntax {")
 
             # Mock subprocess calls
-            with patch("subprocess.run") as mock_subprocess:
+            with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
+                with patch("tinybase.functions.pool.get_pool") as mock_get_pool:
+                    mock_pool = MagicMock()
+                    mock_get_pool.return_value = mock_pool
 
-                def mock_subprocess_side_effect(cmd, *args, **kwargs):
-                    mock_result = MagicMock()
-                    if isinstance(cmd, list) and "--metadata" in cmd:
-                        file_path = str(cmd[-1])
-                        if "valid" in file_path:
-                            mock_result.stdout = '{"name": "valid_function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
-                            mock_result.returncode = 0
+                    def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                        mock_result = MagicMock()
+                        if isinstance(cmd, list) and "--metadata" in cmd:
+                            file_path = str(cmd[-1])
+                            if "valid" in file_path:
+                                mock_result.stdout = '{"name": "valid_function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                mock_result.returncode = 0
+                            else:
+                                # Invalid file fails
+                                mock_result.returncode = 1
+                                mock_result.stderr = "Syntax error"
+                            mock_result.stdout = (
+                                mock_result.stdout if mock_result.returncode == 0 else ""
+                            )
                         else:
-                            # Invalid file fails
-                            mock_result.returncode = 1
-                            mock_result.stderr = "Syntax error"
-                        mock_result.stdout = (
-                            mock_result.stdout if mock_result.returncode == 0 else ""
-                        )
-                    else:
-                        # For prewarm
-                        mock_result.returncode = 0
-                        mock_result.stdout = ""
-                        mock_result.stderr = ""
-                    return mock_result
+                            # For prewarm
+                            mock_result.returncode = 0
+                            mock_result.stdout = ""
+                            mock_result.stderr = ""
+                        return mock_result
 
-                mock_subprocess.side_effect = mock_subprocess_side_effect
+                    mock_subprocess.side_effect = mock_subprocess_side_effect
 
-                # Should load the valid function and skip the invalid one
-                loaded_count = load_functions_from_directory(dir_path)
+                    # Should load the valid function and skip the invalid one
+                    loaded_count = load_functions_from_directory(dir_path)
 
-                assert loaded_count == 1
+                    assert loaded_count == 1
 
-                registry = get_global_registry()
-                assert registry.get("valid_function") is not None
+                    registry = get_global_registry()
+                    assert registry.get("valid_function") is not None
 
     def test_ensure_functions_package(self):
         """Test ensuring functions package exists."""
         with tempfile.TemporaryDirectory() as tmpdir:
             dir_path = Path(tmpdir)
 
-            # Directory doesn't exist yet
-            assert not dir_path.exists()
+            # TemporaryDirectory creates the directory, so it exists
+            assert dir_path.exists()
 
             result = ensure_functions_package(dir_path)
 
@@ -343,7 +349,7 @@ if __name__ == "__main__":
         """Test ensuring functions package when it already exists."""
         with tempfile.TemporaryDirectory() as tmpdir:
             dir_path = Path(tmpdir)
-            dir_path.mkdir()
+            # Directory already exists from TemporaryDirectory
 
             result = ensure_functions_package(dir_path)
 
@@ -376,39 +382,42 @@ if __name__ == "__main__":
 """)
 
             # Mock subprocess calls
-            with patch("subprocess.run") as mock_subprocess:
+            with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
+                with patch("tinybase.functions.pool.get_pool") as mock_get_pool:
+                    mock_pool = MagicMock()
+                    mock_get_pool.return_value = mock_pool
 
-                def mock_subprocess_side_effect(cmd, *args, **kwargs):
-                    mock_result = MagicMock()
-                    if isinstance(cmd, list) and "--metadata" in cmd:
-                        file_path = str(cmd[-1])
-                        # Extract function number from path
-                        func_num = None
-                        for j in range(5):
-                            if f"func{j}" in file_path:
-                                func_num = j
-                                break
-                        if func_num is not None:
-                            mock_result.stdout = f'{{"name": "function_{func_num}", "description": "Function {func_num}", "auth": "auth", "tags": [], "input_schema": {{"type": "object"}}, "output_schema": {{"type": "object"}}}}'
-                            mock_result.returncode = 0
+                    def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                        mock_result = MagicMock()
+                        if isinstance(cmd, list) and "--metadata" in cmd:
+                            file_path = str(cmd[-1])
+                            # Extract function number from path
+                            func_num = None
+                            for j in range(5):
+                                if f"func{j}" in file_path:
+                                    func_num = j
+                                    break
+                            if func_num is not None:
+                                mock_result.stdout = f'{{"name": "function_{func_num}", "description": "Function {func_num}", "auth": "auth", "tags": [], "input_schema": {{"type": "object"}}, "output_schema": {{"type": "object"}}}}'
+                                mock_result.returncode = 0
+                            else:
+                                mock_result.returncode = 1
+                            mock_result.stderr = ""
                         else:
-                            mock_result.returncode = 1
-                        mock_result.stderr = ""
-                    else:
-                        # For prewarm
-                        mock_result.returncode = 0
-                        mock_result.stdout = ""
-                        mock_result.stderr = ""
-                    return mock_result
+                            # For prewarm
+                            mock_result.returncode = 0
+                            mock_result.stdout = ""
+                            mock_result.stderr = ""
+                        return mock_result
 
-                mock_subprocess.side_effect = mock_subprocess_side_effect
+                    mock_subprocess.side_effect = mock_subprocess_side_effect
 
-                # Load functions (should use parallel extraction)
-                loaded_count = load_functions_from_directory(dir_path)
+                    # Load functions (should use parallel extraction)
+                    loaded_count = load_functions_from_directory(dir_path)
 
-                assert loaded_count == 5
+                    assert loaded_count == 5
 
-                # Verify all functions are registered
-                registry = get_global_registry()
-                for i in range(5):
-                    assert registry.get(f"function_{i}") is not None
+                    # Verify all functions are registered
+                    registry = get_global_registry()
+                    for i in range(5):
+                        assert registry.get(f"function_{i}") is not None

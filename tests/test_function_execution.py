@@ -232,10 +232,13 @@ if __name__ == "__main__":
                         )
 
                     # Check that a call record was created
+                    from uuid import UUID
+
                     from sqlmodel import select
 
+                    call_id_uuid = UUID(result.call_id)
                     call = session.exec(
-                        select(FunctionCall).where(FunctionCall.id == result.call_id)
+                        select(FunctionCall).where(FunctionCall.id == call_id_uuid)
                     ).first()
 
                     assert call is not None
@@ -406,10 +409,8 @@ if __name__ == "__main__":
                             )
 
                             assert result.status == FunctionCallStatus.FAILED
-                            assert (
-                                "timeout" in result.error_message.lower()
-                                or "Timeout" in result.error_message
-                            )
+                            assert result.error_message is not None
+                            assert "timeout" in result.error_message.lower()
         finally:
             try:
                 slow_file.unlink()
@@ -418,7 +419,19 @@ if __name__ == "__main__":
 
     def test_execute_function_with_user_context(self, session, test_function_file):
         """Test function execution with user context."""
-        from uuid import uuid4
+        from tinybase.auth import hash_password
+        from tinybase.db.models import User
+
+        # Create a test user
+        test_user = User(
+            email="testuser@example.com",
+            password_hash=hash_password("password"),
+            is_admin=True,
+        )
+        session.add(test_user)
+        session.commit()
+        session.refresh(test_user)
+        user_id = test_user.id
 
         meta = FunctionMeta(
             name="test_function",
@@ -428,7 +441,6 @@ if __name__ == "__main__":
         )
 
         payload = {"value": 4}
-        user_id = uuid4()
 
         with patch("tinybase.config.settings") as mock_settings:
             mock_config = MagicMock()

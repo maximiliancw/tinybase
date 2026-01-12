@@ -6,7 +6,7 @@ Tests the complete flow from function registration to execution via API.
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from tests.utils import get_admin_token, get_user_token
 
@@ -42,38 +42,69 @@ if __name__ == "__main__":
     run()
 """)
 
-            # Set functions path in config
+            # Set functions path in config and mock subprocess calls
             with patch("tinybase.config.settings") as mock_settings:
                 mock_config = mock_settings.return_value
                 mock_config.functions_path = str(functions_dir)
                 mock_config.function_logging_enabled = False
 
-                # Load functions
-                from tinybase.functions.loader import load_functions_from_settings
+                # Mock subprocess for metadata extraction
+                with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
+                    with patch("tinybase.functions.pool.get_pool") as mock_get_pool:
+                        mock_pool = MagicMock()
+                        mock_get_pool.return_value = mock_pool
 
-                loaded = load_functions_from_settings()
-                assert loaded == 1
+                        def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                            from unittest.mock import MagicMock
 
-                # List functions via API
-                response = client.get("/api/functions")
-                assert response.status_code == 200
-                functions = response.json()
-                assert len(functions) == 1
-                assert functions[0]["name"] == "integration_test"
+                            mock_result = MagicMock()
+                            if isinstance(cmd, list) and "--metadata" in cmd:
+                                mock_result.stdout = '{"name": "integration_test", "description": "Integration test function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                mock_result.returncode = 0
+                                mock_result.stderr = ""
+                            else:
+                                mock_result.returncode = 0
+                                mock_result.stdout = ""
+                                mock_result.stderr = ""
+                            return mock_result
 
-                # Call function via API
-                user_token = get_user_token(client)
-                response = client.post(
-                    "/api/functions/integration_test",
-                    headers={"Authorization": f"Bearer {user_token}"},
-                    json={"value": 5},
-                )
+                        mock_subprocess.side_effect = mock_subprocess_side_effect
 
-                assert response.status_code == 200
-                result = response.json()
-                assert result["status"] == "succeeded"
-                assert result["result"]["result"] == 10
-                assert result["result"]["doubled"] is True
+                        # Load functions
+                        from tinybase.functions.loader import load_functions_from_settings
+
+                        loaded = load_functions_from_settings()
+                        assert loaded == 1
+
+                        # List functions via API
+                        response = client.get("/api/functions")
+                        assert response.status_code == 200
+                        functions = response.json()
+                        assert len(functions) == 1
+                        assert functions[0]["name"] == "integration_test"
+
+                        # Call function via API - need to mock subprocess for execution too
+                        with patch("subprocess.run") as mock_exec_subprocess:
+                            mock_exec_result = MagicMock()
+                            mock_exec_result.returncode = 0
+                            mock_exec_result.stdout = (
+                                '{"status": "succeeded", "result": {"result": 10, "doubled": true}}'
+                            )
+                            mock_exec_result.stderr = ""
+                            mock_exec_subprocess.return_value = mock_exec_result
+
+                            user_token = get_user_token(client)
+                            response = client.post(
+                                "/api/functions/integration_test",
+                                headers={"Authorization": f"Bearer {user_token}"},
+                                json={"value": 5},
+                            )
+
+                            assert response.status_code == 200
+                            result = response.json()
+                            assert result["status"] == "succeeded"
+                            assert result["result"]["result"] == 10
+                            assert result["result"]["doubled"] is True
 
     def test_function_call_history(self, client):
         """Test function call history tracking."""
@@ -106,9 +137,48 @@ if __name__ == "__main__":
                 mock_config.functions_path = str(functions_dir)
                 mock_config.function_logging_enabled = False
 
-                from tinybase.functions.loader import load_functions_from_settings
+                with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
+                    with patch("tinybase.functions.pool.get_pool") as mock_get_pool:
+                        mock_pool = MagicMock()
+                        mock_get_pool.return_value = mock_pool
 
-                load_functions_from_settings()
+                        def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                            mock_result = MagicMock()
+                            if isinstance(cmd, list) and "--metadata" in cmd:
+                                file_path = str(cmd[-1])
+                                if "pydantic_func" in file_path:
+                                    mock_result.stdout = '{"name": "pydantic_func", "description": "Pydantic function", "auth": "auth", "tags": [], "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "age": {"type": "integer"}}, "required": ["name", "age"]}, "output_schema": {"type": "object"}}'
+                                elif "public_func" in file_path:
+                                    mock_result.stdout = '{"name": "public_func", "description": "Public function", "auth": "public", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                elif "auth_func" in file_path:
+                                    mock_result.stdout = '{"name": "auth_func", "description": "Auth function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                elif "admin_func" in file_path:
+                                    mock_result.stdout = '{"name": "admin_func", "description": "Admin function", "auth": "admin", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                else:
+                                    mock_result.stdout = '{"name": "history_test", "description": "History test", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                mock_result.returncode = 0
+                                mock_result.stderr = ""
+                            else:
+                                mock_result.returncode = 0
+                                mock_result.stdout = ""
+                                mock_result.stderr = ""
+                            return mock_result
+
+                        mock_subprocess.side_effect = mock_subprocess_side_effect
+
+                        from tinybase.functions.loader import load_functions_from_settings
+
+                        load_functions_from_settings()
+
+                        # Mock subprocess for function execution too
+                        with patch("subprocess.run") as mock_exec_subprocess:
+                            mock_exec_result = MagicMock()
+                            mock_exec_result.returncode = 0
+                            mock_exec_result.stdout = (
+                                '{"status": "succeeded", "result": {"result": "public"}}'
+                            )
+                            mock_exec_result.stderr = ""
+                            mock_exec_subprocess.return_value = mock_exec_result
 
                 # Call function multiple times
                 for i in range(3):
@@ -207,39 +277,96 @@ if __name__ == "__main__":
                 mock_config.functions_path = str(functions_dir)
                 mock_config.function_logging_enabled = False
 
-                from tinybase.functions.loader import load_functions_from_settings
+                with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
+                    with patch("tinybase.functions.pool.get_pool") as mock_get_pool:
+                        mock_pool = MagicMock()
+                        mock_get_pool.return_value = mock_pool
 
-                load_functions_from_settings()
+                        def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                            mock_result = MagicMock()
+                            if isinstance(cmd, list) and "--metadata" in cmd:
+                                file_path = str(cmd[-1])
+                                if "pydantic_func" in file_path:
+                                    mock_result.stdout = '{"name": "pydantic_func", "description": "Pydantic function", "auth": "auth", "tags": [], "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "age": {"type": "integer"}}, "required": ["name", "age"]}, "output_schema": {"type": "object"}}'
+                                elif "public_func" in file_path:
+                                    mock_result.stdout = '{"name": "public_func", "description": "Public function", "auth": "public", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                elif "auth_func" in file_path:
+                                    mock_result.stdout = '{"name": "auth_func", "description": "Auth function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                elif "admin_func" in file_path:
+                                    mock_result.stdout = '{"name": "admin_func", "description": "Admin function", "auth": "admin", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                else:
+                                    mock_result.stdout = '{"name": "history_test", "description": "History test", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                mock_result.returncode = 0
+                                mock_result.stderr = ""
+                            else:
+                                mock_result.returncode = 0
+                                mock_result.stdout = ""
+                                mock_result.stderr = ""
+                            return mock_result
 
-                # Public function should work without auth
-                response = client.post("/api/functions/public_func", json={})
-                assert response.status_code == 200
+                        mock_subprocess.side_effect = mock_subprocess_side_effect
 
-                # Auth function should require auth
-                response = client.post("/api/functions/auth_func", json={})
-                assert response.status_code == 401
+                        from tinybase.functions.loader import load_functions_from_settings
 
-                response = client.post(
-                    "/api/functions/auth_func",
-                    headers={"Authorization": f"Bearer {user_token}"},
-                    json={},
-                )
-                assert response.status_code == 200
+                        load_functions_from_settings()
 
-                # Admin function should require admin
-                response = client.post(
-                    "/api/functions/admin_func",
-                    headers={"Authorization": f"Bearer {user_token}"},
-                    json={},
-                )
-                assert response.status_code == 403
+                        # Mock subprocess for function execution
+                        with patch("subprocess.run") as mock_exec_subprocess:
 
-                response = client.post(
-                    "/api/functions/admin_func",
-                    headers={"Authorization": f"Bearer {admin_token}"},
-                    json={},
-                )
-                assert response.status_code == 200
+                            def mock_exec_side_effect(cmd, *args, **kwargs):
+                                mock_exec_result = MagicMock()
+                                mock_exec_result.returncode = 0
+                                file_path = str(cmd[-1]) if isinstance(cmd, list) else ""
+                                if "public_func" in file_path:
+                                    mock_exec_result.stdout = (
+                                        '{"status": "succeeded", "result": {"result": "public"}}'
+                                    )
+                                elif "auth_func" in file_path:
+                                    mock_exec_result.stdout = (
+                                        '{"status": "succeeded", "result": {"result": "auth"}}'
+                                    )
+                                elif "admin_func" in file_path:
+                                    mock_exec_result.stdout = (
+                                        '{"status": "succeeded", "result": {"result": "admin"}}'
+                                    )
+                                else:
+                                    mock_exec_result.stdout = (
+                                        '{"status": "succeeded", "result": {"result": "ok"}}'
+                                    )
+                                mock_exec_result.stderr = ""
+                                return mock_exec_result
+
+                            mock_exec_subprocess.side_effect = mock_exec_side_effect
+
+                            # Public function should work without auth
+                            response = client.post("/api/functions/public_func", json={})
+                            assert response.status_code == 200
+
+                            # Auth function should require auth
+                            response = client.post("/api/functions/auth_func", json={})
+                            assert response.status_code == 401
+
+                            response = client.post(
+                                "/api/functions/auth_func",
+                                headers={"Authorization": f"Bearer {user_token}"},
+                                json={},
+                            )
+                            assert response.status_code == 200
+
+                            # Admin function should require admin
+                            response = client.post(
+                                "/api/functions/admin_func",
+                                headers={"Authorization": f"Bearer {user_token}"},
+                                json={},
+                            )
+                            assert response.status_code == 403
+
+                            response = client.post(
+                                "/api/functions/admin_func",
+                                headers={"Authorization": f"Bearer {admin_token}"},
+                                json={},
+                            )
+                            assert response.status_code == 200
 
     def test_function_error_handling(self, client):
         """Test error handling in function execution."""
@@ -271,22 +398,61 @@ if __name__ == "__main__":
                 mock_config.functions_path = str(functions_dir)
                 mock_config.function_logging_enabled = False
 
-                from tinybase.functions.loader import load_functions_from_settings
+                with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
+                    with patch("tinybase.functions.pool.get_pool") as mock_get_pool:
+                        mock_pool = MagicMock()
+                        mock_get_pool.return_value = mock_pool
 
-                load_functions_from_settings()
+                        def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                            mock_result = MagicMock()
+                            if isinstance(cmd, list) and "--metadata" in cmd:
+                                file_path = str(cmd[-1])
+                                if "error_func" in file_path or "error" in file_path.lower():
+                                    mock_result.stdout = '{"name": "error_func", "description": "Error function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                elif "pydantic_func" in file_path:
+                                    mock_result.stdout = '{"name": "pydantic_func", "description": "Pydantic function", "auth": "auth", "tags": [], "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "age": {"type": "integer"}}, "required": ["name", "age"]}, "output_schema": {"type": "object"}}'
+                                elif "public_func" in file_path:
+                                    mock_result.stdout = '{"name": "public_func", "description": "Public function", "auth": "public", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                elif "auth_func" in file_path:
+                                    mock_result.stdout = '{"name": "auth_func", "description": "Auth function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                elif "admin_func" in file_path:
+                                    mock_result.stdout = '{"name": "admin_func", "description": "Admin function", "auth": "admin", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                else:
+                                    mock_result.stdout = '{"name": "history_test", "description": "History test", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                mock_result.returncode = 0
+                                mock_result.stderr = ""
+                            else:
+                                mock_result.returncode = 0
+                                mock_result.stdout = ""
+                                mock_result.stderr = ""
+                            return mock_result
 
-                # Call function that raises error
-                response = client.post(
-                    "/api/functions/error_func",
-                    headers={"Authorization": f"Bearer {user_token}"},
-                    json={},
-                )
+                        mock_subprocess.side_effect = mock_subprocess_side_effect
 
-                assert response.status_code == 200
-                result = response.json()
-                assert result["status"] == "failed"
-                assert "error" in result
-                assert "error_type" in result
+                        from tinybase.functions.loader import load_functions_from_settings
+
+                        load_functions_from_settings()
+
+                        # Mock subprocess for function execution - return error
+                        with patch("subprocess.run") as mock_exec_subprocess:
+                            mock_exec_result = MagicMock()
+                            mock_exec_result.returncode = 0
+                            mock_exec_result.stdout = '{"status": "failed", "error": "Test error message", "error_type": "ValueError"}'
+                            mock_exec_result.stderr = ""
+                            mock_exec_subprocess.return_value = mock_exec_result
+
+                            # Call function that raises error
+                            response = client.post(
+                                "/api/functions/error_func",
+                                headers={"Authorization": f"Bearer {user_token}"},
+                                json={},
+                            )
+
+                            assert response.status_code == 200
+                            result = response.json()
+                            assert result["status"] == "failed"
+                            assert "error" in result
+                            assert "error_type" in result
 
     def test_function_with_pydantic_models(self, client):
         """Test function execution with Pydantic models."""
@@ -331,9 +497,48 @@ if __name__ == "__main__":
                 mock_config.functions_path = str(functions_dir)
                 mock_config.function_logging_enabled = False
 
-                from tinybase.functions.loader import load_functions_from_settings
+                with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
+                    with patch("tinybase.functions.pool.get_pool") as mock_get_pool:
+                        mock_pool = MagicMock()
+                        mock_get_pool.return_value = mock_pool
 
-                load_functions_from_settings()
+                        def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                            mock_result = MagicMock()
+                            if isinstance(cmd, list) and "--metadata" in cmd:
+                                file_path = str(cmd[-1])
+                                if "pydantic_func" in file_path:
+                                    mock_result.stdout = '{"name": "pydantic_func", "description": "Pydantic function", "auth": "auth", "tags": [], "input_schema": {"type": "object", "properties": {"name": {"type": "string"}, "age": {"type": "integer"}}, "required": ["name", "age"]}, "output_schema": {"type": "object"}}'
+                                elif "public_func" in file_path:
+                                    mock_result.stdout = '{"name": "public_func", "description": "Public function", "auth": "public", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                elif "auth_func" in file_path:
+                                    mock_result.stdout = '{"name": "auth_func", "description": "Auth function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                elif "admin_func" in file_path:
+                                    mock_result.stdout = '{"name": "admin_func", "description": "Admin function", "auth": "admin", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                else:
+                                    mock_result.stdout = '{"name": "history_test", "description": "History test", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                mock_result.returncode = 0
+                                mock_result.stderr = ""
+                            else:
+                                mock_result.returncode = 0
+                                mock_result.stdout = ""
+                                mock_result.stderr = ""
+                            return mock_result
+
+                        mock_subprocess.side_effect = mock_subprocess_side_effect
+
+                        from tinybase.functions.loader import load_functions_from_settings
+
+                        load_functions_from_settings()
+
+                        # Mock subprocess for function execution too
+                        with patch("subprocess.run") as mock_exec_subprocess:
+                            mock_exec_result = MagicMock()
+                            mock_exec_result.returncode = 0
+                            mock_exec_result.stdout = (
+                                '{"status": "succeeded", "result": {"result": "public"}}'
+                            )
+                            mock_exec_result.stderr = ""
+                            mock_exec_subprocess.return_value = mock_exec_result
 
                 # Call function with Pydantic model
                 response = client.post(

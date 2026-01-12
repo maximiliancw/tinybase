@@ -5,7 +5,6 @@ Tests token creation, expiration, and usage for subprocess callbacks.
 """
 
 from datetime import timedelta
-from uuid import uuid4
 
 import pytest
 from sqlmodel import Session, select
@@ -45,11 +44,32 @@ class TestInternalTokens:
 
         assert token is not None
         assert token.user_id is None
-        assert token.expires_at > utcnow()
+        # Handle timezone-aware vs naive datetime comparison
+        from datetime import timezone
+
+        expires = token.expires_at
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        now = utcnow()
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=timezone.utc)
+        assert expires > now
 
     def test_create_internal_token_with_user(self, session):
         """Test creating internal token with user ID."""
-        user_id = uuid4()
+        from tinybase.auth import hash_password
+        from tinybase.db.models import User
+
+        # Create a test user first
+        test_user = User(
+            email="testuser@example.com",
+            password_hash=hash_password("password"),
+            is_admin=False,
+        )
+        session.add(test_user)
+        session.commit()
+        session.refresh(test_user)
+        user_id = test_user.id
 
         token_str = create_internal_token(
             session=session,
@@ -66,7 +86,19 @@ class TestInternalTokens:
 
     def test_create_internal_token_admin(self, session):
         """Test creating internal token for admin user."""
-        user_id = uuid4()
+        from tinybase.auth import hash_password
+        from tinybase.db.models import User
+
+        # Create a test admin user first
+        test_user = User(
+            email="admin@example.com",
+            password_hash=hash_password("password"),
+            is_admin=True,
+        )
+        session.add(test_user)
+        session.commit()
+        session.refresh(test_user)
+        user_id = test_user.id
 
         token_str = create_internal_token(
             session=session,
@@ -94,8 +126,15 @@ class TestInternalTokens:
 
         assert token is not None
         # Expiration should be approximately 10 minutes from now
+        from datetime import timezone
+
         expected_expiry = utcnow() + timedelta(minutes=10)
-        time_diff = abs((token.expires_at - expected_expiry).total_seconds())
+        expires = token.expires_at
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expected_expiry.tzinfo is None:
+            expected_expiry = expected_expiry.replace(tzinfo=timezone.utc)
+        time_diff = abs((expires - expected_expiry).total_seconds())
         assert time_diff < 60  # Within 1 minute tolerance
 
     def test_create_internal_token_default_expiration(self, session):
@@ -110,8 +149,15 @@ class TestInternalTokens:
 
         assert token is not None
         # Should expire in approximately 5 minutes
+        from datetime import timezone
+
         expected_expiry = utcnow() + timedelta(minutes=5)
-        time_diff = abs((token.expires_at - expected_expiry).total_seconds())
+        expires = token.expires_at
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expected_expiry.tzinfo is None:
+            expected_expiry = expected_expiry.replace(tzinfo=timezone.utc)
+        time_diff = abs((expires - expected_expiry).total_seconds())
         assert time_diff < 60  # Within 1 minute tolerance
 
     def test_create_internal_token_custom_expiration(self, session):
@@ -127,8 +173,15 @@ class TestInternalTokens:
 
         assert token is not None
         # Should expire in approximately 1 minute
+        from datetime import timezone
+
         expected_expiry = utcnow() + timedelta(minutes=1)
-        time_diff = abs((token.expires_at - expected_expiry).total_seconds())
+        expires = token.expires_at
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expected_expiry.tzinfo is None:
+            expected_expiry = expected_expiry.replace(tzinfo=timezone.utc)
+        time_diff = abs((expires - expected_expiry).total_seconds())
         assert time_diff < 60  # Within 1 minute tolerance
 
     def test_create_internal_token_for_scheduled_function(self, session):
@@ -147,7 +200,19 @@ class TestInternalTokens:
 
     def test_internal_token_can_be_validated(self, session):
         """Test that internal token can be validated."""
-        user_id = uuid4()
+        from tinybase.auth import hash_password
+        from tinybase.db.models import User
+
+        # Create a test user first
+        test_user = User(
+            email="testuser@example.com",
+            password_hash=hash_password("password"),
+            is_admin=False,
+        )
+        session.add(test_user)
+        session.commit()
+        session.refresh(test_user)
+        user_id = test_user.id
 
         token_str = create_internal_token(
             session=session,
@@ -168,7 +233,19 @@ class TestInternalTokens:
 
     def test_internal_token_multiple_tokens(self, session):
         """Test creating multiple internal tokens."""
-        user_id = uuid4()
+        from tinybase.auth import hash_password
+        from tinybase.db.models import User
+
+        # Create a test user first
+        test_user = User(
+            email="testuser@example.com",
+            password_hash=hash_password("password"),
+            is_admin=False,
+        )
+        session.add(test_user)
+        session.commit()
+        session.refresh(test_user)
+        user_id = test_user.id
 
         token1 = create_internal_token(
             session=session,
@@ -197,8 +274,27 @@ class TestInternalTokens:
 
     def test_internal_token_different_users(self, session):
         """Test creating tokens for different users."""
-        user1_id = uuid4()
-        user2_id = uuid4()
+        from tinybase.auth import hash_password
+        from tinybase.db.models import User
+
+        # Create test users first
+        user1 = User(
+            email="user1@example.com",
+            password_hash=hash_password("password"),
+            is_admin=False,
+        )
+        user2 = User(
+            email="user2@example.com",
+            password_hash=hash_password("password"),
+            is_admin=False,
+        )
+        session.add(user1)
+        session.add(user2)
+        session.commit()
+        session.refresh(user1)
+        session.refresh(user2)
+        user1_id = user1.id
+        user2_id = user2.id
 
         token1 = create_internal_token(
             session=session,
