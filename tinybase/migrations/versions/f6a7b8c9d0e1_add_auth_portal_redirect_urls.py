@@ -17,18 +17,42 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Add new columns for redirect URLs
-    op.add_column(
-        "instance_settings",
-        sa.Column("auth_portal_login_redirect_url", sa.String(length=500), nullable=True),
-    )
-    op.add_column(
-        "instance_settings",
-        sa.Column("auth_portal_register_redirect_url", sa.String(length=500), nullable=True),
-    )
+    # Add new columns for redirect URLs (only if they don't exist)
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+
+    if "instance_settings" not in tables:
+        return  # Table doesn't exist, nothing to migrate
+
+    columns = {col["name"]: col for col in inspector.get_columns("instance_settings")}
+
+    if "auth_portal_login_redirect_url" not in columns:
+        op.add_column(
+            "instance_settings",
+            sa.Column("auth_portal_login_redirect_url", sa.String(length=500), nullable=True),
+        )
+
+    if "auth_portal_register_redirect_url" not in columns:
+        op.add_column(
+            "instance_settings",
+            sa.Column("auth_portal_register_redirect_url", sa.String(length=500), nullable=True),
+        )
 
 
 def downgrade() -> None:
-    # Remove columns
-    op.drop_column("instance_settings", "auth_portal_register_redirect_url")
-    op.drop_column("instance_settings", "auth_portal_login_redirect_url")
+    # Remove columns (only if they exist)
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+
+    if "instance_settings" not in tables:
+        return  # Table doesn't exist, nothing to migrate
+
+    columns = {col["name"]: col for col in inspector.get_columns("instance_settings")}
+
+    if "auth_portal_register_redirect_url" in columns:
+        op.drop_column("instance_settings", "auth_portal_register_redirect_url")
+
+    if "auth_portal_login_redirect_url" in columns:
+        op.drop_column("instance_settings", "auth_portal_login_redirect_url")

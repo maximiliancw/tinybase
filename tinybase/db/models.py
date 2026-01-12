@@ -19,11 +19,7 @@ from sqlalchemy import Column
 from sqlalchemy.types import JSON
 from sqlmodel import Field, SQLModel
 
-from tinybase.utils import (
-    FunctionCallStatus,
-    TriggerType,
-    utcnow,
-)
+from tinybase.utils import FunctionCallStatus, TriggerType, utcnow
 
 # =============================================================================
 # User & Authentication Models
@@ -60,7 +56,7 @@ class AuthToken(SQLModel, table=True):
     __tablename__ = "auth_token"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    user_id: UUID = Field(foreign_key="user.id", index=True)
+    user_id: UUID | None = Field(default=None, foreign_key="user.id", index=True)
     token: str = Field(index=True, unique=True, max_length=255)
     created_at: datetime = Field(default_factory=utcnow)
     expires_at: datetime | None = Field(default=None)
