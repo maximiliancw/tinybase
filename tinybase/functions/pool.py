@@ -110,6 +110,7 @@ class FunctionProcessPool:
             return
 
         key = str(file_path)
+        # Update last_used to now when returning to pool
         warm.last_used = utcnow()
 
         with self._lock:
@@ -119,6 +120,7 @@ class FunctionProcessPool:
             # If pool is full, discard the oldest
             elif pool:
                 pool.popleft()
+                pool.append(warm)
                 pool.append(warm)
 
     def prewarm_function(self, file_path: Path) -> None:
