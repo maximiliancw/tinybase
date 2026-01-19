@@ -9,11 +9,12 @@ Provides endpoints for:
 import json
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from tinybase.auth import CurrentAdminUser, CurrentUserOptional, DbSession
 from tinybase.functions.core import execute_function, get_global_registry
+from tinybase.rate_limit import check_rate_limit
 from tinybase.utils import AuthLevel, FunctionCallStatus, TriggerType
 
 router = APIRouter(prefix="/functions", tags=["Functions"])
@@ -100,19 +101,22 @@ def list_functions(user: CurrentUserOptional) -> list[FunctionInfo]:
     summary="Call a function",
     description="Invoke a registered function with the provided payload.",
 )
-def call_function(
+async def call_function(
     function_name: str,
     request: Request,
     session: DbSession,
     user: CurrentUserOptional,
     payload: dict[str, Any] | None = None,
+    _rate_limit: None = Depends(check_rate_limit),
 ) -> FunctionCallResponse:
     """
-    Call a registered function.
+    Call a registered function with rate limiting.
 
     The function is invoked with the provided payload, validated against
     the function's input model. A FunctionCall record is created to track
     the execution.
+    
+    Rate limiting is enforced per user to prevent excessive concurrent executions.
     """
     registry = get_global_registry()
     meta = registry.get(function_name)
