@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from pydantic import Field, field_validator
+from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Handle tomli import for Python < 3.11
@@ -85,6 +85,18 @@ class Settings(BaseSettings):
 
     # Auth settings
     auth_token_ttl_hours: int = Field(default=24, description="Auth token time-to-live in hours")
+    
+    # JWT settings
+    jwt_secret_key: str | None = Field(
+        default=None, description="Secret key for JWT signing (auto-generated if not provided)"
+    )
+    jwt_algorithm: str = Field(default="HS256", description="JWT signing algorithm")
+    jwt_access_token_expire_minutes: int = Field(
+        default=1440, description="Access token TTL in minutes (default: 24 hours)"
+    )
+    jwt_refresh_token_expire_days: int = Field(
+        default=30, description="Refresh token TTL in days"
+    )
 
     # Functions settings
     functions_path: str = Field(
@@ -128,6 +140,20 @@ class Settings(BaseSettings):
         default=10,
         ge=1,
         description="Maximum concurrent function executions per user",
+    )
+    
+    # Rate limiting settings
+    rate_limit_backend: str = Field(
+        default="diskcache",
+        description="Rate limiting backend: 'diskcache' or 'redis'",
+    )
+    rate_limit_cache_dir: str = Field(
+        default="./.tinybase/rate_limit_cache",
+        description="Directory for DiskCache rate limiting (when backend=diskcache)",
+    )
+    rate_limit_redis_url: str | None = Field(
+        default=None,
+        description="Redis URL for rate limiting (when backend=redis)",
     )
 
     # Scheduler settings
@@ -196,6 +222,32 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             # Handle comma-separated string from env var
             return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
+    
+    @field_validator("jwt_secret_key")
+    @classmethod
+    def validate_jwt_secret_key(cls, v: str | None) -> str:
+        """Auto-generate JWT secret key if not provided."""
+        if v is None:
+            import secrets
+            return secrets.token_urlsafe(32)
+        return v
+    
+    @field_validator("rate_limit_backend")
+    @classmethod
+    def validate_rate_limit_backend(cls, v: str) -> str:
+        """Ensure rate limiting backend is valid."""
+        valid_backends = {"diskcache", "redis"}
+        if v not in valid_backends:
+            raise ValueError(f"rate_limit_backend must be one of {valid_backends}")
+        return v
+    
+    @field_validator("rate_limit_redis_url")
+    @classmethod
+    def validate_rate_limit_redis_url(cls, v: str | None, info: ValidationInfo) -> str | None:
+        """Ensure Redis URL is provided when using Redis backend."""
+        if info.data.get("rate_limit_backend") == "redis" and not v:
+            raise ValueError("rate_limit_redis_url is required when rate_limit_backend is 'redis'")
         return v
 
 
