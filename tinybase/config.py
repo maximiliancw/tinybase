@@ -8,7 +8,6 @@ Configuration is loaded from (in order of precedence):
 """
 
 import sys
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -200,12 +199,11 @@ class Settings(BaseSettings):
         return v
 
 
-@lru_cache(maxsize=1)
 def get_settings(toml_path: Path | None = None) -> Settings:
     """
     Load and return cached application settings.
 
-    Uses lru_cache for singleton behavior while remaining testable.
+    Uses manual caching for singleton behavior while remaining testable.
     Tests can clear cache with get_settings.cache_clear().
 
     This function loads settings from environment variables and
@@ -217,12 +215,28 @@ def get_settings(toml_path: Path | None = None) -> Settings:
     Returns:
         Configured Settings instance.
     """
+    # Check if we have a cached instance
+    if hasattr(get_settings, "_cache") and get_settings._cache is not None:
+        return get_settings._cache
+
     # Load TOML config first
     toml_config = load_toml_config(toml_path)
 
     # Create settings with TOML values as defaults
     # Environment variables will override TOML values
-    return Settings(**toml_config)
+    settings_instance = Settings(**toml_config)
+    get_settings._cache = settings_instance
+    return settings_instance
+
+
+# Add cache_clear method for test compatibility
+def _cache_clear():
+    """Clear the settings cache."""
+    get_settings._cache = None
+
+
+get_settings.cache_clear = _cache_clear
+get_settings._cache = None
 
 
 def settings() -> Settings:
@@ -232,5 +246,5 @@ def settings() -> Settings:
 
 def reload_settings(toml_path: Path | None = None) -> Settings:
     """Reload settings by clearing cache and loading fresh."""
-    get_settings.cache_clear()
+    get_settings._cache = None
     return get_settings(toml_path)
