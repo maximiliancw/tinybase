@@ -23,11 +23,11 @@ Or in your function's inline dependencies:
 # dependencies = ["tinybase-sdk"]
 # ///
 
-from tinybase_sdk import function, run
-from tinybase_sdk.client import Client
+from tinybase_sdk import register
+from tinybase_sdk.cli import run
 
-@function(name="hello", description="Say hello", auth="public")
-def hello(client: Client, name: str) -> dict[str, str]:
+@register(name="hello", description="Say hello", auth="public")
+def hello(client, name: str) -> dict[str, str]:
     return {"message": f"Hello, {name}!"}
 
 if __name__ == "__main__":
