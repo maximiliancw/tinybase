@@ -47,21 +47,37 @@ class User(SQLModel, table=True):
 
 class AuthToken(SQLModel, table=True):
     """
-    Opaque authentication token model.
+    JWT authentication token model.
 
-    Tokens are issued upon successful login and used as Bearer tokens
-    for API authentication. Tokens can optionally expire.
+    Consolidated model for all token types:
+    - User tokens: scope="user", token_type="access"/"refresh", user_id populated
+    - Application tokens: scope="application", token_type="access", user_id=NULL
+    - Internal tokens: scope="internal", token_type="access", user_id may be NULL
+
+    Tokens are JWT-signed and stored in the database for revocation tracking.
     """
 
     __tablename__ = "auth_token"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID | None = Field(default=None, foreign_key="user.id", index=True)
-    token: str = Field(index=True, unique=True, max_length=255)
+    token: str = Field(index=True, unique=True, max_length=1024)  # JWT tokens are longer
+    
+    # JWT tracking
+    jti: UUID = Field(index=True, unique=True)  # JWT ID for revocation
+    
+    # Token classification
+    token_type: str = Field(max_length=20)  # "access" or "refresh"
+    scope: str = Field(max_length=50)  # "user", "application", or "internal"
+    
+    # Application token metadata (only for scope="application")
+    name: str | None = Field(default=None, max_length=200)
+    description: str | None = Field(default=None, max_length=500)
+    is_active: bool = Field(default=True)  # For application token revocation
+    last_used_at: datetime | None = Field(default=None)  # Track usage
+    
     created_at: datetime = Field(default_factory=utcnow)
     expires_at: datetime | None = Field(default=None)
-    # Token scope (None = full access, "internal" = limited to function context)
-    scope: str | None = Field(default=None, max_length=50)
 
     def is_expired(self) -> bool:
         """Check if this token has expired."""
@@ -348,6 +364,11 @@ class InstanceSettings(SQLModel, table=True):
     # Maximum concurrent schedule executions
     scheduler_max_concurrent_executions: int | None = Field(
         default=None, ge=1, description="Max concurrent executions"
+    )
+    
+    # Rate limiting settings
+    max_concurrent_functions_per_user: int | None = Field(
+        default=None, ge=1, description="Max concurrent function executions per user"
     )
 
     # File storage settings (S3-compatible)
