@@ -21,10 +21,17 @@ from tinybase.auth import (
     CurrentUserOptional,
     DbSession,
     create_auth_token,
-    generate_token,
     hash_password,
     verify_password,
 )
+from tinybase.auth_jwt import (
+    create_refresh_token,
+    get_user_from_token,
+    revoke_all_user_tokens,
+    revoke_token,
+    verify_jwt_token,
+)
+import secrets
 from tinybase.db.models import InstanceSettings, PasswordResetToken, User
 from tinybase.email import send_password_reset_email
 from tinybase.extensions.hooks import (
@@ -71,9 +78,10 @@ class LoginRequest(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    """User login response with token."""
+    """User login response with JWT tokens."""
 
-    token: str = Field(description="Bearer token for API authentication")
+    access_token: str = Field(description="JWT access token for API authentication")
+    refresh_token: str = Field(description="JWT refresh token for obtaining new access tokens")
     token_type: str = Field(default="bearer")
     user_id: str = Field(description="Authenticated user ID")
     email: str = Field(description="Authenticated user email")
@@ -307,15 +315,17 @@ def login(
                 detail="Invalid email or password",
             )
 
-    # Create and return token
-    auth_token = create_auth_token(session, user)
+    # Create access and refresh tokens
+    access_token_obj, access_token_str = create_auth_token(session, user)
+    refresh_token_obj, refresh_token_str = create_refresh_token(session, user)
 
     # Run user login hooks in background
     login_event = UserLoginEvent(user_id=user.id, email=user.email, is_admin=user.is_admin)
     background_tasks.add_task(asyncio.run, run_user_login_hooks(login_event))
 
     return LoginResponse(
-        token=auth_token.token,
+        access_token=access_token_str,
+        refresh_token=refresh_token_str,
         user_id=str(user.id),
         email=user.email,
         is_admin=user.is_admin,
@@ -367,7 +377,7 @@ def request_password_reset(
 
     if user:
         # Generate reset token
-        token_str = generate_token()
+        token_str = secrets.token_hex(32)
         reset_token = PasswordResetToken(
             user_id=user.id,
             token=token_str,
@@ -442,6 +452,99 @@ def confirm_password_reset(
     session.commit()
 
     return PasswordResetConfirmResponse()
+
+
+@router.post(
+    "/refresh",
+    response_model=LoginResponse,
+    summary="Refresh access token",
+    description="Use a refresh token to obtain new access and refresh tokens.",
+)
+@limiter.limit("20/minute")
+def refresh_token(
+    request: Request,
+    session: DbSession,
+    user: CurrentUser,
+) -> LoginResponse:
+    """
+    Refresh access token using a refresh token.
+
+    Validates the provided refresh token and issues new access and refresh tokens.
+    The old refresh token is revoked.
+    """
+    # The user is already authenticated via the refresh token through CurrentUser dependency
+    # We need to verify it's actually a refresh token
+    from fastapi.security import HTTPBearer
+    from fastapi import Depends
+    
+    # Get the token from the request
+    bearer_scheme = HTTPBearer(auto_error=False)
+    credentials = bearer_scheme(request)
+    
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No token provided",
+        )
+    
+    # Verify it's a refresh token
+    result = verify_jwt_token(session, credentials.credentials)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+    
+    claims, db_token = result
+    
+    if claims.get("type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Not a refresh token",
+        )
+    
+    # Revoke the old refresh token
+    revoke_token(session, db_token.jti)
+    
+    # Create new access and refresh tokens
+    access_token_obj, access_token_str = create_auth_token(session, user)
+    refresh_token_obj, refresh_token_str = create_refresh_token(session, user)
+    
+    return LoginResponse(
+        access_token=access_token_str,
+        refresh_token=refresh_token_str,
+        user_id=str(user.id),
+        email=user.email,
+        is_admin=user.is_admin,
+    )
+
+
+class LogoutResponse(BaseModel):
+    """Logout response."""
+    
+    message: str = Field(default="Successfully logged out")
+
+
+@router.post(
+    "/logout",
+    response_model=LogoutResponse,
+    summary="Logout and revoke tokens",
+    description="Revoke all access and refresh tokens for the current user.",
+)
+def logout(
+    user: CurrentUser,
+    session: DbSession,
+) -> LogoutResponse:
+    """
+    Logout the current user by revoking all their tokens.
+
+    This revokes all access and refresh tokens for the user, forcing
+    them to log in again to obtain new tokens.
+    """
+    # Revoke all user tokens (both access and refresh)
+    count = revoke_all_user_tokens(session, user.id)
+    
+    return LogoutResponse(message=f"Successfully logged out ({count} tokens revoked)")
 
 
 @router.get(
