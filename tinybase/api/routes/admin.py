@@ -471,6 +471,9 @@ class InstanceSettingsResponse(BaseModel):
     scheduler_max_concurrent_executions: int | None = Field(
         default=None, description="Max concurrent executions"
     )
+    max_concurrent_functions_per_user: int | None = Field(
+        default=None, description="Max concurrent function executions per user"
+    )
     storage_enabled: bool = Field(description="File storage enabled")
     storage_endpoint: str | None = Field(default=None, description="S3 endpoint")
     storage_bucket: str | None = Field(default=None, description="S3 bucket name")
@@ -514,6 +517,9 @@ class InstanceSettingsUpdate(BaseModel):
     scheduler_max_concurrent_executions: int | None = Field(
         default=None, ge=1, description="Max concurrent executions"
     )
+    max_concurrent_functions_per_user: int | None = Field(
+        default=None, ge=1, description="Max concurrent function executions per user"
+    )
     storage_enabled: bool | None = Field(default=None)
     storage_endpoint: str | None = Field(default=None, max_length=500)
     storage_bucket: str | None = Field(default=None, max_length=100)
@@ -539,6 +545,7 @@ def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse
         scheduler_function_timeout_seconds=settings.scheduler_function_timeout_seconds,
         scheduler_max_schedules_per_tick=settings.scheduler_max_schedules_per_tick,
         scheduler_max_concurrent_executions=settings.scheduler_max_concurrent_executions,
+        max_concurrent_functions_per_user=settings.max_concurrent_functions_per_user,
         storage_enabled=settings.storage_enabled,
         storage_endpoint=settings.storage_endpoint,
         storage_bucket=settings.storage_bucket,
@@ -664,6 +671,13 @@ def update_settings(
                 detail="scheduler_max_concurrent_executions must be at least 1",
             )
         settings.scheduler_max_concurrent_executions = request.scheduler_max_concurrent_executions
+    if request.max_concurrent_functions_per_user is not None:
+        if request.max_concurrent_functions_per_user < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="max_concurrent_functions_per_user must be at least 1",
+            )
+        settings.max_concurrent_functions_per_user = request.max_concurrent_functions_per_user
     if request.storage_enabled is not None:
         settings.storage_enabled = request.storage_enabled
     if request.storage_endpoint is not None:
