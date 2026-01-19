@@ -14,6 +14,10 @@ This guide covers deploying TinyBase to production environments.
 
     Best practices for production deployments, security, and performance.
 
+-   :material-shield-lock: [**Security**](security.md)
+
+    Security considerations, best practices, and hardening guide for production.
+
 </div>
 
 ## Quick Deploy
@@ -227,16 +231,20 @@ Monitor these metrics:
 
 ## Security Hardening
 
-See the [Production Guide](production.md) for detailed security recommendations:
+See the [Security Guide](security.md) for comprehensive security recommendations:
 
-- HTTPS configuration
+- HTTPS/TLS configuration
+- Authentication & token management
+- Resource limits and DoS protection
 - Rate limiting
-- Input validation
-- Access control
+- Function security
+- Database security
+- Monitoring and audit logging
 
 ## Next Steps
 
 - [Docker Deployment](docker.md) - Container-based deployment
-- [Production Guide](production.md) - Security and performance
+- [Production Guide](production.md) - Performance and optimization
+- [Security Guide](security.md) - Security best practices
 - [Configuration](../getting-started/configuration.md) - All configuration options
 
