@@ -27,6 +27,11 @@ def upgrade() -> None:
     # 3. The old column will remain but be ignored by the model
     conn = op.get_bind()
     inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+    
+    if "instance_settings" not in tables:
+        return  # Table doesn't exist, skip migration
+    
     columns = [col["name"] for col in inspector.get_columns("instance_settings")]
 
     if (
@@ -54,6 +59,11 @@ def downgrade() -> None:
     # The new column will remain but be ignored if we revert the model
     conn = op.get_bind()
     inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+    
+    if "instance_settings" not in tables:
+        return  # Table doesn't exist, skip migration
+    
     columns = [col["name"] for col in inspector.get_columns("instance_settings")]
 
     if "auth_portal_background_image_url" in columns and "auth_portal_background_color" in columns:

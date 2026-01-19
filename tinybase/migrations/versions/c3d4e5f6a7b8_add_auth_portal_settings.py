@@ -22,6 +22,11 @@ def upgrade() -> None:
     # Add auth portal settings to instance_settings (only if they don't exist)
     conn = op.get_bind()
     inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+    
+    if "instance_settings" not in tables:
+        return  # Table doesn't exist, skip migration
+    
     columns = [col["name"] for col in inspector.get_columns("instance_settings")]
 
     if "auth_portal_enabled" not in columns:
@@ -53,6 +58,11 @@ def downgrade() -> None:
     # Remove auth portal settings from instance_settings (only if they exist)
     conn = op.get_bind()
     inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+    
+    if "instance_settings" not in tables:
+        return  # Table doesn't exist, skip migration
+    
     columns = [col["name"] for col in inspector.get_columns("instance_settings")]
 
     if "auth_portal_background_color" in columns:

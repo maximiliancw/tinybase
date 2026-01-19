@@ -19,19 +19,22 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Add metrics_collection_interval to instance_settings (only if it doesn't exist)
+    # Add metrics_collection_interval to instance_settings (only if table and column don't exist)
     # SQLite doesn't support IF NOT EXISTS for ALTER TABLE, so we check first
     conn = op.get_bind()
     inspector = sa.inspect(conn)
-    columns = [col["name"] for col in inspector.get_columns("instance_settings")]
-
-    if "metrics_collection_interval" not in columns:
-        op.add_column(
-            "instance_settings",
-            sa.Column(
-                "metrics_collection_interval", sa.Integer(), nullable=True, server_default="360"
-            ),
-        )
+    tables = inspector.get_table_names()
+    
+    # Only try to add column if the table exists
+    if "instance_settings" in tables:
+        columns = [col["name"] for col in inspector.get_columns("instance_settings")]
+        if "metrics_collection_interval" not in columns:
+            op.add_column(
+                "instance_settings",
+                sa.Column(
+                    "metrics_collection_interval", sa.Integer(), nullable=True, server_default="360"
+                ),
+            )
 
     # Create metrics table (only if it doesn't exist)
     tables = inspector.get_table_names()
@@ -66,7 +69,8 @@ def downgrade() -> None:
             op.drop_index(op.f("ix_metrics_metric_type"), table_name="metrics")
         op.drop_table("metrics")
 
-    # Remove metrics_collection_interval from instance_settings (only if it exists)
-    columns = [col["name"] for col in inspector.get_columns("instance_settings")]
-    if "metrics_collection_interval" in columns:
-        op.drop_column("instance_settings", "metrics_collection_interval")
+    # Remove metrics_collection_interval from instance_settings (only if table and column exist)
+    if "instance_settings" in tables:
+        columns = [col["name"] for col in inspector.get_columns("instance_settings")]
+        if "metrics_collection_interval" in columns:
+            op.drop_column("instance_settings", "metrics_collection_interval")

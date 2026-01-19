@@ -24,6 +24,11 @@ def upgrade() -> None:
     # Change the server default for auth_portal_enabled from True (1) to False (0)
     conn = op.get_bind()
     inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+    
+    if "instance_settings" not in tables:
+        return  # Table doesn't exist, skip migration
+    
     columns = [col["name"] for col in inspector.get_columns("instance_settings")]
 
     if "auth_portal_enabled" in columns:
