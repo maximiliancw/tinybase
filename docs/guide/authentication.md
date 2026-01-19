@@ -7,10 +7,11 @@ TinyBase includes a complete authentication system with user management, token-b
 TinyBase authentication features:
 
 - **User registration and login**
-- **Opaque bearer tokens** (not JWT)
+- **JWT tokens** with access and refresh tokens
 - **Token expiration** with configurable TTL
 - **Role-based access** (admin vs. regular users)
 - **Password hashing** with bcrypt
+- **Token revocation** via database tracking
 
 ## Authentication Flow
 
@@ -84,45 +85,86 @@ Response (200 OK):
 
 ```json
 {
-  "token": "tb_a1b2c3d4e5f6g7h8i9j0...",
-  "user": {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "email": "user@example.com",
-    "is_admin": false
-  },
-  "expires_at": "2024-01-02T12:00:00Z"
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "email": "user@example.com",
+  "is_admin": false
 }
 ```
 
 ### Token Format
 
-TinyBase uses opaque tokens (not JWT):
+TinyBase uses JWT (JSON Web Tokens) for authentication:
 
-- Prefix: `tb_`
-- Random string: 64 characters
-- Stored in database with user reference
+- **Access tokens**: Short-lived tokens for API requests (default: 24 hours)
+- **Refresh tokens**: Long-lived tokens for obtaining new access tokens (default: 30 days)
+- **Signed with HS256**: Cryptographically signed with your secret key
+- **Stored in database**: For revocation tracking
+
+JWT claims include:
+- `sub`: User ID
+- `exp`: Expiration timestamp
+- `iat`: Issued at timestamp
+- `jti`: Unique token ID (for revocation)
+- `is_admin`: Admin flag
+- `type`: "access" or "refresh"
+- `scope`: "user", "application", or "internal"
 
 ## Using Tokens
 
 ### Authorization Header
 
-Include the token in all authenticated requests:
+Include the access token in all authenticated requests:
 
 ```bash
 curl http://localhost:8000/api/protected-endpoint \
-  -H "Authorization: Bearer tb_a1b2c3d4e5f6g7h8i9j0..."
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-### Token Expiration
+### Token Expiration and Refresh
 
-Tokens expire based on the configured TTL (default: 24 hours).
+Access tokens expire after 24 hours (default). Use refresh tokens to obtain new access tokens:
 
-Configure in `tinybase.toml`:
+```bash
+curl -X POST http://localhost:8000/api/auth/refresh \
+  -H "Authorization: Bearer $REFRESH_TOKEN"
+```
+
+Response:
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "email": "user@example.com",
+  "is_admin": false
+}
+```
+
+Configure token expiration in `tinybase.toml`:
 
 ```toml
 [auth]
-token_ttl_hours = 24    # Token lifetime in hours
+jwt_access_token_expire_minutes = 1440  # 24 hours
+jwt_refresh_token_expire_days = 30      # 30 days
+jwt_secret_key = "your-secret-key-here" # Auto-generated if not provided
+jwt_algorithm = "HS256"
 ```
+
+### Logout and Token Revocation
+
+Revoke all tokens for the current user:
+
+```bash
+curl -X POST http://localhost:8000/api/auth/logout \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+This deletes all access and refresh tokens from the database, forcing the user to log in again.
 
 ## Current User
 

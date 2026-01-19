@@ -315,6 +315,72 @@ class FunctionCall:
 
 View function calls in the Admin UI under **Function Calls**.
 
+## Rate Limiting
+
+TinyBase enforces **concurrent execution limits** to prevent resource exhaustion. This is different from traditional time-window rate limiting - it limits how many functions can run simultaneously per user.
+
+### How It Works
+
+- Each user can have a maximum number of concurrent function executions
+- When a user tries to execute more functions than allowed, they receive a `429 Too Many Requests` error
+- The counter automatically decrements when functions complete (even on errors)
+- System and scheduled functions are not rate limited
+
+### Configuration
+
+Set the maximum concurrent executions per user:
+
+**In `tinybase.toml`**:
+
+```toml
+[functions]
+max_concurrent_functions_per_user = 10
+```
+
+**In Admin UI**:
+
+Navigate to **Settings** → **Instance Settings** → **Rate Limiting** to configure at runtime.
+
+### Backend Options
+
+Rate limiting uses a backend to track concurrent executions:
+
+**DiskCache (Default)** - Local file-based storage:
+
+```toml
+[rate_limit]
+backend = "diskcache"
+cache_dir = "./.tinybase/rate_limit_cache"
+```
+
+**Redis** - For distributed/multi-instance deployments:
+
+```toml
+[rate_limit]
+backend = "redis"
+redis_url = "redis://localhost:6379/0"
+```
+
+### Error Response
+
+When rate limit is exceeded:
+
+```json
+{
+  "detail": "Rate limit exceeded: maximum 10 concurrent functions per user",
+  "status_code": 429
+}
+```
+
+Response includes `Retry-After: 60` header suggesting when to retry.
+
+### Best Practices
+
+- Use Redis backend for multi-instance deployments
+- Set limits based on your server capacity
+- Monitor rate limit rejections in logs
+- Consider increasing limits for trusted users via custom middleware
+
 ## Generating Function Boilerplate
 
 Use the CLI to create new functions:

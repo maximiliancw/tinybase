@@ -6,31 +6,83 @@ This guide covers security best practices for production deployments of TinyBase
 
 ### Token Management
 
-**Auth Token TTL**
+**JWT Configuration**
 
-Configure appropriate token expiration times based on your security requirements:
+TinyBase uses JWT (JSON Web Tokens) for authentication. Configure token expiration and security:
 
 ```toml
 [auth]
-token_ttl_hours = 24  # Adjust based on security needs
+jwt_secret_key = "your-secret-key-here"  # CRITICAL: Use a strong random key
+jwt_algorithm = "HS256"
+jwt_access_token_expire_minutes = 1440   # 24 hours
+jwt_refresh_token_expire_days = 30       # 30 days
 ```
 
-For high-security environments, consider shorter TTLs (e.g., 1-4 hours) to limit exposure if tokens are compromised.
+**JWT Secret Key Security**
 
-**Token Rotation**
+The JWT secret key is the most critical security component:
 
-Implement token rotation in your client applications:
+- **NEVER commit the secret to version control**
+- Use a strong random value (auto-generated if not provided)
+- Rotate the secret periodically (invalidates all tokens)
+- Store in environment variables or secure key management systems
+- Use different secrets for different environments
 
-- Refresh tokens before expiration
-- Implement logout functionality that revokes tokens
-- Monitor token usage patterns for anomalies
+Generate a secure secret:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+**Token Expiration Strategy**
+
+Configure appropriate token lifetimes:
+
+- **Access tokens**: Short-lived (15 minutes to 24 hours)
+  - Shorter for high-security environments
+  - Longer for user convenience
+- **Refresh tokens**: Long-lived (7 to 90 days)
+  - Balance security with user experience
+  - Require re-authentication after expiration
+
+**Token Rotation and Refresh**
+
+Implement proper token refresh flow:
+
+```python
+# Client-side example
+def make_request(url, access_token, refresh_token):
+    response = requests.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    
+    if response.status_code == 401:
+        # Access token expired, refresh it
+        refresh_response = requests.post(
+            "/api/auth/refresh",
+            headers={"Authorization": f"Bearer {refresh_token}"}
+        )
+        new_tokens = refresh_response.json()
+        # Retry request with new access token
+        response = requests.get(url, headers={"Authorization": f"Bearer {new_tokens['access_token']}"})
+    
+    return response
+```
+
+**Token Revocation**
+
+All JWT tokens are tracked in the database for revocation:
+
+- Logout revokes all user tokens
+- Admin can revoke individual tokens
+- Deleted tokens fail validation even if not expired
+- Application tokens can be deactivated without deletion
 
 **Internal Token Scoping**
 
-Function subprocess use internal tokens with limited scope (`scope="internal"`). These tokens:
+Function subprocesses use internal tokens with limited scope (`scope="internal"`). These tokens:
 
 - Have short expiration (default: 5 minutes)
 - Are automatically managed by the system
+- Carry user permissions for API callbacks
 - Should not be exposed to client applications
 
 ### Password Security
