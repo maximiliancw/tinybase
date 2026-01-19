@@ -78,6 +78,7 @@ if __name__ == "__main__":
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
+            mock_config.max_function_result_bytes = 10_485_760  # 10 MB
             mock_settings.return_value = mock_config
 
             with patch("tinybase.auth.create_internal_token") as mock_token:
@@ -204,6 +205,7 @@ if __name__ == "__main__":
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
+            mock_config.max_function_result_bytes = 10_485_760  # 10 MB
             mock_settings.return_value = mock_config
 
             with patch("tinybase.auth.create_internal_token") as mock_token:
@@ -262,6 +264,7 @@ if __name__ == "__main__":
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
+            mock_config.max_function_result_bytes = 10_485_760  # 10 MB
             mock_settings.return_value = mock_config
 
             with patch("tinybase.auth.create_internal_token") as mock_token:
@@ -312,6 +315,7 @@ if __name__ == "__main__":
             mock_config.function_logging_level = "INFO"
             mock_config.function_logging_format = "json"
             mock_config.scheduler_function_timeout_seconds = 30
+            mock_config.max_function_result_bytes = 10_485_760  # 10 MB
             mock_settings.return_value = mock_config
 
             with patch("tinybase.auth.create_internal_token") as mock_token:
@@ -383,6 +387,7 @@ if __name__ == "__main__":
                 mock_config.server_port = 8000
                 mock_config.function_logging_enabled = False
                 mock_config.scheduler_function_timeout_seconds = 1  # Short timeout
+                mock_config.max_function_result_bytes = 10_485_760  # 10 MB
                 mock_settings.return_value = mock_config
 
                 with patch("tinybase.auth.create_internal_token") as mock_token:
@@ -419,12 +424,14 @@ if __name__ == "__main__":
 
     def test_execute_function_with_user_context(self, session, test_function_file):
         """Test function execution with user context."""
+        import uuid
+
         from tinybase.auth import hash_password
         from tinybase.db.models import User
 
-        # Create a test user
+        # Create a test user with unique email
         test_user = User(
-            email="testuser@example.com",
+            email=f"testuser-{uuid.uuid4().hex[:8]}@example.com",
             password_hash=hash_password("password"),
             is_admin=True,
         )
@@ -447,6 +454,7 @@ if __name__ == "__main__":
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
+            mock_config.max_function_result_bytes = 10_485_760  # 10 MB
             mock_settings.return_value = mock_config
 
             with patch("tinybase.auth.create_internal_token") as mock_token:
