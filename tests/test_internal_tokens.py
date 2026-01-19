@@ -57,12 +57,14 @@ class TestInternalTokens:
 
     def test_create_internal_token_with_user(self, session):
         """Test creating internal token with user ID."""
+        import uuid
+
         from tinybase.auth import hash_password
         from tinybase.db.models import User
 
         # Create a test user first
         test_user = User(
-            email="testuser@example.com",
+            email=f"testuser-{uuid.uuid4().hex[:8]}@example.com",
             password_hash=hash_password("password"),
             is_admin=False,
         )
@@ -86,12 +88,14 @@ class TestInternalTokens:
 
     def test_create_internal_token_admin(self, session):
         """Test creating internal token for admin user."""
+        import uuid
+
         from tinybase.auth import hash_password
         from tinybase.db.models import User
 
         # Create a test admin user first
         test_user = User(
-            email="admin@example.com",
+            email=f"admin-{uuid.uuid4().hex[:8]}@example.com",
             password_hash=hash_password("password"),
             is_admin=True,
         )
@@ -278,17 +282,19 @@ class TestInternalTokens:
 
     def test_internal_token_different_users(self, session):
         """Test creating tokens for different users."""
+        import uuid
+
         from tinybase.auth import hash_password
         from tinybase.db.models import User
 
         # Create test users first
         user1 = User(
-            email="user1@example.com",
+            email=f"user1-{uuid.uuid4().hex[:8]}@example.com",
             password_hash=hash_password("password"),
             is_admin=False,
         )
         user2 = User(
-            email="user2@example.com",
+            email=f"user2-{uuid.uuid4().hex[:8]}@example.com",
             password_hash=hash_password("password"),
             is_admin=False,
         )
