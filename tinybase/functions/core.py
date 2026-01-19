@@ -347,7 +347,7 @@ def execute_function(
 
     except subprocess.TimeoutExpired:
         status = FunctionCallStatus.FAILED
-        error_message = "Function execution timed out"
+        error_message = "Function execution timeout"
         error_type = "TimeoutError"
     except Exception as e:
         status = FunctionCallStatus.FAILED

@@ -121,7 +121,6 @@ class FunctionProcessPool:
             elif pool:
                 pool.popleft()
                 pool.append(warm)
-                pool.append(warm)
 
     def prewarm_function(self, file_path: Path) -> None:
         """
