@@ -62,20 +62,20 @@ class AuthToken(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID | None = Field(default=None, foreign_key="user.id", index=True)
     token: str = Field(index=True, unique=True, max_length=1024)  # JWT tokens are longer
-    
+
     # JWT tracking
     jti: UUID = Field(index=True, unique=True)  # JWT ID for revocation
-    
+
     # Token classification
     token_type: str = Field(max_length=20)  # "access" or "refresh"
     scope: str = Field(max_length=50)  # "user", "application", or "internal"
-    
+
     # Application token metadata (only for scope="application")
     name: str | None = Field(default=None, max_length=200)
     description: str | None = Field(default=None, max_length=500)
     is_active: bool = Field(default=True)  # For application token revocation
     last_used_at: datetime | None = Field(default=None)  # Track usage
-    
+
     created_at: datetime = Field(default_factory=utcnow)
     expires_at: datetime | None = Field(default=None)
 
@@ -365,7 +365,7 @@ class InstanceSettings(SQLModel, table=True):
     scheduler_max_concurrent_executions: int | None = Field(
         default=None, ge=1, description="Max concurrent executions"
     )
-    
+
     # Rate limiting settings
     max_concurrent_functions_per_user: int | None = Field(
         default=None, ge=1, description="Max concurrent function executions per user"

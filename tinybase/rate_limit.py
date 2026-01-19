@@ -15,7 +15,8 @@ import redis
 from fastapi import Depends, HTTPException, status
 
 from tinybase.auth import CurrentUserOptional
-from tinybase.config import Settings, settings as get_settings
+from tinybase.config import Settings
+from tinybase.config import settings as get_settings
 from tinybase.db.core import get_session
 from tinybase.db.models import InstanceSettings
 

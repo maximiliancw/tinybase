@@ -24,7 +24,7 @@ def upgrade() -> None:
     conn = op.get_bind()
     inspector = sa.inspect(conn)
     tables = inspector.get_table_names()
-    
+
     # Only try to add column if the table exists
     if "instance_settings" in tables:
         columns = [col["name"] for col in inspector.get_columns("instance_settings")]

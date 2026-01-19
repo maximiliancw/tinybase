@@ -85,7 +85,7 @@ class Settings(BaseSettings):
 
     # Auth settings
     auth_token_ttl_hours: int = Field(default=24, description="Auth token time-to-live in hours")
-    
+
     # JWT settings
     jwt_secret_key: str | None = Field(
         default=None, description="Secret key for JWT signing (auto-generated if not provided)"
@@ -141,7 +141,7 @@ class Settings(BaseSettings):
         ge=1,
         description="Maximum concurrent function executions per user",
     )
-    
+
     # Rate limiting settings
     rate_limit_backend: str = Field(
         default="diskcache",
@@ -223,7 +223,7 @@ class Settings(BaseSettings):
             # Handle comma-separated string from env var
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
-    
+
     @field_validator("jwt_secret_key")
     @classmethod
     def validate_jwt_secret_key(cls, v: str | None) -> str:
@@ -232,7 +232,7 @@ class Settings(BaseSettings):
             import secrets
             return secrets.token_urlsafe(32)
         return v
-    
+
     @field_validator("rate_limit_backend")
     @classmethod
     def validate_rate_limit_backend(cls, v: str) -> str:
@@ -241,7 +241,7 @@ class Settings(BaseSettings):
         if v not in valid_backends:
             raise ValueError(f"rate_limit_backend must be one of {valid_backends}")
         return v
-    
+
     @field_validator("rate_limit_redis_url")
     @classmethod
     def validate_rate_limit_redis_url(cls, v: str | None, info: ValidationInfo) -> str | None:

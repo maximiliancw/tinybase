@@ -6,8 +6,6 @@ import os
 import tempfile
 from pathlib import Path
 
-import pytest
-
 
 class TestSettingsCaching:
     """Test LRU cache behavior for settings."""

@@ -115,7 +115,7 @@ async def call_function(
     The function is invoked with the provided payload, validated against
     the function's input model. A FunctionCall record is created to track
     the execution.
-    
+
     Rate limiting is enforced per user to prevent excessive concurrent executions.
     """
     registry = get_global_registry()

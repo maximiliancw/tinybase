@@ -6,6 +6,7 @@ for authenticating API requests.
 """
 
 import logging
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -16,16 +17,18 @@ from sqlmodel import Session, select
 
 from tinybase.auth_jwt import (
     create_access_token as jwt_create_access_token,
+)
+from tinybase.auth_jwt import (
     create_application_token as jwt_create_application_token,
+)
+from tinybase.auth_jwt import (
     create_internal_token as jwt_create_internal_token,
-    create_refresh_token as jwt_create_refresh_token,
+)
+from tinybase.auth_jwt import (
     get_user_from_token,
-    revoke_all_user_tokens,
-    revoke_token,
 )
 from tinybase.db.core import get_session
 from tinybase.db.models import AuthToken, User
-from datetime import datetime
 from tinybase.utils import utcnow
 
 logger = logging.getLogger(__name__)

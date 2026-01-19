@@ -45,18 +45,18 @@ def create_jwt_token(
         Tuple of (jwt_string, jti) where jti is the unique token ID.
     """
     config = settings()
-    
+
     # Set default expiration based on token type
     if expires_delta is None:
         if token_type == "refresh":
             expires_delta = timedelta(days=config.jwt_refresh_token_expire_days)
         else:  # access token
             expires_delta = timedelta(minutes=config.jwt_access_token_expire_minutes)
-    
+
     now = utcnow()
     exp = now + expires_delta
     jti = uuid4()
-    
+
     # Build JWT payload with standard claims
     payload = {
         "sub": str(user_id) if user_id else None,
@@ -67,14 +67,14 @@ def create_jwt_token(
         "type": token_type,
         "scope": scope,
     }
-    
+
     # Encode JWT
     jwt_string = jwt.encode(
         payload,
         config.jwt_secret_key,
         algorithm=config.jwt_algorithm,
     )
-    
+
     return jwt_string, jti
 
 
@@ -93,14 +93,14 @@ def decode_jwt_token(token: str) -> dict:
         jwt.ExpiredSignatureError: If token is expired.
     """
     config = settings()
-    
+
     # Decode and verify JWT signature
     payload = jwt.decode(
         token,
         config.jwt_secret_key,
         algorithms=[config.jwt_algorithm],
     )
-    
+
     return payload
 
 
@@ -126,10 +126,10 @@ def create_access_token(session: Session, user: User) -> tuple[AuthToken, str]:
         token_type="access",
         scope="user",
     )
-    
+
     config = settings()
     expires_at = utcnow() + timedelta(minutes=config.jwt_access_token_expire_minutes)
-    
+
     token = AuthToken(
         user_id=user.id,
         token=jwt_string,
@@ -141,7 +141,7 @@ def create_access_token(session: Session, user: User) -> tuple[AuthToken, str]:
     session.add(token)
     session.commit()
     session.refresh(token)
-    
+
     return token, jwt_string
 
 
@@ -162,10 +162,10 @@ def create_refresh_token(session: Session, user: User) -> tuple[AuthToken, str]:
         token_type="refresh",
         scope="user",
     )
-    
+
     config = settings()
     expires_at = utcnow() + timedelta(days=config.jwt_refresh_token_expire_days)
-    
+
     token = AuthToken(
         user_id=user.id,
         token=jwt_string,
@@ -177,7 +177,7 @@ def create_refresh_token(session: Session, user: User) -> tuple[AuthToken, str]:
     session.add(token)
     session.commit()
     session.refresh(token)
-    
+
     return token, jwt_string
 
 
@@ -202,7 +202,7 @@ def create_application_token(
     # Default to 1 year expiration for application tokens
     if expires_at is None:
         expires_at = utcnow() + timedelta(days=365)
-    
+
     expires_delta = expires_at - utcnow()
     jwt_string, jti = create_jwt_token(
         user_id=None,  # Application tokens don't have a user
@@ -211,7 +211,7 @@ def create_application_token(
         scope="application",
         expires_delta=expires_delta,
     )
-    
+
     token = AuthToken(
         user_id=None,
         token=jwt_string,
@@ -226,7 +226,7 @@ def create_application_token(
     session.add(token)
     session.commit()
     session.refresh(token)
-    
+
     return token, jwt_string
 
 
@@ -255,9 +255,9 @@ def create_internal_token(
         scope="internal",
         expires_delta=timedelta(minutes=expires_minutes),
     )
-    
+
     expires_at = utcnow() + timedelta(minutes=expires_minutes)
-    
+
     token = AuthToken(
         user_id=user_id,
         token=jwt_string,
@@ -269,7 +269,7 @@ def create_internal_token(
     session.add(token)
     session.commit()
     session.refresh(token)
-    
+
     return jwt_string
 
 
@@ -292,37 +292,37 @@ def verify_jwt_token(session: Session, token_str: str) -> tuple[dict, AuthToken]
     try:
         # Decode and verify JWT signature
         claims = decode_jwt_token(token_str)
-        
+
         # Extract JTI from claims
         jti_str = claims.get("jti")
         if not jti_str:
             logger.warning("JWT token missing jti claim")
             return None
-        
+
         jti = UUID(jti_str)
-        
+
         # Check if token exists in database (not revoked)
         from sqlmodel import select
         statement = select(AuthToken).where(AuthToken.jti == jti)
         db_token = session.exec(statement).first()
-        
+
         if db_token is None:
             logger.warning(f"JWT token with jti {jti} not found in database (revoked)")
             return None
-        
+
         # Check if application token is active
         if db_token.scope == "application" and not db_token.is_active:
             logger.warning(f"Application token with jti {jti} is inactive")
             return None
-        
+
         # Update last_used_at for application tokens
         if db_token.scope == "application":
             db_token.last_used_at = utcnow()
             session.add(db_token)
             session.commit()
-        
+
         return claims, db_token
-        
+
     except jwt.ExpiredSignatureError:
         logger.debug("JWT token expired")
         return None
@@ -348,21 +348,21 @@ def get_user_from_token(session: Session, token_str: str) -> User | None:
     result = verify_jwt_token(session, token_str)
     if result is None:
         return None
-    
+
     claims, db_token = result
-    
+
     # Extract user_id from claims
     user_id_str = claims.get("sub")
     if not user_id_str:
         # Application or internal tokens without a user
         return None
-    
+
     try:
         user_id = UUID(user_id_str)
     except ValueError:
         logger.warning(f"Invalid user ID format in JWT: {user_id_str}")
         return None
-    
+
     # Fetch the user from database
     user = session.get(User, user_id)
     return user
@@ -385,13 +385,13 @@ def revoke_token(session: Session, jti: UUID) -> bool:
         True if token was found and revoked, False otherwise.
     """
     from sqlmodel import select
-    
+
     statement = select(AuthToken).where(AuthToken.jti == jti)
     token = session.exec(statement).first()
-    
+
     if token is None:
         return False
-    
+
     session.delete(token)
     session.commit()
     logger.info(f"Revoked JWT token with jti {jti}")
@@ -411,19 +411,19 @@ def revoke_all_user_tokens(session: Session, user_id: UUID, token_type: str | No
         Number of tokens revoked.
     """
     from sqlmodel import select
-    
+
     statement = select(AuthToken).where(AuthToken.user_id == user_id)
     if token_type:
         statement = statement.where(AuthToken.token_type == token_type)
-    
+
     tokens = session.exec(statement).all()
     count = len(tokens)
-    
+
     for token in tokens:
         session.delete(token)
-    
+
     if count > 0:
         session.commit()
         logger.info(f"Revoked {count} tokens for user {user_id}")
-    
+
     return count

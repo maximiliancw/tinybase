@@ -9,6 +9,7 @@ Provides endpoints for:
 
 import asyncio
 import os
+import secrets
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request, status
 from pydantic import BaseModel, EmailStr, Field
@@ -26,12 +27,10 @@ from tinybase.auth import (
 )
 from tinybase.auth_jwt import (
     create_refresh_token,
-    get_user_from_token,
     revoke_all_user_tokens,
     revoke_token,
     verify_jwt_token,
 )
-import secrets
 from tinybase.db.models import InstanceSettings, PasswordResetToken, User
 from tinybase.email import send_password_reset_email
 from tinybase.extensions.hooks import (
@@ -475,18 +474,17 @@ def refresh_token(
     # The user is already authenticated via the refresh token through CurrentUser dependency
     # We need to verify it's actually a refresh token
     from fastapi.security import HTTPBearer
-    from fastapi import Depends
-    
+
     # Get the token from the request
     bearer_scheme = HTTPBearer(auto_error=False)
     credentials = bearer_scheme(request)
-    
+
     if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="No token provided",
         )
-    
+
     # Verify it's a refresh token
     result = verify_jwt_token(session, credentials.credentials)
     if not result:
@@ -494,22 +492,22 @@ def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
         )
-    
+
     claims, db_token = result
-    
+
     if claims.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Not a refresh token",
         )
-    
+
     # Revoke the old refresh token
     revoke_token(session, db_token.jti)
-    
+
     # Create new access and refresh tokens
     access_token_obj, access_token_str = create_auth_token(session, user)
     refresh_token_obj, refresh_token_str = create_refresh_token(session, user)
-    
+
     return LoginResponse(
         access_token=access_token_str,
         refresh_token=refresh_token_str,
@@ -521,7 +519,7 @@ def refresh_token(
 
 class LogoutResponse(BaseModel):
     """Logout response."""
-    
+
     message: str = Field(default="Successfully logged out")
 
 
@@ -543,7 +541,7 @@ def logout(
     """
     # Revoke all user tokens (both access and refresh)
     count = revoke_all_user_tokens(session, user.id)
-    
+
     return LogoutResponse(message=f"Successfully logged out ({count} tokens revoked)")
 
 

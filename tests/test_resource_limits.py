@@ -5,10 +5,6 @@ Tests for resource limits (payload and result size validation).
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from tests.utils import get_admin_token, get_user_token
-
 
 class TestPayloadSizeValidation:
     """Test payload size validation at API layer."""

@@ -46,10 +46,10 @@ def upgrade() -> None:
             op.drop_table("auth_token_new")
 
         # Get all columns from existing table
-        existing_columns = {col["name"]: col for col in inspector.get_columns("auth_token")}
+        {col["name"]: col for col in inspector.get_columns("auth_token")}
 
         # Get foreign keys
-        foreign_keys = inspector.get_foreign_keys("auth_token")
+        inspector.get_foreign_keys("auth_token")
 
         # Build column list with user_id as nullable
         table_columns = [
@@ -147,10 +147,10 @@ def downgrade() -> None:
             op.drop_table("auth_token_new")
 
         # Get all columns from existing table
-        existing_columns = {col["name"]: col for col in inspector.get_columns("auth_token")}
+        {col["name"]: col for col in inspector.get_columns("auth_token")}
 
         # Get foreign keys
-        foreign_keys = inspector.get_foreign_keys("auth_token")
+        inspector.get_foreign_keys("auth_token")
 
         # Build column list with user_id as NOT NULL
         table_columns = [
