@@ -12,6 +12,16 @@ from sqlmodel import Session
 from tests.utils import create_collection, create_record, get_admin_token, get_user_token
 
 
+@pytest.fixture(autouse=True)
+def clear_settings_cache():
+    """Clear settings cache before and after each test."""
+    from tinybase.config import get_settings
+
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
 @pytest.fixture(scope="function")
 def client():
     """Create a test client with a fresh database."""

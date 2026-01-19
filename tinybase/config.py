@@ -8,6 +8,7 @@ Configuration is loaded from (in order of precedence):
 """
 
 import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -113,6 +114,23 @@ class Settings(BaseSettings):
         description="Time to keep warm processes alive after last use (0 = disabled)",
     )
 
+    # Resource limits
+    max_function_payload_bytes: int = Field(
+        default=10_485_760,  # 10 MB
+        ge=1024,  # Min 1 KB
+        description="Maximum payload size for function calls in bytes",
+    )
+    max_function_result_bytes: int = Field(
+        default=10_485_760,  # 10 MB
+        ge=1024,
+        description="Maximum result size from functions in bytes",
+    )
+    max_concurrent_functions_per_user: int = Field(
+        default=10,
+        ge=1,
+        description="Maximum concurrent function executions per user",
+    )
+
     # Scheduler settings
     scheduler_enabled: bool = Field(default=True, description="Enable the background scheduler")
     scheduler_interval_seconds: int = Field(
@@ -182,9 +200,13 @@ class Settings(BaseSettings):
         return v
 
 
+@lru_cache(maxsize=1)
 def get_settings(toml_path: Path | None = None) -> Settings:
     """
-    Load and return application settings.
+    Load and return cached application settings.
+
+    Uses lru_cache for singleton behavior while remaining testable.
+    Tests can clear cache with get_settings.cache_clear().
 
     This function loads settings from environment variables and
     optionally from a tinybase.toml file.
@@ -203,20 +225,12 @@ def get_settings(toml_path: Path | None = None) -> Settings:
     return Settings(**toml_config)
 
 
-# Global settings instance (lazy loaded)
-_settings: Settings | None = None
-
-
 def settings() -> Settings:
-    """Get the global settings instance, creating it if needed."""
-    global _settings
-    if _settings is None:
-        _settings = get_settings()
-    return _settings
+    """Get the cached settings instance."""
+    return get_settings()
 
 
 def reload_settings(toml_path: Path | None = None) -> Settings:
-    """Reload settings from configuration sources."""
-    global _settings
-    _settings = get_settings(toml_path)
-    return _settings
+    """Reload settings by clearing cache and loading fresh."""
+    get_settings.cache_clear()
+    return get_settings(toml_path)
