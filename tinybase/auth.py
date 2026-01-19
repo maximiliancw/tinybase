@@ -1,13 +1,11 @@
 """
 Authentication utilities for TinyBase.
 
-Provides password hashing, token generation, and FastAPI dependencies
+Provides password hashing, JWT token management, and FastAPI dependencies
 for authenticating API requests.
 """
 
 import logging
-import secrets
-from datetime import datetime, timedelta
 from typing import Annotated
 from uuid import UUID
 
@@ -16,9 +14,18 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
 
-from tinybase.config import settings
+from tinybase.auth_jwt import (
+    create_access_token as jwt_create_access_token,
+    create_application_token as jwt_create_application_token,
+    create_internal_token as jwt_create_internal_token,
+    create_refresh_token as jwt_create_refresh_token,
+    get_user_from_token,
+    revoke_all_user_tokens,
+    revoke_token,
+)
 from tinybase.db.core import get_session
-from tinybase.db.models import ApplicationToken, AuthToken, User
+from tinybase.db.models import AuthToken, User
+from datetime import datetime
 from tinybase.utils import utcnow
 
 logger = logging.getLogger(__name__)
@@ -68,68 +75,36 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 # =============================================================================
-# Token Utilities
+# Token Utilities (JWT-based)
 # =============================================================================
 
 
-def generate_token() -> str:
+def create_auth_token(session: Session, user: User) -> tuple[AuthToken, str]:
     """
-    Generate a cryptographically secure random token.
-
-    Returns:
-        A 64-character hexadecimal token string.
-    """
-    return secrets.token_hex(32)
-
-
-def create_auth_token(session: Session, user: User) -> AuthToken:
-    """
-    Create and persist a new authentication token for a user.
+    Create and persist a new JWT access token for a user.
 
     Args:
         session: Database session.
         user: The user to create a token for.
 
     Returns:
-        The created AuthToken instance.
+        Tuple of (AuthToken, jwt_string).
     """
-    ttl_hours = settings().auth_token_ttl_hours
-    expires_at = utcnow() + timedelta(hours=ttl_hours) if ttl_hours > 0 else None
-
-    token = AuthToken(
-        user_id=user.id,
-        token=generate_token(),
-        expires_at=expires_at,
-    )
-    session.add(token)
-    session.commit()
-    session.refresh(token)
-    return token
+    return jwt_create_access_token(session, user)
 
 
 def get_token_user(session: Session, token_str: str) -> User | None:
     """
-    Get the user associated with a token string.
+    Get the user associated with a JWT token string.
 
     Args:
         session: Database session.
-        token_str: The token string to look up.
+        token_str: The JWT token string to look up.
 
     Returns:
         The User if the token is valid and not expired, None otherwise.
     """
-    statement = select(AuthToken).where(AuthToken.token == token_str)
-    auth_token = session.exec(statement).first()
-
-    if auth_token is None:
-        return None
-
-    if auth_token.is_expired():
-        return None
-
-    # Fetch the associated user
-    user = session.get(User, auth_token.user_id)
-    return user
+    return get_user_from_token(session, token_str)
 
 
 # =============================================================================
@@ -225,7 +200,7 @@ DbSession = Annotated[Session, Depends(get_session)]
 
 def cleanup_expired_tokens(session: Session) -> int:
     """
-    Remove expired authentication tokens from the database.
+    Remove expired JWT authentication tokens from the database.
 
     Args:
         session: Database session.
@@ -249,13 +224,13 @@ def cleanup_expired_tokens(session: Session) -> int:
 
     if count > 0:
         session.commit()
-        logger.info(f"Cleaned up {count} expired auth tokens")
+        logger.info(f"Cleaned up {count} expired JWT tokens")
 
     return count
 
 
 # =============================================================================
-# Application Token Utilities
+# Application Token Utilities (JWT-based)
 # =============================================================================
 
 
@@ -264,30 +239,20 @@ def create_application_token(
     name: str,
     description: str | None = None,
     expires_at: datetime | None = None,
-) -> ApplicationToken:
+) -> tuple[AuthToken, str]:
     """
-    Create and persist a new application token for system-to-system authentication.
+    Create and persist a new JWT application token for system-to-system authentication.
 
     Args:
         session: Database session.
         name: Human-readable name for this token.
         description: Optional description of the token's purpose.
-        expires_at: Optional expiration datetime. If None, token never expires.
+        expires_at: Optional expiration datetime. If None, defaults to 1 year.
 
     Returns:
-        The created ApplicationToken instance (with token value).
+        Tuple of (AuthToken, jwt_string).
     """
-    token = ApplicationToken(
-        name=name,
-        token=generate_token(),
-        description=description,
-        expires_at=expires_at,
-        is_active=True,
-    )
-    session.add(token)
-    session.commit()
-    session.refresh(token)
-    return token
+    return jwt_create_application_token(session, name, description, expires_at)
 
 
 def create_internal_token(
@@ -297,7 +262,7 @@ def create_internal_token(
     expires_minutes: int = 5,
 ) -> str:
     """
-    Create a short-lived internal token for subprocess HTTP callbacks.
+    Create a short-lived internal JWT token for subprocess HTTP callbacks.
 
     This token allows function subprocesses to make authenticated HTTP requests
     back to the TinyBase API. The token has the same permissions as the calling user.
@@ -309,65 +274,14 @@ def create_internal_token(
         expires_minutes: Token expiration time in minutes (default: 5).
 
     Returns:
-        The token string to use for authentication.
+        The JWT token string to use for authentication.
     """
-    expires_at = utcnow() + timedelta(minutes=expires_minutes)
-
-    # Create a temporary user if needed (for scheduled functions)
-    if user_id is None:
-        # For scheduled functions, we don't have a user
-        # Create a token without a user_id (will be None)
-        token = AuthToken(
-            user_id=None,  # type: ignore
-            token=generate_token(),
-            expires_at=expires_at,
-            scope="internal",
-        )
-    else:
-        token = AuthToken(
-            user_id=user_id,
-            token=generate_token(),
-            expires_at=expires_at,
-            scope="internal",
-        )
-
-    session.add(token)
-    session.commit()
-    session.refresh(token)
-    return token.token
-
-
-def get_application_token(session: Session, token_str: str) -> ApplicationToken | None:
-    """
-    Get an application token by its token string.
-
-    Args:
-        session: Database session.
-        token_str: The token string to look up.
-
-    Returns:
-        The ApplicationToken if valid, None otherwise.
-    """
-    statement = select(ApplicationToken).where(ApplicationToken.token == token_str)
-    app_token = session.exec(statement).first()
-
-    if app_token is None:
-        return None
-
-    if not app_token.is_valid():
-        return None
-
-    # Update last_used_at
-    app_token.last_used_at = utcnow()
-    session.add(app_token)
-    session.commit()
-
-    return app_token
+    return jwt_create_internal_token(session, user_id, is_admin, expires_minutes)
 
 
 def revoke_application_token(session: Session, token_id: UUID) -> bool:
     """
-    Revoke (deactivate) an application token.
+    Revoke (deactivate) an application token by marking it inactive.
 
     Args:
         session: Database session.
@@ -376,57 +290,11 @@ def revoke_application_token(session: Session, token_id: UUID) -> bool:
     Returns:
         True if token was found and revoked, False otherwise.
     """
-    token = session.get(ApplicationToken, token_id)
-    if token is None:
+    token = session.get(AuthToken, token_id)
+    if token is None or token.scope != "application":
         return False
 
     token.is_active = False
     session.add(token)
     session.commit()
     return True
-
-
-# =============================================================================
-# Application Token FastAPI Dependency
-# =============================================================================
-
-
-def get_application_token_auth(
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
-    session: Annotated[Session, Depends(get_session)],
-) -> ApplicationToken:
-    """
-    Get the application token from the request (required).
-
-    Raises HTTP 401 if no valid application token is provided.
-
-    Args:
-        credentials: The HTTP Bearer credentials.
-        session: Database session.
-
-    Returns:
-        The authenticated ApplicationToken.
-
-    Raises:
-        HTTPException: 401 if not authenticated with a valid application token.
-    """
-    if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Application token required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    app_token = get_application_token(session, credentials.credentials)
-    if app_token is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired application token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    return app_token
-
-
-# Type alias for dependency injection
-CurrentApplicationToken = Annotated[ApplicationToken, Depends(get_application_token_auth)]
