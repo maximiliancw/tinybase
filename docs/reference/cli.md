@@ -27,7 +27,7 @@ tinybase version
 **Output:**
 
 ```
-TinyBase v0.2.0
+TinyBase v0.3.0
 ```
 
 ---

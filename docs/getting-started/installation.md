@@ -66,7 +66,7 @@ tinybase version
 You should see output like:
 
 ```
-TinyBase v0.2.0
+TinyBase v0.3.0
 ```
 
 ## Project Setup
