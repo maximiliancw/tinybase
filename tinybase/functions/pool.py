@@ -4,6 +4,7 @@ Cold start optimization: Process pool for keeping functions warm.
 Maintains a pool of pre-warmed subprocess environments to reduce cold start latency.
 """
 
+import atexit
 import logging
 import subprocess
 import threading
@@ -50,6 +51,7 @@ class FunctionProcessPool:
         self._lock = threading.Lock()
         self._cleanup_thread: threading.Thread | None = None
         self._running = False
+        self._shutdown_registered = False
 
     def start(self) -> None:
         """Start the cleanup thread."""
@@ -59,16 +61,37 @@ class FunctionProcessPool:
         self._running = True
         self._cleanup_thread = threading.Thread(target=self._cleanup_loop, daemon=True)
         self._cleanup_thread.start()
+
+        # Register shutdown hook
+        if not self._shutdown_registered:
+            atexit.register(self.stop)
+            self._shutdown_registered = True
+
         logger.info("Function process pool started")
 
     def stop(self) -> None:
         """Stop the cleanup thread and clear all pools."""
+        if not self._running:
+            return
+
+        logger.info("Stopping function process pool...")
         self._running = False
+
         if self._cleanup_thread:
             self._cleanup_thread.join(timeout=5)
 
         with self._lock:
+            # Kill any remaining processes
+            for pool_queue in self._pools.values():
+                for warm_proc in pool_queue:
+                    if warm_proc.process:
+                        try:
+                            warm_proc.process.terminate()
+                            warm_proc.process.wait(timeout=2)
+                        except Exception:
+                            pass
             self._pools.clear()
+
         logger.info("Function process pool stopped")
 
     def get_warm_process(self, file_path: Path) -> WarmProcess | None:
