@@ -94,7 +94,7 @@ class TestTokenScoping:
         assert token.user_id == test_admin.id
 
     def test_regular_auth_token_has_no_scope(self, session):
-        """Test that regular auth tokens have None scope."""
+        """Test that regular auth tokens have 'user' scope."""
         # Create a test user
         import uuid
 
@@ -108,9 +108,9 @@ class TestTokenScoping:
         session.refresh(test_user)
 
         # Create regular auth token
-        auth_token = create_auth_token(session, test_user)
+        auth_token_obj, auth_token_str = create_auth_token(session, test_user)
 
-        assert auth_token.scope is None
+        assert auth_token_obj.scope == "user"
 
     def test_scope_field_persists(self, session):
         """Test that scope field persists correctly."""
@@ -145,7 +145,7 @@ class TestTokenScoping:
         session.refresh(test_user)
 
         # Create regular token
-        regular_token = create_auth_token(session, test_user)
+        regular_token_obj, regular_token_str = create_auth_token(session, test_user)
 
         # Create internal token
         internal_token_str = create_internal_token(
@@ -160,7 +160,7 @@ class TestTokenScoping:
         ).first()
 
         # Verify different scopes
-        assert regular_token.scope is None
+        assert regular_token_obj.scope == "user"
         assert internal_token.scope == "internal"
 
     def test_scope_field_optional(self):

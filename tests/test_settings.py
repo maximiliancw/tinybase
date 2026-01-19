@@ -23,7 +23,7 @@ def test_get_settings_requires_admin(client):
             "password": "testpassword123",
         },
     )
-    token = login_response.json()["token"]
+    token = login_response.json()["access_token"]
 
     response = client.get(
         "/api/admin/settings",

@@ -133,7 +133,7 @@ def test_auth_login(client):
     )
     assert response.status_code == 200
     data = response.json()
-    assert "token" in data
+    assert "access_token" in data
     assert data["email"] == "logintest@test.com"
 
 
@@ -147,7 +147,7 @@ def test_auth_me(client):
             "password": "testpassword",
         },
     )
-    token = login_response.json()["token"]
+    token = login_response.json()["access_token"]
 
     # Get user info
     response = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
@@ -204,7 +204,7 @@ def test_users_list_requires_admin(client):
             "password": "testpassword123",
         },
     )
-    token = login_response.json()["token"]
+    token = login_response.json()["access_token"]
 
     # Try to list users
     response = client.get(

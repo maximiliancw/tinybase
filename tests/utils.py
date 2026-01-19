@@ -17,7 +17,7 @@ def get_admin_token(client: TestClient) -> str:
         },
     )
     assert response.status_code == 200
-    return response.json()["token"]
+    return response.json()["access_token"]
 
 
 def get_user_token(
@@ -34,7 +34,7 @@ def get_user_token(
     )
 
     if login_response.status_code == 200:
-        return login_response.json()["token"]
+        return login_response.json()["access_token"]
 
     # User doesn't exist, register them
     register_response = client.post(
@@ -55,7 +55,7 @@ def get_user_token(
         },
     )
     assert login_response.status_code == 200
-    return login_response.json()["token"]
+    return login_response.json()["access_token"]
 
 
 def create_collection(
