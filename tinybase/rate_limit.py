@@ -277,4 +277,6 @@ async def check_rate_limit(
     finally:
         # Always decrement, even on errors
         new_count = backend.decrement(key)
-        logger.debug(f"Decremented rate limit counter for user {user.id}: {new_count}/{max_concurrent}")
+        logger.debug(
+            f"Decremented rate limit counter for user {user.id}: {new_count}/{max_concurrent}"
+        )

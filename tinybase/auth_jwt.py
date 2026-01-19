@@ -303,6 +303,7 @@ def verify_jwt_token(session: Session, token_str: str) -> tuple[dict, AuthToken]
 
         # Check if token exists in database (not revoked)
         from sqlmodel import select
+
         statement = select(AuthToken).where(AuthToken.jti == jti)
         db_token = session.exec(statement).first()
 

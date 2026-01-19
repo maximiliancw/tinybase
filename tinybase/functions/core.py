@@ -343,9 +343,7 @@ def execute_function(
 
                     if result_size > config.max_function_result_bytes:
                         status = FunctionCallStatus.FAILED
-                        error_message = (
-                            f"Result exceeds maximum size of {config.max_function_result_bytes} bytes"
-                        )
+                        error_message = f"Result exceeds maximum size of {config.max_function_result_bytes} bytes"
                         error_type = "ResultSizeError"
                         result = None
                 else:

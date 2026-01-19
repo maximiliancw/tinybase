@@ -94,9 +94,7 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = Field(
         default=1440, description="Access token TTL in minutes (default: 24 hours)"
     )
-    jwt_refresh_token_expire_days: int = Field(
-        default=30, description="Refresh token TTL in days"
-    )
+    jwt_refresh_token_expire_days: int = Field(default=30, description="Refresh token TTL in days")
 
     # Functions settings
     functions_path: str = Field(
@@ -230,6 +228,7 @@ class Settings(BaseSettings):
         """Auto-generate JWT secret key if not provided."""
         if v is None:
             import secrets
+
             return secrets.token_urlsafe(32)
         return v
 

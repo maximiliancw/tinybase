@@ -45,40 +45,40 @@ class TestFunctionMetrics:
         with Session(engine) as session:
             # Create function calls
             calls = [
-            FunctionCall(
-                function_name="test_func1",
-                status=FunctionCallStatus.SUCCEEDED,
-                trigger_type=TriggerType.MANUAL,
-                started_at=now,
-                finished_at=now + timedelta(milliseconds=100),
-                duration_ms=100,
-            ),
-            FunctionCall(
-                function_name="test_func1",
-                status=FunctionCallStatus.SUCCEEDED,
-                trigger_type=TriggerType.MANUAL,
-                started_at=now,
-                finished_at=now + timedelta(milliseconds=200),
-                duration_ms=200,
-            ),
-            FunctionCall(
-                function_name="test_func1",
-                status=FunctionCallStatus.FAILED,
-                trigger_type=TriggerType.MANUAL,
-                started_at=now,
-                finished_at=now + timedelta(milliseconds=50),
-                duration_ms=50,
-                error_message="Test error",
-                error_type="TestError",
-            ),
-            FunctionCall(
-                function_name="test_func2",
-                status=FunctionCallStatus.SUCCEEDED,
-                trigger_type=TriggerType.MANUAL,
-                started_at=now,
-                finished_at=now + timedelta(milliseconds=300),
-                duration_ms=300,
-            ),
+                FunctionCall(
+                    function_name="test_func1",
+                    status=FunctionCallStatus.SUCCEEDED,
+                    trigger_type=TriggerType.MANUAL,
+                    started_at=now,
+                    finished_at=now + timedelta(milliseconds=100),
+                    duration_ms=100,
+                ),
+                FunctionCall(
+                    function_name="test_func1",
+                    status=FunctionCallStatus.SUCCEEDED,
+                    trigger_type=TriggerType.MANUAL,
+                    started_at=now,
+                    finished_at=now + timedelta(milliseconds=200),
+                    duration_ms=200,
+                ),
+                FunctionCall(
+                    function_name="test_func1",
+                    status=FunctionCallStatus.FAILED,
+                    trigger_type=TriggerType.MANUAL,
+                    started_at=now,
+                    finished_at=now + timedelta(milliseconds=50),
+                    duration_ms=50,
+                    error_message="Test error",
+                    error_type="TestError",
+                ),
+                FunctionCall(
+                    function_name="test_func2",
+                    status=FunctionCallStatus.SUCCEEDED,
+                    trigger_type=TriggerType.MANUAL,
+                    started_at=now,
+                    finished_at=now + timedelta(milliseconds=300),
+                    duration_ms=300,
+                ),
             ]
 
             for call in calls:
@@ -122,12 +122,12 @@ class TestFunctionMetrics:
         with Session(engine) as session:
             # Create old call (beyond 24 hours)
             old_call = FunctionCall(
-            function_name="old_func",
-            status=FunctionCallStatus.SUCCEEDED,
-            trigger_type=TriggerType.MANUAL,
-            started_at=now - timedelta(hours=48),
-            finished_at=now - timedelta(hours=48) + timedelta(milliseconds=100),
-            duration_ms=100,
+                function_name="old_func",
+                status=FunctionCallStatus.SUCCEEDED,
+                trigger_type=TriggerType.MANUAL,
+                started_at=now - timedelta(hours=48),
+                finished_at=now - timedelta(hours=48) + timedelta(milliseconds=100),
+                duration_ms=100,
             )
 
             # Create recent call

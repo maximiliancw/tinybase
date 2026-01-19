@@ -225,9 +225,7 @@ def get_function_metrics(
     """Get aggregated function execution metrics."""
     cutoff = utcnow() - timedelta(hours=hours)
 
-    calls = session.exec(
-        select(FunctionCall).where(FunctionCall.started_at >= cutoff)
-    ).all()
+    calls = session.exec(select(FunctionCall).where(FunctionCall.started_at >= cutoff)).all()
 
     # Aggregate by function name
     metrics = {}

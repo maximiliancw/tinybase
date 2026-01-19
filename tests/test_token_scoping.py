@@ -41,6 +41,7 @@ class TestTokenScoping:
         """Test that internal tokens with user_id have 'internal' scope."""
         # Create a test user
         import uuid
+
         test_user = User(
             email=f"test-{uuid.uuid4().hex[:8]}@example.com",
             password_hash=hash_password("testpass"),
@@ -68,6 +69,7 @@ class TestTokenScoping:
         """Test that internal tokens for admin users have 'internal' scope."""
         # Create a test admin
         import uuid
+
         test_admin = User(
             email=f"admin-{uuid.uuid4().hex[:8]}@example.com",
             password_hash=hash_password("adminpass"),
@@ -95,6 +97,7 @@ class TestTokenScoping:
         """Test that regular auth tokens have None scope."""
         # Create a test user
         import uuid
+
         test_user = User(
             email=f"user-{uuid.uuid4().hex[:8]}@example.com",
             password_hash=hash_password("userpass"),
@@ -122,9 +125,7 @@ class TestTokenScoping:
         session.close()
 
         with Session(get_engine()) as new_session:
-            token = new_session.exec(
-                select(AuthToken).where(AuthToken.token == token_str)
-            ).first()
+            token = new_session.exec(select(AuthToken).where(AuthToken.token == token_str)).first()
 
             assert token is not None
             assert token.scope == "internal"
@@ -133,6 +134,7 @@ class TestTokenScoping:
         """Test creating tokens with different scopes."""
         # Create user for regular token
         import uuid
+
         test_user = User(
             email=f"user2-{uuid.uuid4().hex[:8]}@example.com",
             password_hash=hash_password("userpass2"),
