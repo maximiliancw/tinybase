@@ -290,7 +290,7 @@ author = "Your Name"
 license = "MIT"
 
 [extension.tinybase]
-min_version = "0.1.0"
+min_version = "0.2.0"
 
 [extension.dependencies]
 requests = ">=2.28.0"
