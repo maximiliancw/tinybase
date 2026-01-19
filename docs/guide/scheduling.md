@@ -2,6 +2,9 @@
 
 TinyBase includes a built-in scheduler for running functions automatically. Schedule one-time tasks, recurring jobs, or complex cron-based schedules.
 
+!!! note "Function Format"
+    The examples on this page use simplified function signatures for clarity. In practice, user functions should use the [TinyBase SDK format](functions.md#defining-functions) with isolated execution. The scheduling API works the same regardless of function format.
+
 ## Overview
 
 The scheduler:

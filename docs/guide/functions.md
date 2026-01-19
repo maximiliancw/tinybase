@@ -453,17 +453,26 @@ my-app/
 Each file can define functions independently:
 
 ```python title="functions/orders.py"
+# /// script
+# dependencies = ["tinybase-sdk"]
+# ///
+
 from pydantic import BaseModel
-from tinybase.functions import Context, register
+from tinybase_sdk import register
+from tinybase_sdk.cli import run
 
 
 class CreateOrderInput(BaseModel):
     ...
 
 
-@register(name="create_order", ...)
-def create_order(ctx: Context, payload: CreateOrderInput) -> ...:
+@register(name="create_order", auth="auth")
+def create_order(client, payload: CreateOrderInput):
     ...
+
+
+if __name__ == "__main__":
+    run()
 ```
 
 ### Using uv's Single-File Script Feature

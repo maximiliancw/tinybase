@@ -247,6 +247,9 @@ curl http://localhost:8000/api/collections/posts/records \
 
 ## Working with Records in Functions
 
+!!! note "Function Format"
+    The examples below show internal API usage for extensions. User functions should use the [TinyBase SDK format](functions.md#defining-functions) and access collections via the `client` API object instead of direct database access.
+
 Access collections from within functions using the context:
 
 ```python

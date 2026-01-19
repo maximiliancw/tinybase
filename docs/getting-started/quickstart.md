@@ -153,14 +153,24 @@ Response:
 
 ## Step 6: Create a Custom Function
 
-Now let's create a function to get task statistics. Edit `functions.py`:
+Now let's create a function to get task statistics. Create a new function file:
 
-```python title="functions.py"
+```bash
+tinybase functions new task_stats -d "Get task completion statistics"
+```
+
+This creates `functions/task_stats.py`. Edit it:
+
+```python title="functions/task_stats.py"
+# /// script
+# dependencies = [
+#   "tinybase-sdk",
+# ]
+# ///
+
 from pydantic import BaseModel
-from sqlmodel import select
-
-from tinybase.db.models import Record
-from tinybase.functions import Context, register
+from tinybase_sdk import register
+from tinybase_sdk.cli import run
 
 
 class TaskStatsInput(BaseModel):
@@ -180,27 +190,16 @@ class TaskStatsOutput(BaseModel):
     name="task_stats",
     description="Get task completion statistics",
     auth="public",
-    input_model=TaskStatsInput,
-    output_model=TaskStatsOutput,
     tags=["tasks"],
 )
-def task_stats(ctx: Context, payload: TaskStatsInput) -> TaskStatsOutput:
+def task_stats(client, payload: TaskStatsInput) -> TaskStatsOutput:
     """Calculate task statistics from the database."""
-    # Query all task records
-    records = ctx.db.exec(
-        select(Record).where(Record.collection_id != None)  # All records
-    ).all()
+    # Query all task records via API
+    response = client.get("/api/collections/tasks/records")
+    records = response.json().get("items", [])
     
-    # Filter to task collection records (in production, filter by collection_id)
-    total = 0
-    completed = 0
-    
-    for record in records:
-        if "completed" in record.data:
-            total += 1
-            if record.data.get("completed"):
-                completed += 1
-    
+    total = len(records)
+    completed = sum(1 for r in records if r.get("data", {}).get("completed", False))
     pending = total - completed
     rate = (completed / total * 100) if total > 0 else 0.0
     
@@ -210,6 +209,10 @@ def task_stats(ctx: Context, payload: TaskStatsInput) -> TaskStatsOutput:
         pending=pending,
         completion_rate=round(rate, 2)
     )
+
+
+if __name__ == "__main__":
+    run()
 ```
 
 Restart the server (or use `--reload` flag) and call the function:
@@ -234,9 +237,26 @@ curl -X PATCH http://localhost:8000/api/collections/tasks/records/RECORD_ID \
 
 Let's create a function that sends daily task reminders, and schedule it.
 
-Add to `functions.py`:
+Create a new function:
+
+```bash
+tinybase functions new send_task_reminders -d "Send reminders for pending tasks"
+```
+
+Edit `functions/send_task_reminders.py`:
 
 ```python
+# /// script
+# dependencies = [
+#   "tinybase-sdk",
+# ]
+# ///
+
+from pydantic import BaseModel
+from tinybase_sdk import register
+from tinybase_sdk.cli import run
+
+
 class ReminderInput(BaseModel):
     pass
 
@@ -250,20 +270,23 @@ class ReminderOutput(BaseModel):
     name="send_task_reminders",
     description="Send reminders for pending tasks",
     auth="admin",
-    input_model=ReminderInput,
-    output_model=ReminderOutput,
     tags=["tasks", "notifications"],
 )
-def send_task_reminders(ctx: Context, payload: ReminderInput) -> ReminderOutput:
+def send_task_reminders(client, payload: ReminderInput) -> ReminderOutput:
     """Check for pending tasks and 'send' reminders."""
     # In production, this would send emails/notifications
-    records = ctx.db.exec(select(Record)).all()
-    pending = sum(1 for r in records if not r.data.get("completed", False))
+    response = client.get("/api/collections/tasks/records")
+    records = response.json().get("items", [])
+    pending = sum(1 for r in records if not r.get("data", {}).get("completed", False))
     
     return ReminderOutput(
         message=f"Reminder: You have {pending} pending tasks!",
         pending_count=pending
     )
+
+
+if __name__ == "__main__":
+    run()
 ```
 
 Create a schedule via the Admin UI or API:
@@ -311,92 +334,14 @@ Congratulations! You've built a functional task API with TinyBase. Here's what t
 
 ## Complete Code
 
-Here's the complete `functions.py` for reference:
+Your `functions/` directory should now contain:
 
-```python title="functions.py"
-"""Task Management Functions for TinyBase"""
-
-from pydantic import BaseModel
-from sqlmodel import select
-
-from tinybase.db.models import Record
-from tinybase.functions import Context, register
-
-
-# =============================================================================
-# Task Statistics
-# =============================================================================
-
-
-class TaskStatsInput(BaseModel):
-    pass
-
-
-class TaskStatsOutput(BaseModel):
-    total: int
-    completed: int
-    pending: int
-    completion_rate: float
-
-
-@register(
-    name="task_stats",
-    description="Get task completion statistics",
-    auth="public",
-    input_model=TaskStatsInput,
-    output_model=TaskStatsOutput,
-    tags=["tasks"],
-)
-def task_stats(ctx: Context, payload: TaskStatsInput) -> TaskStatsOutput:
-    records = ctx.db.exec(select(Record)).all()
-    
-    total = completed = 0
-    for record in records:
-        if "completed" in record.data:
-            total += 1
-            if record.data.get("completed"):
-                completed += 1
-    
-    pending = total - completed
-    rate = (completed / total * 100) if total > 0 else 0.0
-    
-    return TaskStatsOutput(
-        total=total,
-        completed=completed,
-        pending=pending,
-        completion_rate=round(rate, 2)
-    )
-
-
-# =============================================================================
-# Task Reminders
-# =============================================================================
-
-
-class ReminderInput(BaseModel):
-    pass
-
-
-class ReminderOutput(BaseModel):
-    message: str
-    pending_count: int
-
-
-@register(
-    name="send_task_reminders",
-    description="Send reminders for pending tasks",
-    auth="admin",
-    input_model=ReminderInput,
-    output_model=ReminderOutput,
-    tags=["tasks", "notifications"],
-)
-def send_task_reminders(ctx: Context, payload: ReminderInput) -> ReminderOutput:
-    records = ctx.db.exec(select(Record)).all()
-    pending = sum(1 for r in records if not r.data.get("completed", False))
-    
-    return ReminderOutput(
-        message=f"Reminder: You have {pending} pending tasks!",
-        pending_count=pending
-    )
 ```
+functions/
+├── __init__.py
+├── task_stats.py
+└── send_task_reminders.py
+```
+
+Both function files follow the SDK format with inline dependency declarations and isolated execution environments.
 

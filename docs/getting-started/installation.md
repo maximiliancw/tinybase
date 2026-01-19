@@ -87,8 +87,8 @@ This creates the following structure:
 my-project/
 ├── tinybase.toml      # Configuration file
 ├── tinybase.db        # SQLite database
-├── functions.py       # Main functions file
-└── functions/         # Additional function modules
+└── functions/         # Functions directory (each function in its own file)
+    └── __init__.py    # Package marker
 ```
 
 ### Initialize with Admin User

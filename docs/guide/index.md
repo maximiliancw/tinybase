@@ -168,7 +168,7 @@ def notify_order(event: RecordCreateEvent):
 
 ??? question "Functions not loading"
     
-    1. Ensure `functions.py` exists in your project directory
+    1. Ensure `functions/` directory exists in your project directory
     2. Check for Python syntax errors:
        ```bash
        python -c "import functions"

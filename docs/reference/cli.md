@@ -70,8 +70,8 @@ tinybase init ./my-app
 
 - `tinybase.toml` - Configuration file
 - `tinybase.db` - SQLite database
-- `functions.py` - Example functions
-- `functions/` - Functions directory
+- `functions/` - Functions directory (each function in its own file)
+  - `__init__.py` - Package marker
 
 ---
 
@@ -129,7 +129,6 @@ tinybase functions new NAME [OPTIONS]
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--description, -d` | Function description | `TODO: Add description` |
-| `--file, -f` | Functions file to add to | `./functions.py` |
 
 **Examples:**
 

@@ -2,7 +2,81 @@
 
 Reference documentation for TinyBase Python modules.
 
-## Functions Module
+!!! info "Two Function APIs"
+    TinyBase provides two ways to define functions:
+    
+    1. **TinyBase SDK** (`tinybase_sdk`) - For user functions that run in isolated subprocesses
+        - Recommended for most use cases
+        - Automatic dependency management with inline script dependencies
+        - Full isolation and security
+        - See [Functions Guide](../guide/functions.md)
+    
+    2. **Internal API** (`tinybase.functions`) - For extensions and internal code
+        - Direct access to TinyBase internals
+        - Runs in the main process
+        - Used by extensions and system integrations
+        - Documented below
+
+## SDK Module (User Functions)
+
+### tinybase_sdk
+
+The SDK for writing user functions with isolated execution.
+
+```python
+# /// script
+# dependencies = ["tinybase-sdk"]
+# ///
+
+from tinybase_sdk import register
+from tinybase_sdk.cli import run
+from pydantic import BaseModel
+
+class MyInput(BaseModel):
+    value: str
+
+class MyOutput(BaseModel):
+    result: str
+
+@register(
+    name="my_function",
+    description="My function",
+    auth="auth",  # "public", "auth", "admin"
+    tags=["category"]
+)
+def my_function(client, payload: MyInput) -> MyOutput:
+    # client provides authenticated access to TinyBase API
+    # payload is automatically validated against MyInput
+    return MyOutput(result=f"Processed: {payload.value}")
+
+if __name__ == "__main__":
+    run()
+```
+
+**The `client` Object:**
+
+The `client` parameter provides authenticated HTTP access to the TinyBase API:
+
+```python
+# GET request
+response = client.get("/api/collections/tasks/records")
+data = response.json()
+
+# POST request
+response = client.post(
+    "/api/collections/tasks/records",
+    json={"data": {"title": "New task"}}
+)
+
+# Other HTTP methods
+response = client.patch(url, json=data)
+response = client.delete(url)
+response = client.put(url, json=data)
+```
+
+---
+
+## Internal Functions Module (Extensions)
 
 ### tinybase.functions
 

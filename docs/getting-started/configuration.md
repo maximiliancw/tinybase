@@ -60,7 +60,7 @@ All settings can be overridden with environment variables using the `TINYBASE_` 
 | `TINYBASE_DB_URL` | `database.url` | `sqlite:///./tinybase.db` |
 | `TINYBASE_AUTH_TOKEN_TTL_HOURS` | `auth.token_ttl_hours` | `24` |
 | `TINYBASE_FUNCTIONS_PATH` | `functions.path` | `./functions` |
-| `TINYBASE_FUNCTIONS_FILE` | `functions.file` | `./functions.py` |
+| `TINYBASE_FUNCTIONS_PATH` | `functions.path` | `./functions` |
 | `TINYBASE_SCHEDULER_ENABLED` | `scheduler.enabled` | `true` |
 | `TINYBASE_SCHEDULER_INTERVAL_SECONDS` | `scheduler.interval_seconds` | `5` |
 | `TINYBASE_SCHEDULER_TOKEN_CLEANUP_INTERVAL` | `scheduler.token_cleanup_interval` | `60` |
@@ -120,7 +120,7 @@ Tokens are opaque bearer tokens stored in the database. After the TTL expires, u
 ```toml
 [functions]
 path = "./functions"    # Directory for function modules
-file = "./functions.py" # Single file for functions
+path = "./functions" # Directory containing function files
 ```
 
 TinyBase loads functions from both:

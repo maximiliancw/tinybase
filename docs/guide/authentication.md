@@ -400,15 +400,18 @@ def sensitive_action(ctx: Context, payload: Input) -> Output:
     return Output(result=result)
 ```
 
-## Logout / Token Invalidation
+## Logout
 
-Currently, TinyBase doesn't have a dedicated logout endpoint. Tokens expire automatically based on TTL.
+TinyBase provides a logout endpoint that revokes all tokens for the current user.
 
-To "logout":
+To logout:
 
-1. Client discards the token
-2. Token expires naturally
-3. Or admin can delete the token from the database
+```bash
+curl -X POST http://localhost:8000/api/auth/logout \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+This deletes all access and refresh tokens from the database, forcing the user to log in again to obtain new tokens.
 
 ## Error Responses
 

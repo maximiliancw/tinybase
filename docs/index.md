@@ -90,7 +90,7 @@ TinyBase is a self-hosted Backend-as-a-Service (BaaS) framework that brings the 
 
     ---
 
-    Built-in user authentication with opaque tokens. Role-based access control with admin and user roles.
+    Built-in user authentication with JWT tokens. Role-based access control with admin and user roles. Includes access and refresh tokens.
 
     [:octicons-arrow-right-24: Learn about Authentication](guide/authentication.md)
 
@@ -108,9 +108,16 @@ TinyBase is a self-hosted Backend-as-a-Service (BaaS) framework that brings the 
 
 Define a server-side function in Python:
 
-```python title="functions.py"
+```python title="functions/greet.py"
+# /// script
+# dependencies = [
+#   "tinybase-sdk",
+# ]
+# ///
+
 from pydantic import BaseModel
-from tinybase.functions import Context, register
+from tinybase_sdk import register
+from tinybase_sdk.cli import run
 
 
 class GreetInput(BaseModel):
@@ -125,11 +132,13 @@ class GreetOutput(BaseModel):
     name="greet",
     description="Generate a greeting",
     auth="public",
-    input_model=GreetInput,
-    output_model=GreetOutput,
 )
-def greet(ctx: Context, payload: GreetInput) -> GreetOutput:
+def greet(client, payload: GreetInput) -> GreetOutput:
     return GreetOutput(message=f"Hello, {payload.name}!")
+
+
+if __name__ == "__main__":
+    run()
 ```
 
 Call it via the REST API:

@@ -78,7 +78,7 @@ services:
       - "8000:8000"
     volumes:
       - tinybase-data:/data
-      - ./functions.py:/app/functions.py:ro
+      - ./functions:/app/functions:ro
     environment:
       - TINYBASE_ADMIN_EMAIL=admin@example.com
       - TINYBASE_ADMIN_PASSWORD=changeme
@@ -119,7 +119,7 @@ services:
     build: .
     volumes:
       - tinybase-data:/data
-      - ./functions.py:/app/functions.py:ro
+      - ./functions:/app/functions:ro
     environment:
       - TINYBASE_ADMIN_EMAIL=admin@example.com
       - TINYBASE_ADMIN_PASSWORD=${TINYBASE_ADMIN_PASSWORD}
@@ -158,7 +158,7 @@ services:
     build: .
     volumes:
       - tinybase-data:/data
-      - ./functions.py:/app/functions.py:ro
+      - ./functions:/app/functions:ro
     environment:
       - TINYBASE_ADMIN_EMAIL=admin@example.com
       - TINYBASE_ADMIN_PASSWORD=${TINYBASE_ADMIN_PASSWORD}
@@ -216,12 +216,11 @@ volumes:
 
 ### Custom Functions
 
-Mount your functions file:
+Mount your functions directory:
 
 ```yaml
 volumes:
-  - ./functions.py:/app/functions.py:ro
-  - ./functions/:/app/functions/:ro
+  - ./functions:/app/functions:ro
 ```
 
 ### Custom Configuration
