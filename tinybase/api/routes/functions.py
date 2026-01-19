@@ -156,7 +156,7 @@ def call_function(
 
     if payload_size > config.max_function_payload_bytes:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f"Payload exceeds maximum size of {config.max_function_payload_bytes} bytes",
         )
 
