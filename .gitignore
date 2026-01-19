@@ -69,6 +69,7 @@ tinybase.db
 tinybase.toml
 alembic.ini
 ./functions/
+*cache.db*
 
 
 # OS
