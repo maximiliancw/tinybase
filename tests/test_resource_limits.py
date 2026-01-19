@@ -42,7 +42,7 @@ class TestPayloadSizeValidation:
         assert response.status_code == 413
         assert "exceeds maximum size" in response.json()["detail"]
 
-    def test_payload_size_configurable(self, client, mock_functions, user_token, monkeypatch):
+    def test_payload_size_configurable(self, client, mock_functions, monkeypatch):
         """Test that payload size limit is configurable."""
         # Set a small limit (must be >= 1024)
         monkeypatch.setenv("TINYBASE_MAX_FUNCTION_PAYLOAD_BYTES", "2048")
@@ -51,6 +51,11 @@ class TestPayloadSizeValidation:
         from tinybase.config import reload_settings
 
         reload_settings()
+
+        # Get a fresh user token after reloading settings
+        from tests.utils import get_user_token
+
+        user_token = get_user_token(client)
 
         # Payload larger than 2048 bytes
         large_data = "x" * 3000
