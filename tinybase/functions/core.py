@@ -336,6 +336,18 @@ def execute_function(
                 output = json.loads(subprocess_result.stdout)
                 if output.get("status") == "succeeded":
                     result = output.get("result")
+
+                    # Validate result size
+                    result_json = json.dumps(result)
+                    result_size = len(result_json.encode("utf-8"))
+
+                    if result_size > config.max_function_result_bytes:
+                        status = FunctionCallStatus.FAILED
+                        error_message = (
+                            f"Result exceeds maximum size of {config.max_function_result_bytes} bytes"
+                        )
+                        error_type = "ResultSizeError"
+                        result = None
                 else:
                     status = FunctionCallStatus.FAILED
                     error_message = output.get("error", "Unknown error")
@@ -373,14 +385,16 @@ def execute_function(
         for log_entry in logs:
             log_level = log_entry.get("level", "INFO").upper()
             log_message = log_entry.get("message", "")
+            # Filter out reserved keys to avoid LogRecord conflicts
+            extra_fields = {k: v for k, v in log_entry.items() if k not in ["message", "asctime"]}
             if log_level == "ERROR" or log_level == "CRITICAL":
-                logger.error(f"[{meta.name}] {log_message}", extra=log_entry)
+                logger.error(f"[{meta.name}] {log_message}", extra=extra_fields)
             elif log_level == "WARNING":
-                logger.warning(f"[{meta.name}] {log_message}", extra=log_entry)
+                logger.warning(f"[{meta.name}] {log_message}", extra=extra_fields)
             elif log_level == "DEBUG":
-                logger.debug(f"[{meta.name}] {log_message}", extra=log_entry)
+                logger.debug(f"[{meta.name}] {log_message}", extra=extra_fields)
             else:
-                logger.info(f"[{meta.name}] {log_message}", extra=log_entry)
+                logger.info(f"[{meta.name}] {log_message}", extra=extra_fields)
 
     # Run function complete hooks (after execution)
     complete_event = FunctionCompleteEvent(

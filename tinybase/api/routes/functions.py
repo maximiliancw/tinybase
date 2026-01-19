@@ -6,6 +6,7 @@ Provides endpoints for:
 - Function listing (GET /api/functions)
 """
 
+import json
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, status
@@ -145,6 +146,19 @@ def call_function(
 
     # Input validation will be done in the subprocess by the SDK
     # We just pass the payload through here
+
+    # Validate payload size
+    from tinybase.config import settings
+
+    config = settings()
+    payload_json = json.dumps(payload or {})
+    payload_size = len(payload_json.encode("utf-8"))
+
+    if payload_size > config.max_function_payload_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Payload exceeds maximum size of {config.max_function_payload_bytes} bytes",
+        )
 
     # Execute the function
     result = execute_function(
