@@ -393,7 +393,7 @@ if __name__ == "__main__":
                         mock_pool_instance.get_warm_process.return_value = None
                         mock_pool.return_value = mock_pool_instance
 
-                        with patch("subprocess.run") as mock_subprocess:
+                        with patch("tinybase.functions.core.subprocess.run") as mock_subprocess:
                             # Mock timeout exception
                             mock_subprocess.side_effect = subprocess.TimeoutExpired(
                                 ["uv", "run", "--script"], timeout=1
@@ -409,8 +409,8 @@ if __name__ == "__main__":
                             )
 
                             assert result.status == FunctionCallStatus.FAILED
+                            assert result.error_type == "TimeoutError"
                             assert result.error_message is not None
-                            assert "timeout" in result.error_message.lower()
         finally:
             try:
                 slow_file.unlink()

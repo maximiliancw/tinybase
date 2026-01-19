@@ -200,12 +200,14 @@ class TestInternalTokens:
 
     def test_internal_token_can_be_validated(self, session):
         """Test that internal token can be validated."""
+        # Create a test user first (use unique email)
+        from uuid import uuid4
+
         from tinybase.auth import hash_password
         from tinybase.db.models import User
 
-        # Create a test user first
         test_user = User(
-            email="testuser@example.com",
+            email=f"testuser_{uuid4().hex[:8]}@example.com",
             password_hash=hash_password("password"),
             is_admin=False,
         )
@@ -233,12 +235,14 @@ class TestInternalTokens:
 
     def test_internal_token_multiple_tokens(self, session):
         """Test creating multiple internal tokens."""
+        # Create a test user first (use unique email)
+        from uuid import uuid4
+
         from tinybase.auth import hash_password
         from tinybase.db.models import User
 
-        # Create a test user first
         test_user = User(
-            email="testuser@example.com",
+            email=f"testuser_{uuid4().hex[:8]}@example.com",
             password_hash=hash_password("password"),
             is_admin=False,
         )

@@ -222,8 +222,8 @@ if __name__ == "__main__":
                         mock_result = MagicMock()
                         # Check if this is metadata extraction (--metadata flag)
                         if isinstance(cmd, list) and "--metadata" in cmd:
-                            # Determine which function based on file path (last item in cmd)
-                            file_path = str(cmd[-1])
+                            # Determine which function based on file path (cmd[3] or cmd[-2])
+                            file_path = str(cmd[3]) if len(cmd) > 3 else ""
                             if "func1" in file_path:
                                 mock_result.stdout = '{"name": "function_one", "description": "First function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
                             elif "func2" in file_path:
@@ -264,12 +264,12 @@ if __name__ == "__main__":
             assert loaded_count == 0
 
     def test_load_functions_handles_errors_gracefully(self):
-        """Test that loader handles errors gracefully."""
+        """Test that loader handles errors gracefully and skips invalid files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             dir_path = Path(tmpdir)
 
-            # Create one valid and one invalid function file
-            valid_file = dir_path / "valid.py"
+            # Create a valid SDK function with proper script block
+            valid_file = dir_path / "my_function.py"
             valid_file.write_text("""# /// script
 # dependencies = [
 #   "tinybase-sdk",
@@ -287,8 +287,20 @@ if __name__ == "__main__":
     run()
 """)
 
-            invalid_file = dir_path / "invalid.py"
-            invalid_file.write_text("invalid syntax {")
+            # Create file with syntax error - should be skipped
+            invalid_syntax = dir_path / "broken.py"
+            invalid_syntax.write_text("invalid syntax {")
+
+            # Create file without tinybase-sdk dependency - should be skipped
+            no_sdk = dir_path / "no_sdk.py"
+            no_sdk.write_text("""# /// script
+# dependencies = [
+#   "requests",
+# ]
+# ///
+
+print("No SDK")
+""")
 
             # Mock subprocess calls
             with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
@@ -299,17 +311,25 @@ if __name__ == "__main__":
                     def mock_subprocess_side_effect(cmd, *args, **kwargs):
                         mock_result = MagicMock()
                         if isinstance(cmd, list) and "--metadata" in cmd:
-                            file_path = str(cmd[-1])
-                            if "valid" in file_path:
+                            file_path = str(cmd[3]) if len(cmd) > 3 else ""
+                            if "my_function.py" in file_path:
+                                # Valid function with SDK
                                 mock_result.stdout = '{"name": "valid_function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
                                 mock_result.returncode = 0
-                            else:
-                                # Invalid file fails
+                            elif "broken.py" in file_path:
+                                # Syntax error
                                 mock_result.returncode = 1
-                                mock_result.stderr = "Syntax error"
-                            mock_result.stdout = (
-                                mock_result.stdout if mock_result.returncode == 0 else ""
-                            )
+                                mock_result.stderr = "SyntaxError: invalid syntax"
+                                mock_result.stdout = ""
+                            elif "no_sdk.py" in file_path:
+                                # No SDK = no function registered
+                                mock_result.returncode = 1
+                                mock_result.stderr = "No function registered"
+                                mock_result.stdout = ""
+                            else:
+                                mock_result.returncode = 1
+                                mock_result.stderr = "Unknown error"
+                                mock_result.stdout = ""
                         else:
                             # For prewarm
                             mock_result.returncode = 0
@@ -319,13 +339,85 @@ if __name__ == "__main__":
 
                     mock_subprocess.side_effect = mock_subprocess_side_effect
 
-                    # Should load the valid function and skip the invalid one
+                    # Should load only the valid function and skip the invalid ones
                     loaded_count = load_functions_from_directory(dir_path)
 
                     assert loaded_count == 1
 
                     registry = get_global_registry()
                     assert registry.get("valid_function") is not None
+
+    def test_load_functions_excludes_underscore_files(self):
+        """Test that files starting with underscore are excluded from loading."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dir_path = Path(tmpdir)
+
+            # Create __init__.py - should be excluded
+            init_file = dir_path / "__init__.py"
+            init_file.write_text('"""Package init"""')
+
+            # Create _helper.py - should be excluded
+            helper_file = dir_path / "_helper.py"
+            helper_file.write_text("""# /// script
+# dependencies = [
+#   "tinybase-sdk",
+# ]
+# ///
+
+from tinybase_sdk import register
+
+@register(name="should_not_load")
+def helper(client, payload: dict) -> dict:
+    return {"result": "ok"}
+""")
+
+            # Create normal function file - should be loaded
+            func_file = dir_path / "my_function.py"
+            func_file.write_text("""# /// script
+# dependencies = [
+#   "tinybase-sdk",
+# ]
+# ///
+
+from tinybase_sdk import register
+
+@register(name="my_function")
+def my_func(client, payload: dict) -> dict:
+    return {"result": "ok"}
+""")
+
+            with patch("tinybase.functions.loader.subprocess.run") as mock_subprocess:
+                with patch("tinybase.functions.pool.get_pool") as mock_get_pool:
+                    mock_pool = MagicMock()
+                    mock_get_pool.return_value = mock_pool
+
+                    def mock_subprocess_side_effect(cmd, *args, **kwargs):
+                        mock_result = MagicMock()
+                        if isinstance(cmd, list) and "--metadata" in cmd:
+                            file_path = str(cmd[3]) if len(cmd) > 3 else ""
+                            # Only my_function.py should be processed
+                            if "my_function.py" in file_path:
+                                mock_result.stdout = '{"name": "my_function", "auth": "auth", "tags": [], "input_schema": {"type": "object"}, "output_schema": {"type": "object"}}'
+                                mock_result.returncode = 0
+                            else:
+                                # __init__.py and _helper.py should never reach here
+                                raise AssertionError(f"File {file_path} should not be processed")
+                        else:
+                            mock_result.returncode = 0
+                            mock_result.stdout = ""
+                            mock_result.stderr = ""
+                        return mock_result
+
+                    mock_subprocess.side_effect = mock_subprocess_side_effect
+
+                    loaded_count = load_functions_from_directory(dir_path)
+
+                    # Only my_function.py should be loaded
+                    assert loaded_count == 1
+
+                    registry = get_global_registry()
+                    assert registry.get("my_function") is not None
+                    assert registry.get("should_not_load") is None
 
     def test_ensure_functions_package(self):
         """Test ensuring functions package exists."""
@@ -390,7 +482,7 @@ if __name__ == "__main__":
                     def mock_subprocess_side_effect(cmd, *args, **kwargs):
                         mock_result = MagicMock()
                         if isinstance(cmd, list) and "--metadata" in cmd:
-                            file_path = str(cmd[-1])
+                            file_path = str(cmd[3]) if len(cmd) > 3 else ""
                             # Extract function number from path
                             func_num = None
                             for j in range(5):

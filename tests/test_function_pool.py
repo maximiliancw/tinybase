@@ -107,18 +107,20 @@ class TestFunctionProcessPool:
 
     def test_pool_ttl_expiration(self):
         """Test that expired processes are removed."""
+        from collections import deque
+        from datetime import timedelta
+
         pool = FunctionProcessPool(max_pool_size=3, ttl_seconds=1)  # 1 second TTL
 
         file_path = Path("/test/func.py")
 
-        # Create old warm process
-        old_time = utcnow()
-        # Subtract 2 seconds to make it expired
-        from datetime import timedelta
-
-        old_time = old_time - timedelta(seconds=2)
+        # Create old warm process (2 seconds old, expired)
+        old_time = utcnow() - timedelta(seconds=2)
         warm = WarmProcess(file_path=file_path, last_used=old_time)
-        pool.return_warm_process(file_path, warm)
+        # Manually add to pool without updating last_used (which return_warm_process would do)
+        key = str(file_path)
+        with pool._lock:
+            pool._pools.setdefault(key, deque()).append(warm)
 
         # Try to get it - should be None (expired)
         retrieved = pool.get_warm_process(file_path)
@@ -131,6 +133,7 @@ class TestFunctionProcessPool:
         file_path = Path("/test/func.py")
 
         # Add expired process (3 seconds old)
+        from collections import deque
         from datetime import timedelta
 
         old_time = utcnow() - timedelta(seconds=3)
