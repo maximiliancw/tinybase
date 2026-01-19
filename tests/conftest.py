@@ -109,3 +109,74 @@ def test_record(client, admin_token, test_collection):
         "test_collection",
         {"title": "Test Record"},
     )
+
+
+@pytest.fixture
+def mock_functions(client):
+    """Register mock functions for API testing."""
+    from tinybase.functions.core import FunctionMeta, get_global_registry
+    from tinybase.utils import AuthLevel
+
+    registry = get_global_registry()
+
+    # Public function
+    registry.register(
+        FunctionMeta(
+            name="public_test",
+            description="Public test function",
+            auth=AuthLevel.PUBLIC,
+            tags=["test"],
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
+            file_path="/mock/public_test.py",
+        )
+    )
+
+    # Auth-required function
+    registry.register(
+        FunctionMeta(
+            name="auth_test",
+            description="Auth test function",
+            auth=AuthLevel.AUTH,
+            tags=["test"],
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
+            file_path="/mock/auth_test.py",
+        )
+    )
+
+    # Admin-only function
+    registry.register(
+        FunctionMeta(
+            name="admin_test",
+            description="Admin test function",
+            auth=AuthLevel.ADMIN,
+            tags=["test"],
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
+            file_path="/mock/admin_test.py",
+        )
+    )
+
+    # Function with Pydantic schema
+    registry.register(
+        FunctionMeta(
+            name="validated_test",
+            description="Function with validation",
+            auth=AuthLevel.AUTH,
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "age": {"type": "integer", "minimum": 0},
+                },
+                "required": ["name", "age"],
+            },
+            output_schema={"type": "object"},
+            file_path="/mock/validated_test.py",
+        )
+    )
+
+    yield
+
+    # Cleanup handled by reset_global_registry in client fixture

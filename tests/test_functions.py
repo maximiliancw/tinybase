@@ -2,8 +2,6 @@
 Tests for functions functionality.
 """
 
-import pytest
-
 from tests.utils import get_admin_token
 
 
@@ -15,7 +13,7 @@ def test_list_functions(client):
     assert isinstance(response.json(), list)
 
 
-def test_admin_function_list(client):
+def test_admin_function_list(client, mock_functions):
     """Test admin function list with extended info."""
     token = get_admin_token(client)
 
@@ -27,28 +25,19 @@ def test_admin_function_list(client):
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
+    assert len(data) >= 4  # Should have at least our 4 mock functions
 
-    # If there are functions, verify extended info fields
-    if data:
-        func = data[0]
-        assert "module" in func
-        assert "file_path" in func
-        assert "is_async" in func
+    # Verify extended info fields
+    func = data[0]
+    assert "module" in func
+    assert "file_path" in func
+    assert "is_async" in func
 
 
-def test_function_call_requires_auth_for_auth_functions(client):
+def test_function_call_requires_auth_for_auth_functions(client, mock_functions):
     """Test that auth-level functions require authentication."""
-    # This test depends on having an auth-level function registered
-    # Skip if no functions are available
-    response = client.get("/api/functions")
-    functions = response.json()
-
-    auth_function = next((f for f in functions if f["auth"] == "auth"), None)
-    if auth_function is None:
-        pytest.skip("No auth-level function available for testing")
-
-    # Try to call without auth
-    response = client.post(f"/api/functions/{auth_function['name']}", json={})
+    # Try to call auth function without authentication
+    response = client.post("/api/functions/auth_test", json={})
     assert response.status_code == 401
 
 
