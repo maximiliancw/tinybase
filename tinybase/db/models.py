@@ -239,6 +239,10 @@ class FunctionCall(SQLModel, table=True):
     error_message: str | None = Field(default=None)
     error_type: str | None = Field(default=None, max_length=200)
 
+    # Resource usage (optional, for future tracking)
+    memory_peak_mb: int | None = Field(default=None)
+    cpu_time_ms: int | None = Field(default=None)
+
     created_at: datetime = Field(default_factory=utcnow)
 
 

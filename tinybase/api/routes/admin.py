@@ -212,6 +212,57 @@ def get_function_call(
     return call_to_response(call)
 
 
+@router.get(
+    "/functions/metrics",
+    summary="Get function execution metrics",
+    description="Get aggregated function execution metrics over a time period.",
+)
+def get_function_metrics(
+    session: DbSession,
+    _admin: CurrentAdminUser,
+    hours: int = Query(default=24, ge=1, le=720, description="Time period in hours"),
+) -> dict:
+    """Get aggregated function execution metrics."""
+    cutoff = utcnow() - timedelta(hours=hours)
+
+    calls = session.exec(
+        select(FunctionCall).where(FunctionCall.started_at >= cutoff)
+    ).all()
+
+    # Aggregate by function name
+    metrics = {}
+    for call in calls:
+        if call.function_name not in metrics:
+            metrics[call.function_name] = {
+                "total_calls": 0,
+                "succeeded": 0,
+                "failed": 0,
+                "avg_duration_ms": 0,
+                "durations": [],
+            }
+
+        m = metrics[call.function_name]
+        m["total_calls"] += 1
+        if call.status == FunctionCallStatus.SUCCEEDED:
+            m["succeeded"] += 1
+        else:
+            m["failed"] += 1
+
+        if call.duration_ms:
+            m["durations"].append(call.duration_ms)
+
+    # Calculate averages
+    for name, m in metrics.items():
+        if m["durations"]:
+            m["avg_duration_ms"] = sum(m["durations"]) / len(m["durations"])
+            del m["durations"]
+
+    return {
+        "period_hours": hours,
+        "functions": metrics,
+    }
+
+
 # =============================================================================
 # User Management Routes
 # =============================================================================
