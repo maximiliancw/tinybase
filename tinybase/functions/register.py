@@ -46,7 +46,7 @@ def register(
 
     Example:
         from pydantic import BaseModel
-        from tinybase.functions import Context, register
+        from tinybase.functions import register
 
         class AddInput(BaseModel):
             x: int
@@ -63,7 +63,7 @@ def register(
             output_model=AddOutput,
             tags=["math"],
         )
-        def add_numbers(ctx: Context, payload: AddInput) -> AddOutput:
+        def add_numbers(payload: AddInput) -> AddOutput:
             return AddOutput(sum=payload.x + payload.y)
     """
 
