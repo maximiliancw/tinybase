@@ -321,12 +321,14 @@ def create_internal_token(
             user_id=None,  # type: ignore
             token=generate_token(),
             expires_at=expires_at,
+            scope="internal",
         )
     else:
         token = AuthToken(
             user_id=user_id,
             token=generate_token(),
             expires_at=expires_at,
+            scope="internal",
         )
 
     session.add(token)

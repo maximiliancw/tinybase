@@ -60,6 +60,8 @@ class AuthToken(SQLModel, table=True):
     token: str = Field(index=True, unique=True, max_length=255)
     created_at: datetime = Field(default_factory=utcnow)
     expires_at: datetime | None = Field(default=None)
+    # Token scope (None = full access, "internal" = limited to function context)
+    scope: str | None = Field(default=None, max_length=50)
 
     def is_expired(self) -> bool:
         """Check if this token has expired."""
