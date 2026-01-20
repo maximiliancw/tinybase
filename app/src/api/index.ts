@@ -1,46 +1,38 @@
 /**
- * API Client
+ * API Client Configuration
  * 
- * Axios instance configured for TinyBase API requests.
- * Automatically includes authentication token in requests.
+ * Configures the auto-generated client with authentication and error handling.
+ * The client is generated from the OpenAPI spec - see scripts/generate-client.js
  * 
- * In development, set VITE_API_URL to point to your FastAPI server:
- *   VITE_API_URL=http://localhost:8000
- * 
- * In production (when served from FastAPI), leave it empty to use relative URLs.
+ * To regenerate the client:
+ *   1. Start the TinyBase server: tinybase serve
+ *   2. Run: yarn generate:client
  */
 
-import axios from 'axios'
+import { client } from '@/client/services.gen'
 
 // Get API base URL from environment variable
 // In dev: VITE_API_URL=http://localhost:8000
 // In prod: empty (relative URLs)
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
-// Create axios instance
-export const api = axios.create({
+// Configure the generated client
+client.setConfig({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 })
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('tb_access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
+// Add request interceptor for auth token
+client.interceptors.request.use((config) => {
+  const token = localStorage.getItem('tb_access_token')
+  if (token) {
+    config.headers = config.headers || {}
+    config.headers.Authorization = `Bearer ${token}`
   }
-)
+  return config
+})
 
-// Response interceptor to handle errors
-api.interceptors.response.use(
+// Add response interceptor for error handling
+client.interceptors.response.use(
   (response) => response,
   (error) => {
     // Handle 401 errors (unauthorized)
@@ -56,5 +48,12 @@ api.interceptors.response.use(
   }
 )
 
-export default api
+// Re-export the configured client and all service functions
+export { client }
 
+// Export client as 'api' for backward compatibility with existing code
+export const api = client.instance
+
+export * from '@/client/services.gen'
+export * from '@/client/types.gen'
+export * from '@/client/schemas.gen'

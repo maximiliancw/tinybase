@@ -56,7 +56,7 @@ async function generateClient() {
   await createClient({
     input: `${SERVER_URL}/openapi.json`,
     output: CLIENT_DIR,
-    client: 'axios',
+    client: '@hey-api/client-axios',
   });
 
   console.log(`✓ Client generated at ${CLIENT_DIR}`);
