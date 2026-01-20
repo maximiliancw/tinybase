@@ -3,19 +3,28 @@
  * Collections View
  *
  * List and manage data collections.
- * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, computed, h, watch } from "vue";
 import { useToast } from "vue-toastification";
 import { useRoute } from "vue-router";
 import { useUrlSearchParams } from "@vueuse/core";
-import { useForm } from "vee-validate";
+import { useField, useForm } from "vee-validate";
 import { useCollectionsStore } from "../stores/collections";
 import { useAuthStore } from "../stores/auth";
 import { validationSchemas } from "../composables/useFormValidation";
-import Modal from "../components/Modal.vue";
-import FormField from "../components/FormField.vue";
 import DataTable from "../components/DataTable.vue";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const toast = useToast();
 const route = useRoute();
@@ -39,6 +48,10 @@ const { handleSubmit, resetForm } = useForm({
   },
 });
 
+const nameField = useField("name");
+const labelField = useField("label");
+const schemaTextField = useField("schemaText");
+
 const onSubmit = handleSubmit(async (values) => {
   try {
     const schema = JSON.parse(values.schemaText);
@@ -61,7 +74,6 @@ const onSubmit = handleSubmit(async (values) => {
       toast.error(collectionsStore.error || "Failed to create collection");
     }
   } catch (err) {
-    // JSON validation should catch this, but handle just in case
     toast.error("Invalid schema JSON");
   }
 });
@@ -72,7 +84,6 @@ watch(
   (newAction) => {
     if (newAction === "create" && authStore.isAdmin) {
       showCreateModal.value = true;
-      // Clear the action param after opening modal
       params.action = undefined;
     }
   },
@@ -104,7 +115,7 @@ const collectionColumns = computed(() => {
       key: "name",
       label: "Name",
       render: (value: any) =>
-        h("router-link", { to: `/collections/${value}` }, value),
+        h("router-link", { to: `/collections/${value}`, class: "text-primary hover:underline" }, value),
     },
     { key: "label", label: "Label" },
     {
@@ -117,7 +128,7 @@ const collectionColumns = computed(() => {
       key: "created_at",
       label: "Created",
       render: (value: any) =>
-        h("small", { class: "text-muted" }, [
+        h("span", { class: "text-sm text-muted-foreground" }, [
           new Date(value).toLocaleDateString(),
         ]),
     },
@@ -131,7 +142,7 @@ const collectionColumns = computed(() => {
         {
           label: "Delete",
           action: (row: any) => handleDelete(row.name),
-          variant: "contrast" as const,
+          variant: "destructive" as const,
         },
       ],
     });
@@ -142,40 +153,41 @@ const collectionColumns = computed(() => {
 </script>
 
 <template>
-  <section data-animate="fade-in">
-    <header class="page-header">
-      <hgroup>
-        <h1>Collections</h1>
-        <p>Manage your data collections</p>
-      </hgroup>
+  <section class="space-y-6 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <header class="space-y-1">
+      <h1 class="text-3xl font-bold tracking-tight">Collections</h1>
+      <p class="text-muted-foreground">Manage your data collections</p>
     </header>
 
     <!-- Loading State -->
-    <article v-if="collectionsStore.loading" aria-busy="true">
-      Loading collections...
-    </article>
+    <Card v-if="collectionsStore.loading">
+      <CardContent class="flex items-center justify-center py-10">
+        <p class="text-sm text-muted-foreground">Loading collections...</p>
+      </CardContent>
+    </Card>
 
     <!-- Empty State -->
-    <article v-else-if="collectionsStore.collections.length === 0">
-      <div data-empty data-empty-icon="📁">
-        <p>No collections yet</p>
-        <p>
-          <small class="text-muted"
-            >Create your first collection to start storing data.</small
-          >
+    <Card v-else-if="collectionsStore.collections.length === 0">
+      <CardContent class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
+          📁
+        </div>
+        <h3 class="mb-1 text-lg font-semibold">No collections yet</h3>
+        <p class="mb-4 text-sm text-muted-foreground">
+          Create your first collection to start storing data.
         </p>
-        <button
+        <Button
           v-if="authStore.isAdmin"
-          class="mt-2"
           @click="showCreateModal = true"
         >
           Create Collection
-        </button>
-      </div>
-    </article>
+        </Button>
+      </CardContent>
+    </Card>
 
     <!-- Collections Table -->
-    <article v-else>
+    <Card v-else>
       <DataTable
         :data="collectionsStore.collections"
         :columns="collectionColumns"
@@ -188,77 +200,80 @@ const collectionColumns = computed(() => {
                 action: () => {
                   showCreateModal = true;
                 },
-                variant: 'primary',
+                variant: 'default',
+                icon: 'Plus',
               }
             : undefined
         "
       />
-    </article>
+    </Card>
 
     <!-- Create Collection Modal -->
-    <Modal v-model:open="showCreateModal" title="Create Collection">
-      <form id="collection-form" @submit="onSubmit">
-        <FormField
-          name="name"
-          type="text"
-          label="Name (snake_case)"
-          placeholder="my_collection"
-        />
+    <Dialog v-model:open="showCreateModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create Collection</DialogTitle>
+        </DialogHeader>
 
-        <FormField
-          name="label"
-          type="text"
-          label="Label"
-          placeholder="My Collection"
-        />
+        <form id="collection-form" @submit.prevent="onSubmit" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="name">Name (snake_case)</Label>
+            <Input
+              id="name"
+              v-model="nameField.value.value"
+              placeholder="my_collection"
+              :aria-invalid="nameField.errorMessage.value ? 'true' : undefined"
+            />
+            <p v-if="nameField.errorMessage.value" class="text-sm text-destructive">
+              {{ nameField.errorMessage.value }}
+            </p>
+          </div>
 
-        <FormField
-          name="schemaText"
-          as="textarea"
-          label="Schema (JSON)"
-          :rows="10"
-          style="font-family: monospace; font-size: 0.875rem"
-        />
-      </form>
-      <template #footer>
-        <button
-          type="button"
-          class="secondary"
-          @click="showCreateModal = false"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          form="collection-form"
-          :aria-busy="collectionsStore.loading"
-          :disabled="collectionsStore.loading"
-        >
-          {{ collectionsStore.loading ? "" : "Create Collection" }}
-        </button>
-      </template>
-    </Modal>
+          <div class="space-y-2">
+            <Label for="label">Label</Label>
+            <Input
+              id="label"
+              v-model="labelField.value.value"
+              placeholder="My Collection"
+              :aria-invalid="labelField.errorMessage.value ? 'true' : undefined"
+            />
+            <p v-if="labelField.errorMessage.value" class="text-sm text-destructive">
+              {{ labelField.errorMessage.value }}
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <Label for="schema">Schema (JSON)</Label>
+            <Textarea
+              id="schema"
+              v-model="schemaTextField.value.value"
+              :rows="10"
+              class="font-mono text-sm"
+              :aria-invalid="schemaTextField.errorMessage.value ? 'true' : undefined"
+            />
+            <p v-if="schemaTextField.errorMessage.value" class="text-sm text-destructive">
+              {{ schemaTextField.errorMessage.value }}
+            </p>
+          </div>
+        </form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="ghost"
+            @click="showCreateModal = false"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="collection-form"
+            :disabled="collectionsStore.loading"
+          >
+            {{ collectionsStore.loading ? "Creating..." : "Create Collection" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
-
-<style scoped>
-/* Page header layout */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.page-header hgroup {
-  margin: 0;
-}
-
-.page-header hgroup h1 {
-  margin-bottom: var(--tb-spacing-xs);
-}
-
-.page-header hgroup p {
-  margin: 0;
-  color: var(--pico-muted-color);
-}
-</style>
