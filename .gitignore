@@ -58,6 +58,7 @@ app/node_modules/
 app/dist/
 app/.yarn/
 app/.pnp.*
+app/*/client
 !app/.yarnrc.yml
 !app/.env.development
 !app/.env.production
