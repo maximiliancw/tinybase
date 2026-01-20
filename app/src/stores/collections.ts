@@ -6,17 +6,7 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import {
-  listCollectionsApiCollectionsGet,
-  getCollectionApiCollectionsCollectionNameGet,
-  createCollectionApiCollectionsPost,
-  deleteCollectionApiCollectionsCollectionNameDelete,
-  listRecordsApiCollectionsCollectionNameRecordsGet,
-  createRecordApiCollectionsCollectionNameRecordsPost,
-  deleteRecordApiCollectionsCollectionNameRecordsRecordIdDelete,
-  type Collection as ApiCollection,
-  type RecordResponse,
-} from '../api'
+import { api } from '../api'
 
 export interface Collection {
   id: string
@@ -63,7 +53,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      const response = await listCollectionsApiCollectionsGet()
+      const response = await api.collections.listCollections()
       collections.value = response.data as Collection[]
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to fetch collections'
@@ -77,7 +67,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      const response = await getCollectionApiCollectionsCollectionNameGet({
+      const response = await api.collections.getCollection({
         path: { collection_name: name },
       })
       currentCollection.value = response.data as Collection
@@ -100,7 +90,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      const response = await createCollectionApiCollectionsPost({
+      const response = await api.collections.createCollection({
         body: data,
       })
       await fetchCollections()
@@ -118,7 +108,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      await deleteCollectionApiCollectionsCollectionNameDelete({
+      await api.collections.deleteCollection({
         path: { collection_name: name },
       })
       await fetchCollections()
@@ -140,7 +130,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      const response = await listRecordsApiCollectionsCollectionNameRecordsGet({
+      const response = await api.collections.listRecords({
         path: { collection_name: collectionName },
         query: { limit, offset },
       })
@@ -162,7 +152,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      const response = await createRecordApiCollectionsCollectionNameRecordsPost({
+      const response = await api.collections.createRecord({
         path: { collection_name: collectionName },
         body: { data },
       })
@@ -183,7 +173,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      await deleteRecordApiCollectionsCollectionNameRecordsRecordIdDelete({
+      await api.collections.deleteRecord({
         path: { collection_name: collectionName, record_id: recordId },
       })
       return true

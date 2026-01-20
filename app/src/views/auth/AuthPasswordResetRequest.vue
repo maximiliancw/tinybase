@@ -7,7 +7,7 @@
 import { ref, onMounted } from "vue";
 import { useToast } from "../../composables/useToast";
 import { usePortalStore } from "../../stores/portal";
-import { requestPasswordResetApiAuthPasswordResetRequestPost } from "../../api";
+import { api } from "../../api";
 import { usePreviewParams } from "../../composables/usePreviewParams";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ async function handleRequestReset() {
   loading.value = true;
 
   try {
-    await requestPasswordResetApiAuthPasswordResetRequestPost({
+    await api.auth.requestPasswordReset({
       body: {
         email: email.value,
       },

@@ -8,14 +8,7 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { useLocalStorage } from "@vueuse/core";
-import {
-  loginApiAuthLoginPost,
-  getMeApiAuthMeGet,
-  logoutApiAuthLogoutPost,
-  getInstanceInfoApiAuthInstanceInfoGet,
-  getStorageStatusApiFilesStatusGet,
-  type User as ApiUser,
-} from "../api";
+import { api } from "../api";
 
 export interface User {
   id: string;
@@ -46,7 +39,7 @@ export const useAuthStore = defineStore("auth", () => {
     adminCreated.value = false;
 
     try {
-      const response = await loginApiAuthLoginPost({
+      const response = await api.auth.login({
         body: { email, password },
       });
       const data = response.data;
@@ -78,7 +71,7 @@ export const useAuthStore = defineStore("auth", () => {
     }
 
     try {
-      const response = await getMeApiAuthMeGet();
+      const response = await api.auth.getMe();
       user.value = response.data as User;
     } catch (err) {
       // Token might be invalid
@@ -91,7 +84,7 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       // Call backend logout to revoke all tokens
       if (accessToken.value) {
-        await logoutApiAuthLogoutPost();
+        await api.auth.logout();
       }
     } catch (err) {
       // Log error but continue with local logout
@@ -114,7 +107,7 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function fetchInstanceInfo(): Promise<void> {
     try {
-      const response = await getInstanceInfoApiAuthInstanceInfoGet();
+      const response = await api.auth.getInstanceInfo();
       instanceName.value = response.data.instance_name;
     } catch (err) {
       // Fallback to default name if fetch fails
@@ -130,7 +123,7 @@ export const useAuthStore = defineStore("auth", () => {
     }
 
     try {
-      const response = await getStorageStatusApiFilesStatusGet();
+      const response = await api.files.getStorageStatus();
       storageEnabled.value = response.data.enabled;
     } catch (err: any) {
       // If check fails (including 401), assume storage is disabled

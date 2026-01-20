@@ -11,7 +11,7 @@ import { useCollectionsStore } from "../stores/collections";
 import { useFunctionsStore } from "../stores/functions";
 import { useUsersStore } from "../stores/users";
 import { useAuthStore } from "../stores/auth";
-import { getMetricsApiAdminMetricsGet } from "../api";
+import { api } from "../api";
 import CollectionSizesChart from "../components/CollectionSizesChart.vue";
 import FunctionStatsChart from "../components/FunctionStatsChart.vue";
 import Icon from "../components/Icon.vue";
@@ -91,7 +91,7 @@ async function fetchMetrics() {
   metricsError.value = null;
 
   try {
-    const response = await getMetricsApiAdminMetricsGet();
+    const response = await api.admin.getMetrics();
     metrics.value = {
       collection_sizes: response.data.collection_sizes || [],
       function_stats: response.data.function_stats || [],

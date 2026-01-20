@@ -6,20 +6,7 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import {
-  listFunctionsApiFunctionsGet,
-  listFunctionsAdminApiFunctionsAdminListGet,
-  callFunctionApiFunctionsFunctionNamePost,
-  getFunctionSchemaApiFunctionsFunctionNameSchemaGet,
-  listFunctionCallsApiAdminFunctionsCallsGet,
-  listSchedulesApiAdminSchedulesGetData,
-  listSchedulesApiAdminSchedulesGet,
-  createScheduleApiAdminSchedulesPost,
-  updateScheduleApiAdminSchedulesScheduleIdPatch,
-  deleteScheduleApiAdminSchedulesScheduleIdDelete,
-  uploadFunctionApiAdminFunctionsUploadPost,
-  listFunctionVersionsApiAdminFunctionsFunctionNameVersionsGet,
-} from '../api'
+import { api } from '../api'
 
 export interface FunctionInfo {
   name: string
@@ -152,7 +139,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     error.value = null
 
     try {
-      const response = await listFunctionsApiFunctionsGet()
+      const response = await api.functions.listFunctions()
       functions.value = response.data as FunctionInfo[]
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to fetch functions'
@@ -166,7 +153,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     error.value = null
 
     try {
-      const response = await listFunctionsAdminApiFunctionsAdminListGet()
+      const response = await api.functions.listFunctionsAdmin()
       adminFunctions.value = response.data as FunctionInfo[]
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to fetch functions'
@@ -183,7 +170,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     error.value = null
 
     try {
-      const response = await callFunctionApiFunctionsFunctionNamePost({
+      const response = await api.functions.callFunction({
         path: { function_name: name },
         body: payload,
       })
@@ -209,7 +196,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     error.value = null
 
     try {
-      const response = await listFunctionCallsApiAdminFunctionsCallsGet({
+      const response = await api.admin.listFunctionCalls({
         query: filters,
       })
       functionCalls.value = response.data.calls as FunctionCall[]
@@ -227,7 +214,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     error.value = null
 
     try {
-      const response = await listSchedulesApiAdminSchedulesGet()
+      const response = await api.schedules.listSchedules()
       schedules.value = response.data.schedules as Schedule[]
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to fetch schedules'
@@ -247,7 +234,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     error.value = null
 
     try {
-      const response = await createScheduleApiAdminSchedulesPost({
+      const response = await api.schedules.createSchedule({
         body: data,
       })
       await fetchSchedules()
@@ -268,7 +255,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     error.value = null
 
     try {
-      const response = await updateScheduleApiAdminSchedulesScheduleIdPatch({
+      const response = await api.schedules.updateSchedule({
         path: { schedule_id: id },
         body: data,
       })
@@ -287,7 +274,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     error.value = null
 
     try {
-      await deleteScheduleApiAdminSchedulesScheduleIdDelete({
+      await api.schedules.deleteSchedule({
         path: { schedule_id: id },
       })
       await fetchSchedules()
@@ -304,7 +291,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     error.value = null
 
     try {
-      const response = await getFunctionSchemaApiFunctionsFunctionNameSchemaGet({
+      const response = await api.functions.getFunctionSchema({
         path: { function_name: name },
       })
       return response.data as FunctionSchema
@@ -323,7 +310,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     error.value = null
 
     try {
-      const response = await uploadFunctionApiAdminFunctionsUploadPost({
+      const response = await api.admin.uploadFunction({
         body: {
           filename,
           content,
@@ -344,7 +331,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     error.value = null
 
     try {
-      const response = await listFunctionVersionsApiAdminFunctionsFunctionNameVersionsGet({
+      const response = await api.admin.listFunctionVersions({
         path: { function_name: functionName },
       })
       return response.data.versions || []

@@ -7,7 +7,8 @@
 
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { getPortalConfigApiAuthPortalConfigGet, client } from "../api";
+import { api } from "../api";
+import { client as baseClient } from "../client/client.gen";
 
 interface PortalConfig {
   instance_name: string;
@@ -75,14 +76,14 @@ export const usePortalStore = defineStore("portal", () => {
         // If token is provided in URL (for iframe preview), add it to client
         const previewToken = urlParams.get("token");
         if (previewToken) {
-          const response = await getPortalConfigApiAuthPortalConfigGet({
+          const response = await api.auth.getPortalConfig({
             query: queryParams,
             client: {
-              ...client,
+              ...baseClient,
               getConfig: () => ({
-                ...client.getConfig(),
+                ...baseClient.getConfig(),
                 headers: {
-                  ...client.getConfig().headers,
+                  ...baseClient.getConfig().headers,
                   Authorization: `Bearer ${previewToken}`,
                 },
               }),
@@ -90,13 +91,13 @@ export const usePortalStore = defineStore("portal", () => {
           });
           config.value = response.data as PortalConfig;
         } else {
-          const response = await getPortalConfigApiAuthPortalConfigGet({
+          const response = await api.auth.getPortalConfig({
             query: queryParams,
           });
           config.value = response.data as PortalConfig;
         }
       } else {
-        const response = await getPortalConfigApiAuthPortalConfigGet();
+        const response = await api.auth.getPortalConfig();
         config.value = response.data as PortalConfig;
       }
     } catch (err: any) {

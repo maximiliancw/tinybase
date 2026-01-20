@@ -7,7 +7,7 @@
 import { ref, onMounted } from "vue";
 import { useToast } from "../../composables/useToast";
 import { useRouter, useRoute } from "vue-router";
-import { registerApiAuthRegisterPost } from "../../api";
+import { api } from "../../api";
 import { usePortalStore } from "../../stores/portal";
 import { usePreviewParams } from "../../composables/usePreviewParams";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -55,7 +55,7 @@ async function handleRegister() {
   }
 
   try {
-    await registerApiAuthRegisterPost({
+    await api.auth.register({
       body: {
         email: email.value,
         password: password.value,

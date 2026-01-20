@@ -9,13 +9,8 @@ import { onMounted, ref, computed, h, watch } from "vue";
 import { useToast } from "../composables/useToast";
 import { useForm, Field, useField } from "vee-validate";
 import { useLocalStorage, useFileDialog, useDropZone } from "@vueuse/core";
-import {
-  getStorageStatusApiFilesStatusGet,
-  uploadFileApiFilesUploadPost,
-  downloadFileApiFilesDownloadKeyGet,
-  deleteFileApiFilesKeyDelete,
-  client,
-} from "../api";
+import { api } from "../api";
+import { client } from "../client/client.gen";
 import { validationSchemas } from "../composables/useFormValidation";
 import DataTable from "../components/DataTable.vue";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -105,7 +100,7 @@ async function checkStorageStatus() {
   loading.value = true;
 
   try {
-    const response = await getStorageStatusApiFilesStatusGet();
+    const response = await api.files.getStorageStatus();
     storageEnabled.value = response.data.enabled;
   } catch (err: any) {
     toast.error(err.error?.detail || "Failed to check storage status");
@@ -143,7 +138,7 @@ const onSubmit = handleSubmit(async (values) => {
       formData.append("path_prefix", values.path_prefix.trim());
     }
 
-    const response = await uploadFileApiFilesUploadPost({
+    const response = await api.files.uploadFile({
       body: formData,
     });
 
@@ -199,7 +194,7 @@ async function deleteFile(key: string) {
   }
 
   try {
-    await deleteFileApiFilesKeyDelete({
+    await api.files.deleteFile({
       path: { key: encodeURIComponent(key) },
     });
 

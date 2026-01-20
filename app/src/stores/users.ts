@@ -6,12 +6,7 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import {
-  listUsersApiAdminUsersGet,
-  createUserApiAdminUsersPost,
-  updateUserApiAdminUsersUserIdPatch,
-  deleteUserApiAdminUsersUserIdDelete,
-} from '../api'
+import { api } from '../api'
 
 export interface AdminUser {
   id: string
@@ -36,7 +31,7 @@ export const useUsersStore = defineStore('users', () => {
     error.value = null
 
     try {
-      const response = await listUsersApiAdminUsersGet({
+      const response = await api.admin.listUsers({
         query: { limit, offset },
       })
       users.value = response.data.users as AdminUser[]
@@ -58,7 +53,7 @@ export const useUsersStore = defineStore('users', () => {
     error.value = null
 
     try {
-      const response = await createUserApiAdminUsersPost({
+      const response = await api.admin.createUser({
         body: data,
       })
       await fetchUsers()
@@ -79,7 +74,7 @@ export const useUsersStore = defineStore('users', () => {
     error.value = null
 
     try {
-      const response = await updateUserApiAdminUsersUserIdPatch({
+      const response = await api.admin.updateUser({
         path: { user_id: id },
         body: data,
       })
@@ -98,7 +93,7 @@ export const useUsersStore = defineStore('users', () => {
     error.value = null
 
     try {
-      await deleteUserApiAdminUsersUserIdDelete({
+      await api.admin.deleteUser({
         path: { user_id: id },
       })
       await fetchUsers()

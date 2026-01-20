@@ -8,12 +8,7 @@
 import { onMounted, ref } from "vue";
 import { useToast } from "../composables/useToast";
 import { useForm, useField } from "vee-validate";
-import {
-  listExtensionsApiAdminExtensionsGet,
-  installExtensionRouteApiAdminExtensionsPost,
-  uninstallExtensionRouteApiAdminExtensionsExtensionNameDelete,
-  updateExtensionApiAdminExtensionsExtensionNamePatch,
-} from "../api";
+import { api } from "../api";
 import { validationSchemas } from "../composables/useFormValidation";
 import Icon from "../components/Icon.vue";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,7 +79,7 @@ async function fetchExtensions() {
   loading.value = true;
 
   try {
-    const response = await listExtensionsApiAdminExtensionsGet({
+    const response = await api.extensions.listExtensions({
       query: { check_updates: true },
     });
     extensions.value = response.data.extensions;
@@ -106,8 +101,10 @@ const onSubmit = handleSubmit(async (values) => {
   installing.value = true;
 
   try {
-    await api.post("/api/admin/extensions", {
-      repo_url: values.repo_url.trim(),
+    await api.extensions.createExtension({
+      body: {
+        repo_url: values.repo_url.trim(),
+      },
     });
 
     showInstallModal.value = false;
@@ -137,9 +134,9 @@ async function handleUninstall() {
   uninstalling.value = true;
 
   try {
-    await api.delete(
-      `/api/admin/extensions/${extensionToUninstall.value.name}`
-    );
+    await api.extensions.deleteExtension({
+      path: { extension_name: extensionToUninstall.value.name },
+    });
 
     showUninstallModal.value = false;
     toast.success(
@@ -160,8 +157,11 @@ async function handleUninstall() {
 
 async function toggleEnabled(ext: Extension) {
   try {
-    await api.patch(`/api/admin/extensions/${ext.name}`, {
-      is_enabled: !ext.is_enabled,
+    await api.extensions.updateExtension({
+      path: { extension_name: ext.name },
+      body: {
+        is_enabled: !ext.is_enabled,
+      },
     });
 
     ext.is_enabled = !ext.is_enabled;
