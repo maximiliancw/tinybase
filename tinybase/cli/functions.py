@@ -2,13 +2,17 @@
 
 import re
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import typer
 
 from tinybase.config import settings
 
 from .utils import create_function_boilerplate, snake_to_camel
+
+if TYPE_CHECKING:
+    from rich.console import Console
+    from tinybase_sdk.deployment import DeploymentError, DeploymentResult
 
 # Create functions subcommand group
 functions_app = typer.Typer(
@@ -135,7 +139,6 @@ def functions_deploy(
         tinybase functions deploy --notes "Fixed bug in validation"
     """
     from rich.console import Console
-    from rich.table import Table
 
     try:
         from tinybase_sdk.config import ConfigurationError, load_deployment_config
@@ -228,7 +231,6 @@ def _display_deployment_results(
 ) -> None:
     """Display deployment results in a table."""
     from rich.table import Table
-
     from tinybase_sdk.deployment import DeploymentError, DeploymentResult
 
     # Separate successes and errors
