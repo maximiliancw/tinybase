@@ -226,7 +226,8 @@ def test_get_or_create_version_existing(client):
 
     engine = get_engine()
     with Session(engine) as session:
-        admin = session.query(User).filter_by(email="admin@test.com").first()
+        stmt = select(User).where(User.email == "admin@test.com")
+        admin = session.exec(stmt).first()
 
         # Create first version
         version1, is_new1 = get_or_create_version(
