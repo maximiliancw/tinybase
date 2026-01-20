@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:client": "node scripts/generate-client.js"
   },
   "dependencies": {
     "@vueuse/core": "^14.1.0",
@@ -26,6 +27,7 @@
     "yup": "^1.7.1"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.54.0",
     "@picocss/pico": "^2.0.6",
     "@vitejs/plugin-vue": "^5.1.4",
     "vite": "^5.4.10"
