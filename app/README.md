@@ -1,6 +1,6 @@
-# TinyBase Admin UI
+# TinyBase Admin
 
-Modern Vue 3 admin interface for TinyBase.
+Modern admin user interface for TinyBase instances built with Vue, Vite, shadcn, and TailwindCSS.
 
 ## Development
 
@@ -27,9 +27,9 @@ yarn generate:client
 yarn dev
 ```
 
-The admin UI will be available at http://localhost:5173 (or another port if 5173 is busy).
+The admin UI will be available at <http://localhost:5173> (or another port if 5173 is busy).
 
-In development, it proxies API requests to the TinyBase backend running on http://localhost:8000.
+In development, it proxies API requests to the TinyBase backend running on <http://localhost:8000>.
 
 ### Building for Production
 
@@ -41,28 +41,75 @@ yarn build
 yarn preview
 ```
 
-The built files in `dist/` should be copied to `../tinybase/admin_static/` for deployment with TinyBase.
+> Note: The built files in `dist/` should be copied to `PROJECT_ROOT/tinybase/admin_static/` for integrated deployment with TinyBase.
 
 ## Type-Safe API Client
 
-The frontend uses a generated TypeScript client from the backend's OpenAPI spec for type safety and auto-completion.
+The frontend uses an **auto-generated TypeScript client** created from TinyBase's OpenAPI specification. This provides full type safety, auto-completion, and ensures the frontend stays in sync with the backend API.
+
+### Generated Client
+
+The client is located at `src/client/` (gitignored) and includes:
+
+- `services.gen.ts` - All API endpoint functions
+- `types.gen.ts` - TypeScript types for requests/responses
+- `schemas.gen.ts` - Schema definitions
+
+The client is configured in `src/api/index.ts` with automatic:
+
+- JWT authentication (bearer tokens)
+- Error handling (401 redirects)
+- Base URL configuration via `VITE_API_URL`
 
 ### Regenerating the Client
 
-When the backend API changes:
+Whenever the backend API changes, regenerate the client:
 
-1. Ensure TinyBase server is running: `tinybase serve`
-2. Run: `yarn generate:client`
+```bash
+# 1. Start TinyBase server
+tinybase serve
 
-The generated client is in `src/client/` (gitignored, regenerate as needed).
+# 2. Regenerate the client
+yarn generate:client
+```
+
+### Usage Examples
+
+```typescript
+// Import service functions and types
+import { 
+  loginApiAuthLoginPost,
+  getMeApiAuthMeGet,
+  listCollectionsApiCollectionsGet,
+  type User,
+  type Collection
+} from '@/api'
+
+// Call API with full type safety
+const response = await loginApiAuthLoginPost({
+  body: {
+    email: 'user@example.com',
+    password: 'password123'
+  }
+})
+
+// Backward compatibility - raw axios instance
+import { api } from '@/api'
+const response = await api.get('/api/auth/me')
+```
 
 ## Tech Stack
 
-- **Vue 3** - Progressive framework
-- **Pinia** - State management
-- **Vue Router** - Routing
+- **Vue 3** - Progressive JavaScript framework with Composition API
+- **Pinia** - State management for Vue 3
+- **Vue Router** - Client-side routing
 - **Vite** - Build tool & dev server
-- **PicoCSS** - Minimal CSS framework
+- **shadcn-vue** - Modern UI component library
+- **Tailwind CSS** - Utility-first CSS framework
+- **Reka UI** - Unstyled, accessible component primitives
+- **@hey-api/openapi-ts** - OpenAPI client generator for Typescript
 - **Axios** - HTTP client (via generated client)
-- **Chart.js** - Data visualization
-- **VeeValidate + Yup** - Form validation
+- **Unovis** - Data visualization
+- **VeeValidate + Zod** - Form validation
+- **VueUse** - Collection of composition utilities
+- **Lucide Icons** - Icon library
