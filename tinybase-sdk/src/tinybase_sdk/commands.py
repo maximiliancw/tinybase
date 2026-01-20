@@ -1,7 +1,12 @@
 """
-CLI commands for TinyBase SDK.
+Example CLI implementation for TinyBase SDK.
 
-Provides command-line interface for deploying functions to TinyBase.
+This module demonstrates how to build a CLI using the SDK's deployment functionality.
+The actual TinyBase CLI (installed with the `tinybase` package) uses these same
+functions to implement `tinybase functions deploy`.
+
+Note: This is NOT registered as a CLI entrypoint. It's provided as an example
+and for potential standalone use cases.
 """
 
 from pathlib import Path
