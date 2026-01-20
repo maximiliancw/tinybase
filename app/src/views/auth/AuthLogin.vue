@@ -10,7 +10,10 @@ import { useRouter, useRoute } from "vue-router";
 import { api } from "../../api";
 import { usePortalStore } from "../../stores/portal";
 import { usePreviewParams } from "../../composables/usePreviewParams";
-import Icon from "../../components/Icon.vue";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const toast = useToast();
 const router = useRouter();
@@ -91,83 +94,76 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div
-    class="auth-layout"
-    :data-has-background="
-      portalStore.config.background_image_url ? true : undefined
-    "
-  >
-    <article class="auth-card" data-animate="fade-in">
-      <!-- Logo -->
-      <div class="auth-logo">
+  <div class="flex min-h-screen items-center justify-center p-6 bg-background">
+    <Card class="w-full max-w-md">
+      <CardHeader class="space-y-2 text-center">
         <img
           v-if="portalStore.config.logo_url"
           :src="portalStore.config.logo_url"
           alt="Logo"
+          class="mx-auto h-12 w-auto"
         />
-        <h1>{{ portalStore.config.instance_name }}</h1>
-        <p>Sign in to your account</p>
-      </div>
+        <h1 class="text-2xl font-bold">{{ portalStore.config.instance_name }}</h1>
+        <p class="text-sm text-muted-foreground">Sign in to your account</p>
+      </CardHeader>
 
-      <!-- Login Form -->
-      <form @submit.prevent="handleLogin" class="auth-form">
-        <label for="email">
-          Email
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            placeholder="user@example.com"
-            required
-            autocomplete="email"
-          />
-        </label>
+      <CardContent>
+        <form @submit.prevent="handleLogin" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="email">Email</Label>
+            <Input
+              id="email"
+              v-model="email"
+              type="email"
+              placeholder="user@example.com"
+              required
+              autocomplete="email"
+            />
+          </div>
 
-        <label for="password">
-          Password
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            placeholder="••••••••"
-            required
-            autocomplete="current-password"
-          />
-        </label>
+          <div class="space-y-2">
+            <Label for="password">Password</Label>
+            <Input
+              id="password"
+              v-model="password"
+              type="password"
+              placeholder="••••••••"
+              required
+              autocomplete="current-password"
+            />
+          </div>
 
-        <button type="submit" :aria-busy="loading" :disabled="loading">
-          {{ loading ? "" : "Sign In" }}
-        </button>
-      </form>
-
-      <!-- Links -->
-      <div class="auth-links">
-        <router-link :to="withPreviewParams('/auth/password-reset')"
-          >Forgot password?</router-link
-        >
-        <span v-if="portalStore.config.registration_enabled">
-          |
-          <router-link :to="withPreviewParams('/auth/register')"
-            >Create account</router-link
+          <Button
+            type="submit"
+            class="w-full"
+            :disabled="loading"
           >
-        </span>
-      </div>
+            {{ loading ? "Signing in..." : "Sign In" }}
+          </Button>
+        </form>
 
-      <!-- Footer -->
-      <div class="auth-footer">
-        <small>Powered by TinyBase</small>
-      </div>
-    </article>
+        <div class="mt-4 flex items-center justify-center gap-2 text-sm">
+          <router-link
+            :to="withPreviewParams('/auth/password-reset')"
+            class="text-primary hover:underline"
+          >
+            Forgot password?
+          </router-link>
+          <template v-if="portalStore.config.registration_enabled">
+            <span class="text-muted-foreground">|</span>
+            <router-link
+              :to="withPreviewParams('/auth/register')"
+              class="text-primary hover:underline"
+            >
+              Create account
+            </router-link>
+          </template>
+        </div>
+      </CardContent>
+
+      <CardFooter class="justify-center">
+        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
+      </CardFooter>
+    </Card>
   </div>
 </template>
-
-<style scoped>
-.auth-layout {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--tb-spacing-lg);
-}
-</style>

@@ -9,7 +9,10 @@ import { useToast } from "vue-toastification";
 import { usePortalStore } from "../../stores/portal";
 import { api } from "../../api";
 import { usePreviewParams } from "../../composables/usePreviewParams";
-import Icon from "../../components/Icon.vue";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const toast = useToast();
 const portalStore = usePortalStore();
@@ -44,70 +47,60 @@ async function handleRequestReset() {
 </script>
 
 <template>
-  <div
-    class="auth-layout"
-    :data-has-background="
-      portalStore.config.background_image_url ? true : undefined
-    "
-  >
-    <article class="auth-card" data-animate="fade-in">
-      <!-- Logo -->
-      <div class="auth-logo">
+  <div class="flex min-h-screen items-center justify-center p-6 bg-background">
+    <Card class="w-full max-w-md">
+      <CardHeader class="space-y-2 text-center">
         <img
           v-if="portalStore.config.logo_url"
           :src="portalStore.config.logo_url"
           alt="Logo"
+          class="mx-auto h-12 w-auto"
         />
-        <h1>{{ portalStore.config.instance_name }}</h1>
-        <p>Reset your password</p>
-      </div>
+        <h1 class="text-2xl font-bold">{{ portalStore.config.instance_name }}</h1>
+        <p class="text-sm text-muted-foreground">Reset your password</p>
+      </CardHeader>
 
-      <!-- Reset Request Form -->
-      <form @submit.prevent="handleRequestReset" class="auth-form">
-        <p>
+      <CardContent>
+        <p class="mb-4 text-sm text-muted-foreground">
           Enter your email address and we'll send you a link to reset your
           password.
         </p>
 
-        <label for="email">
-          Email
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            placeholder="user@example.com"
-            required
-            autocomplete="email"
-          />
-        </label>
+        <form @submit.prevent="handleRequestReset" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="email">Email</Label>
+            <Input
+              id="email"
+              v-model="email"
+              type="email"
+              placeholder="user@example.com"
+              required
+              autocomplete="email"
+            />
+          </div>
 
-        <button type="submit" :aria-busy="loading" :disabled="loading">
-          {{ loading ? "" : "Send Reset Link" }}
-        </button>
-      </form>
+          <Button
+            type="submit"
+            class="w-full"
+            :disabled="loading"
+          >
+            {{ loading ? "Sending..." : "Send Reset Link" }}
+          </Button>
+        </form>
 
-      <!-- Links -->
-      <div class="auth-links">
-        <router-link :to="withPreviewParams('/auth/login')"
-          >Back to sign in</router-link
-        >
-      </div>
+        <div class="mt-4 text-center text-sm">
+          <router-link
+            :to="withPreviewParams('/auth/login')"
+            class="text-primary hover:underline"
+          >
+            Back to sign in
+          </router-link>
+        </div>
+      </CardContent>
 
-      <!-- Footer -->
-      <div class="auth-footer">
-        <small>Powered by TinyBase</small>
-      </div>
-    </article>
+      <CardFooter class="justify-center">
+        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
+      </CardFooter>
+    </Card>
   </div>
 </template>
-
-<style scoped>
-.auth-layout {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--tb-spacing-lg);
-}
-</style>

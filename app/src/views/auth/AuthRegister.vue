@@ -10,7 +10,10 @@ import { useRouter, useRoute } from "vue-router";
 import { api } from "../../api";
 import { usePortalStore } from "../../stores/portal";
 import { usePreviewParams } from "../../composables/usePreviewParams";
-import Icon from "../../components/Icon.vue";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const toast = useToast();
 const router = useRouter();
@@ -78,10 +81,8 @@ async function handleRegister() {
     // Redirect after 1 second
     setTimeout(() => {
       if (redirectUrl && isValidAbsoluteUrl(redirectUrl)) {
-        // Absolute URL - redirect to it
         window.location.href = redirectUrl;
       } else {
-        // No valid redirect URL configured - show error
         toast.error(
           "Registration successful, but redirect URL is not configured. Please contact your administrator."
         );
@@ -96,92 +97,82 @@ async function handleRegister() {
 </script>
 
 <template>
-  <div
-    class="auth-layout"
-    :data-has-background="
-      portalStore.config.background_image_url ? true : undefined
-    "
-  >
-    <article class="auth-card" data-animate="fade-in">
-      <!-- Logo -->
-      <div class="auth-logo">
+  <div class="flex min-h-screen items-center justify-center p-6 bg-background">
+    <Card class="w-full max-w-md">
+      <CardHeader class="space-y-2 text-center">
         <img
           v-if="portalStore.config.logo_url"
           :src="portalStore.config.logo_url"
           alt="Logo"
+          class="mx-auto h-12 w-auto"
         />
-        <h1>{{ portalStore.config.instance_name }}</h1>
-        <p>Create a new account</p>
-      </div>
+        <h1 class="text-2xl font-bold">{{ portalStore.config.instance_name }}</h1>
+        <p class="text-sm text-muted-foreground">Create a new account</p>
+      </CardHeader>
 
-      <!-- Register Form -->
-      <form @submit.prevent="handleRegister" class="auth-form">
-        <label for="email">
-          Email
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            placeholder="user@example.com"
-            required
-            autocomplete="email"
-          />
-        </label>
+      <CardContent>
+        <form @submit.prevent="handleRegister" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="email">Email</Label>
+            <Input
+              id="email"
+              v-model="email"
+              type="email"
+              placeholder="user@example.com"
+              required
+              autocomplete="email"
+            />
+          </div>
 
-        <label for="password">
-          Password
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            placeholder="••••••••"
-            required
-            autocomplete="new-password"
-            minlength="8"
-          />
-          <small>Must be at least 8 characters</small>
-        </label>
+          <div class="space-y-2">
+            <Label for="password">Password</Label>
+            <Input
+              id="password"
+              v-model="password"
+              type="password"
+              placeholder="••••••••"
+              required
+              autocomplete="new-password"
+              minlength="8"
+            />
+            <p class="text-xs text-muted-foreground">Must be at least 8 characters</p>
+          </div>
 
-        <label for="confirmPassword">
-          Confirm Password
-          <input
-            id="confirmPassword"
-            v-model="confirmPassword"
-            type="password"
-            placeholder="••••••••"
-            required
-            autocomplete="new-password"
-            minlength="8"
-          />
-        </label>
+          <div class="space-y-2">
+            <Label for="confirmPassword">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              v-model="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              required
+              autocomplete="new-password"
+              minlength="8"
+            />
+          </div>
 
-        <button type="submit" :aria-busy="loading" :disabled="loading">
-          {{ loading ? "" : "Create Account" }}
-        </button>
-      </form>
+          <Button
+            type="submit"
+            class="w-full"
+            :disabled="loading"
+          >
+            {{ loading ? "Creating account..." : "Create Account" }}
+          </Button>
+        </form>
 
-      <!-- Links -->
-      <div class="auth-links">
-        <router-link :to="withPreviewParams('/auth/login')"
-          >Already have an account? Sign in</router-link
-        >
-      </div>
+        <div class="mt-4 text-center text-sm">
+          <router-link
+            :to="withPreviewParams('/auth/login')"
+            class="text-primary hover:underline"
+          >
+            Already have an account? Sign in
+          </router-link>
+        </div>
+      </CardContent>
 
-      <!-- Footer -->
-      <div class="auth-footer">
-        <small>Powered by TinyBase</small>
-      </div>
-    </article>
+      <CardFooter class="justify-center">
+        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
+      </CardFooter>
+    </Card>
   </div>
 </template>
-
-<style scoped>
-.auth-layout {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--tb-spacing-lg);
-}
-</style>

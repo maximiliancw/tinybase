@@ -10,7 +10,10 @@ import { useRoute, useRouter } from "vue-router";
 import { api } from "../../api";
 import { usePortalStore } from "../../stores/portal";
 import { usePreviewParams } from "../../composables/usePreviewParams";
-import Icon from "../../components/Icon.vue";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const toast = useToast();
 const route = useRoute();
@@ -65,84 +68,70 @@ async function handleResetPassword() {
 </script>
 
 <template>
-  <div
-    class="auth-layout"
-    :data-has-background="
-      portalStore.config.background_image_url ? true : undefined
-    "
-  >
-    <article class="auth-card" data-animate="fade-in">
-      <!-- Logo -->
-      <div class="auth-logo">
+  <div class="flex min-h-screen items-center justify-center p-6 bg-background">
+    <Card class="w-full max-w-md">
+      <CardHeader class="space-y-2 text-center">
         <img
           v-if="portalStore.config.logo_url"
           :src="portalStore.config.logo_url"
           alt="Logo"
+          class="mx-auto h-12 w-auto"
         />
-        <h1>{{ portalStore.config.instance_name }}</h1>
-        <p>Set your new password</p>
-      </div>
+        <h1 class="text-2xl font-bold">{{ portalStore.config.instance_name }}</h1>
+        <p class="text-sm text-muted-foreground">Set your new password</p>
+      </CardHeader>
 
-      <!-- Reset Confirm Form -->
-      <form @submit.prevent="handleResetPassword" class="auth-form">
-        <label for="password">
-          New Password
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            placeholder="••••••••"
-            required
-            autocomplete="new-password"
-            minlength="8"
-          />
-          <small>Must be at least 8 characters</small>
-        </label>
+      <CardContent>
+        <form @submit.prevent="handleResetPassword" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="password">New Password</Label>
+            <Input
+              id="password"
+              v-model="password"
+              type="password"
+              placeholder="••••••••"
+              required
+              autocomplete="new-password"
+              minlength="8"
+            />
+            <p class="text-xs text-muted-foreground">Must be at least 8 characters</p>
+          </div>
 
-        <label for="confirmPassword">
-          Confirm New Password
-          <input
-            id="confirmPassword"
-            v-model="confirmPassword"
-            type="password"
-            placeholder="••••••••"
-            required
-            autocomplete="new-password"
-            minlength="8"
-          />
-        </label>
+          <div class="space-y-2">
+            <Label for="confirmPassword">Confirm New Password</Label>
+            <Input
+              id="confirmPassword"
+              v-model="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              required
+              autocomplete="new-password"
+              minlength="8"
+            />
+          </div>
 
-        <button
-          type="submit"
-          :aria-busy="loading"
-          :disabled="loading || !token"
-        >
-          {{ loading ? "" : "Reset Password" }}
-        </button>
-      </form>
+          <Button
+            type="submit"
+            class="w-full"
+            :disabled="loading || !token"
+          >
+            {{ loading ? "Resetting..." : "Reset Password" }}
+          </Button>
+        </form>
 
-      <!-- Links -->
-      <div class="auth-links">
-        <router-link :to="withPreviewParams('/auth/login')"
-          >Back to sign in</router-link
-        >
-      </div>
+        <div class="mt-4 text-center text-sm">
+          <router-link
+            :to="withPreviewParams('/auth/login')"
+            class="text-primary hover:underline"
+          >
+            Back to sign in
+          </router-link>
+        </div>
+      </CardContent>
 
-      <!-- Footer -->
-      <div class="auth-footer">
-        <small>Powered by TinyBase</small>
-      </div>
-    </article>
+      <CardFooter class="justify-center">
+        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
+      </CardFooter>
+    </Card>
   </div>
 </template>
-
-<style scoped>
-.auth-layout {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--tb-spacing-lg);
-}
-</style>
