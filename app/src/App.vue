@@ -69,7 +69,8 @@ function handleLogout() {
     <!-- Sidebar Navigation -->
     <aside
       v-if="showSidebar"
-      class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r bg-card overflow-y-auto"
+      class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r bg-card overflow-y-auto transition-transform md:translate-x-0"
+      :class="{ '-translate-x-full': isMobile }"
     >
       <!-- Header -->
       <header class="flex flex-col items-center justify-center p-6 border-b">
@@ -226,8 +227,7 @@ function handleLogout() {
     <main
       class="flex-1 p-6 transition-all"
       :class="{
-        'ml-64': showSidebar,
-        'ml-0': !showSidebar,
+        'md:ml-64': showSidebar && !isMobile,
         'flex items-center justify-center min-h-screen': isAuthPortal,
       }"
     >
@@ -250,16 +250,5 @@ function handleLogout() {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(4px);
-}
-
-/* Mobile responsive - hide sidebar offset */
-@media (max-width: 768px) {
-  main {
-    @apply ml-0;
-  }
-
-  aside {
-    @apply -translate-x-full transition-transform;
-  }
 }
 </style>
