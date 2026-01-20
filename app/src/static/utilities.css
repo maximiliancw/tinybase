@@ -78,3 +78,46 @@ button.full-width,
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================
+   Vue Toastification overrides
+   Fix conflicts with PicoCSS button styles
+   ============================================ */
+
+/* Reset PicoCSS button styles for toast close button */
+.Vue-Toastification__close-button {
+  /* Remove PicoCSS background/gradient */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  
+  /* Reset dimensions */
+  padding: 0 !important;
+  min-width: auto !important;
+  min-height: auto !important;
+  width: auto !important;
+  height: auto !important;
+  
+  /* Reset PicoCSS font styles */
+  font-size: 1.25rem !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+  
+  /* Positioning and color */
+  opacity: 0.7;
+  color: inherit !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.Vue-Toastification__close-button:hover {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  opacity: 1;
+  color: inherit !important;
+}
+
+/* Ensure toast container has proper z-index */
+.Vue-Toastification__container {
+  z-index: 9999;
+}
