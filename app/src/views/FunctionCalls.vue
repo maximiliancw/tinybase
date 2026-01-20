@@ -154,6 +154,21 @@ const functionCallColumns = computed(() => [
       h("small", { class: "text-muted" }, formatTimestamp(value)),
   },
   {
+    key: "version_hash",
+    label: "Version",
+    render: (value: string | null, row: any) => {
+      if (!value) return h("small", { class: "text-muted" }, "-");
+      return h(
+        "code",
+        {
+          style: { fontSize: "0.75rem" },
+          title: `Version ID: ${row.version_id || "N/A"}`,
+        },
+        value.substring(0, 8)
+      );
+    },
+  },
+  {
     key: "error",
     label: "Error",
     render: (_value: any, row: any) => {
