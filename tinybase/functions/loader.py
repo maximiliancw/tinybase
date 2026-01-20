@@ -122,6 +122,59 @@ def load_functions_from_directory(dir_path: Path) -> int:
     return loaded
 
 
+def reload_single_function(file_path: Path) -> bool:
+    """
+    Hot-reload a single function file.
+
+    Process:
+    1. Extract metadata from file
+    2. Unregister existing function (if any)
+    3. Re-register in global registry with new metadata
+    4. Pre-warm dependencies in background
+
+    Args:
+        file_path: Path to function file
+
+    Returns:
+        True if successful, False otherwise
+    """
+    registry = get_global_registry()
+
+    # Step 1: Extract metadata
+    metadata = extract_function_metadata(file_path)
+    if not metadata:
+        logger.error(f"Failed to extract metadata for hot-reload: {file_path}")
+        return False
+
+    function_name = metadata["name"]
+
+    # Step 2: Unregister old version (if exists)
+    registry.unregister(function_name)
+    logger.info(f"Unregistered old version of function: {function_name}")
+
+    # Step 3: Register new version
+    meta = FunctionMeta(
+        name=function_name,
+        description=metadata.get("description"),
+        auth=AuthLevel(metadata.get("auth", "auth")),
+        tags=metadata.get("tags", []),
+        input_schema=metadata.get("input_schema"),
+        output_schema=metadata.get("output_schema"),
+        file_path=str(file_path),
+    )
+    registry.register(meta)
+    logger.info(f"Registered new version of function: {function_name}")
+
+    # Step 4: Pre-warm dependencies in background
+    from tinybase.functions.pool import get_pool
+
+    pool = get_pool()
+    pool.prewarm_function(file_path)
+    logger.debug(f"Triggered dependency pre-warming for: {function_name}")
+
+    return True
+
+
 def ensure_functions_package(dir_path: Path) -> bool:
     """
     Ensure the functions directory exists and has an __init__.py file.
