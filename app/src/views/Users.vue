@@ -3,18 +3,28 @@
  * Users View
  *
  * Manage user accounts (admin only).
- * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, computed, h, watch } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import { useRoute } from "vue-router";
 import { useUrlSearchParams } from "@vueuse/core";
-import { useForm, Field } from "vee-validate";
+import { useForm, useField, Field } from "vee-validate";
 import { useUsersStore } from "../stores/users";
 import { validationSchemas } from "../composables/useFormValidation";
-import Modal from "../components/Modal.vue";
-import FormField from "../components/FormField.vue";
 import DataTable from "../components/DataTable.vue";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 const toast = useToast();
 const route = useRoute();
@@ -34,6 +44,10 @@ const { handleSubmit, resetForm } = useForm({
     is_admin: false,
   },
 });
+
+const emailField = useField("email");
+const passwordField = useField("password");
+const isAdminField = useField("is_admin");
 
 const onSubmit = handleSubmit(async (values) => {
   const result = await usersStore.createUser(values);
@@ -94,9 +108,9 @@ const userColumns = computed(() => [
     label: "Role",
     render: (_value: any, row: any) => {
       return h(
-        "mark",
-        { "data-status": row.is_admin ? "info" : "neutral" },
-        row.is_admin ? "Admin" : "User"
+        Badge,
+        { variant: row.is_admin ? "default" : "secondary" },
+        () => (row.is_admin ? "Admin" : "User")
       );
     },
   },
@@ -104,7 +118,7 @@ const userColumns = computed(() => [
     key: "created_at",
     label: "Created",
     render: (value: any) => {
-      return h("small", { class: "text-muted" }, [
+      return h("span", { class: "text-sm text-muted-foreground" }, [
         new Date(value).toLocaleDateString(),
       ]);
     },
@@ -121,7 +135,7 @@ const userColumns = computed(() => [
       {
         label: "Delete",
         action: (row: any) => handleDelete(row.id),
-        variant: "contrast" as const,
+        variant: "destructive" as const,
       },
     ],
   },
@@ -129,21 +143,22 @@ const userColumns = computed(() => [
 </script>
 
 <template>
-  <section data-animate="fade-in">
-    <header class="page-header">
-      <hgroup>
-        <h1>Users</h1>
-        <p>Manage user accounts</p>
-      </hgroup>
+  <section class="space-y-6 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <header class="space-y-1">
+      <h1 class="text-3xl font-bold tracking-tight">Users</h1>
+      <p class="text-muted-foreground">Manage user accounts</p>
     </header>
 
     <!-- Loading State -->
-    <article v-if="usersStore.loading" aria-busy="true">
-      Loading users...
-    </article>
+    <Card v-if="usersStore.loading">
+      <CardContent class="flex items-center justify-center py-10">
+        <p class="text-sm text-muted-foreground">Loading users...</p>
+      </CardContent>
+    </Card>
 
     <!-- Users Table -->
-    <article v-else>
+    <Card v-else>
       <DataTable
         :data="usersStore.users"
         :columns="userColumns as any"
@@ -154,69 +169,76 @@ const userColumns = computed(() => [
           action: () => {
             showCreateModal = true;
           },
-          variant: 'primary',
+          variant: 'default',
+          icon: 'Plus',
         }"
       />
-    </article>
+    </Card>
 
     <!-- Create User Modal -->
-    <Modal v-model:open="showCreateModal" title="Create User">
-      <form id="user-form" @submit="onSubmit">
-        <FormField name="email" type="email" label="Email" />
+    <Dialog v-model:open="showCreateModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create User</DialogTitle>
+        </DialogHeader>
 
-        <FormField
-          name="password"
-          type="password"
-          label="Password"
-          helper="Password must be at least 8 characters"
-        />
+        <form id="user-form" @submit.prevent="onSubmit" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="email">Email</Label>
+            <Input
+              id="email"
+              v-model="emailField.value.value"
+              type="email"
+              :aria-invalid="emailField.errorMessage.value ? 'true' : undefined"
+            />
+            <p v-if="emailField.errorMessage.value" class="text-sm text-destructive">
+              {{ emailField.errorMessage.value }}
+            </p>
+          </div>
 
-        <Field name="is_admin" v-slot="{ field }">
-          <label>
-            <input v-bind="field" type="checkbox" role="switch" />
-            Admin privileges
-          </label>
-        </Field>
-      </form>
-      <template #footer>
-        <button
-          type="button"
-          class="secondary"
-          @click="showCreateModal = false"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          form="user-form"
-          :aria-busy="usersStore.loading"
-          :disabled="usersStore.loading"
-        >
-          {{ usersStore.loading ? "" : "Create User" }}
-        </button>
-      </template>
-    </Modal>
+          <div class="space-y-2">
+            <Label for="password">Password</Label>
+            <Input
+              id="password"
+              v-model="passwordField.value.value"
+              type="password"
+              :aria-invalid="passwordField.errorMessage.value ? 'true' : undefined"
+            />
+            <p class="text-xs text-muted-foreground">
+              Password must be at least 8 characters
+            </p>
+            <p v-if="passwordField.errorMessage.value" class="text-sm text-destructive">
+              {{ passwordField.errorMessage.value }}
+            </p>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <Switch
+              id="is_admin"
+              :checked="isAdminField.value.value"
+              @update:checked="isAdminField.value.value = $event"
+            />
+            <Label for="is_admin" class="cursor-pointer">Admin privileges</Label>
+          </div>
+        </form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="ghost"
+            @click="showCreateModal = false"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="user-form"
+            :disabled="usersStore.loading"
+          >
+            {{ usersStore.loading ? "Creating..." : "Create User" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
-
-<style scoped>
-/* Page header layout */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.page-header hgroup {
-  margin: 0;
-}
-
-.page-header hgroup h1 {
-  margin-bottom: var(--tb-spacing-xs);
-}
-
-.page-header hgroup p {
-  margin: 0;
-  color: var(--pico-muted-color);
-}
-</style>

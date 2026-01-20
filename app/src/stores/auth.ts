@@ -8,7 +8,14 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { useLocalStorage } from "@vueuse/core";
-import { api } from "../api";
+import {
+  loginApiAuthLoginPost,
+  getMeApiAuthMeGet,
+  logoutApiAuthLogoutPost,
+  getInstanceInfoApiAuthInstanceInfoGet,
+  getStorageStatusApiFilesStatusGet,
+  type User as ApiUser,
+} from "../api";
 
 export interface User {
   id: string;
@@ -39,7 +46,9 @@ export const useAuthStore = defineStore("auth", () => {
     adminCreated.value = false;
 
     try {
-      const response = await api.post("/api/auth/login", { email, password });
+      const response = await loginApiAuthLoginPost({
+        body: { email, password },
+      });
       const data = response.data;
 
       // Store JWT tokens
@@ -56,7 +65,7 @@ export const useAuthStore = defineStore("auth", () => {
 
       return true;
     } catch (err: any) {
-      error.value = err.response?.data?.detail || "Login failed";
+      error.value = err.error?.detail || "Login failed";
       return false;
     } finally {
       loading.value = false;
@@ -69,8 +78,8 @@ export const useAuthStore = defineStore("auth", () => {
     }
 
     try {
-      const response = await api.get("/api/auth/me");
-      user.value = response.data;
+      const response = await getMeApiAuthMeGet();
+      user.value = response.data as User;
     } catch (err) {
       // Token might be invalid
       clearTokens();
@@ -82,7 +91,7 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       // Call backend logout to revoke all tokens
       if (accessToken.value) {
-        await api.post("/api/auth/logout");
+        await logoutApiAuthLogoutPost();
       }
     } catch (err) {
       // Log error but continue with local logout
@@ -105,7 +114,7 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function fetchInstanceInfo(): Promise<void> {
     try {
-      const response = await api.get("/api/auth/instance-info");
+      const response = await getInstanceInfoApiAuthInstanceInfoGet();
       instanceName.value = response.data.instance_name;
     } catch (err) {
       // Fallback to default name if fetch fails
@@ -121,7 +130,7 @@ export const useAuthStore = defineStore("auth", () => {
     }
 
     try {
-      const response = await api.get("/api/files/status");
+      const response = await getStorageStatusApiFilesStatusGet();
       storageEnabled.value = response.data.enabled;
     } catch (err: any) {
       // If check fails (including 401), assume storage is disabled

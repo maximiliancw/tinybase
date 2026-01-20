@@ -3,12 +3,22 @@
  * Function Calls View
  *
  * View function call history (admin only).
- * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, computed, h } from "vue";
 import { useInfiniteScroll } from "@vueuse/core";
 import { useFunctionsStore } from "../stores/functions";
 import DataTable from "../components/DataTable.vue";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 const functionsStore = useFunctionsStore();
 
@@ -73,18 +83,18 @@ async function applyFilters() {
   await loadCalls(true); // Reset when filters change
 }
 
-function getStatusType(
+function getStatusVariant(
   status: string
-): "success" | "error" | "warning" | "neutral" {
+): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
     case "succeeded":
-      return "success";
+      return "default";
     case "failed":
-      return "error";
+      return "destructive";
     case "running":
-      return "warning";
+      return "secondary";
     default:
-      return "neutral";
+      return "outline";
   }
 }
 
@@ -97,7 +107,6 @@ function formatDuration(ms: number | null): string {
 function formatTimestamp(value: string | null): string {
   if (!value) return "-";
   const date = new Date(value);
-  // Use a simple format for now - composables can't be called in render functions
   const now = Date.now();
   const diff = now - date.getTime();
   const seconds = Math.floor(diff / 1000);
@@ -128,40 +137,40 @@ const functionCallColumns = computed(() => [
   {
     key: "function_name",
     label: "Function",
-    render: (value: any) => h("code", value),
+    render: (value: any) => h("code", { class: "text-sm" }, value),
   },
   {
     key: "status",
     label: "Status",
     render: (value: any) =>
-      h("mark", { "data-status": getStatusType(value) }, value),
+      h(Badge, { variant: getStatusVariant(value) }, () => value),
   },
   {
     key: "trigger_type",
     label: "Trigger",
-    render: (value: any) => h("mark", { "data-status": "neutral" }, value),
+    render: (value: any) => h(Badge, { variant: "outline" }, () => value),
   },
   {
     key: "duration_ms",
     label: "Duration",
     render: (value: any) =>
-      h("small", { class: "text-muted" }, formatDuration(value)),
+      h("span", { class: "text-sm text-muted-foreground" }, formatDuration(value)),
   },
   {
     key: "started_at",
     label: "Started",
     render: (value: any) =>
-      h("small", { class: "text-muted" }, formatTimestamp(value)),
+      h("span", { class: "text-sm text-muted-foreground" }, formatTimestamp(value)),
   },
   {
     key: "version_hash",
     label: "Version",
     render: (value: string | null, row: any) => {
-      if (!value) return h("small", { class: "text-muted" }, "-");
+      if (!value) return h("span", { class: "text-sm text-muted-foreground" }, "-");
       return h(
         "code",
         {
-          style: { fontSize: "0.75rem" },
+          class: "text-xs",
           title: `Version ID: ${row.version_id || "N/A"}`,
         },
         value.substring(0, 8)
@@ -174,82 +183,112 @@ const functionCallColumns = computed(() => [
     render: (_value: any, row: any) => {
       if (row.error_message) {
         return h(
-          "small",
-          { class: "text-error" },
+          "span",
+          { class: "text-sm text-destructive" },
           `${row.error_type}: ${row.error_message.slice(0, 50)}...`
         );
       }
-      return h("small", { class: "text-muted" }, "-");
+      return h("span", { class: "text-sm text-muted-foreground" }, "-");
     },
   },
 ]);
 </script>
 
 <template>
-  <section data-animate="fade-in">
-    <header class="page-header">
-      <h1>Function Calls</h1>
-      <p>Execution history for all functions</p>
+  <section class="space-y-6 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <header class="space-y-1">
+      <h1 class="text-3xl font-bold tracking-tight">Function Calls</h1>
+      <p class="text-muted-foreground">Execution history for all functions</p>
     </header>
 
-    <!-- Filters - using Pico's grid for layout -->
-    <article class="filters">
-      <div class="grid">
-        <label>
-          Function
-          <select v-model="filters.function_name">
-            <option value="">All Functions</option>
-            <option
-              v-for="fn in functionsStore.functions"
-              :key="fn.name"
-              :value="fn.name"
-            >
-              {{ fn.name }}
-            </option>
-          </select>
-        </label>
+    <!-- Filters -->
+    <Card>
+      <CardHeader>
+        <CardTitle>Filters</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div class="space-y-2">
+            <Label for="filter_function">Function</Label>
+            <Select v-model="filters.function_name">
+              <SelectTrigger>
+                <SelectValue placeholder="All Functions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Functions</SelectItem>
+                <SelectItem
+                  v-for="fn in functionsStore.functions"
+                  :key="fn.name"
+                  :value="fn.name"
+                >
+                  {{ fn.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <label>
-          Status
-          <select v-model="filters.status">
-            <option value="">All Statuses</option>
-            <option value="succeeded">Succeeded</option>
-            <option value="failed">Failed</option>
-            <option value="running">Running</option>
-          </select>
-        </label>
+          <div class="space-y-2">
+            <Label for="filter_status">Status</Label>
+            <Select v-model="filters.status">
+              <SelectTrigger>
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="succeeded">Succeeded</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+                <SelectItem value="running">Running</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <label>
-          Trigger
-          <select v-model="filters.trigger_type">
-            <option value="">All Triggers</option>
-            <option value="manual">Manual</option>
-            <option value="schedule">Schedule</option>
-          </select>
-        </label>
-      </div>
-      <button class="secondary" @click="applyFilters">Apply Filters</button>
-    </article>
+          <div class="space-y-2">
+            <Label for="filter_trigger">Trigger</Label>
+            <Select v-model="filters.trigger_type">
+              <SelectTrigger>
+                <SelectValue placeholder="All Triggers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Triggers</SelectItem>
+                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="schedule">Schedule</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <Button
+          class="mt-4"
+          variant="secondary"
+          @click="applyFilters"
+        >
+          Apply Filters
+        </Button>
+      </CardContent>
+    </Card>
 
     <!-- Loading State -->
-    <article v-if="functionsStore.loading" aria-busy="true">
-      Loading function calls...
-    </article>
+    <Card v-if="functionsStore.loading">
+      <CardContent class="flex items-center justify-center py-10">
+        <p class="text-sm text-muted-foreground">Loading function calls...</p>
+      </CardContent>
+    </Card>
 
     <!-- Empty State -->
-    <article v-else-if="displayedCalls.length === 0">
-      <div data-empty data-empty-icon="📜">
-        <p>No function calls yet</p>
-        <p>
-          <small class="text-muted"
-            >Function calls will appear here when functions are invoked.</small
-          >
+    <Card v-else-if="displayedCalls.length === 0">
+      <CardContent class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
+          📜
+        </div>
+        <p class="font-medium">No function calls yet</p>
+        <p class="text-sm text-muted-foreground">
+          Function calls will appear here when functions are invoked.
         </p>
-      </div>
-    </article>
+      </CardContent>
+    </Card>
 
     <!-- Function Calls Table -->
-    <article v-else ref="scrollContainer">
+    <Card v-else ref="scrollContainer">
       <DataTable
         :data="displayedCalls"
         :columns="functionCallColumns"
@@ -258,9 +297,13 @@ const functionCallColumns = computed(() => [
       />
 
       <!-- Server-side Pagination -->
-      <footer v-if="total > pageSize" class="server-pagination">
-        <button
-          class="small secondary"
+      <div
+        v-if="total > pageSize"
+        class="flex items-center justify-between border-t p-4"
+      >
+        <Button
+          size="sm"
+          variant="ghost"
           :disabled="page === 1"
           @click="
             page--;
@@ -268,13 +311,14 @@ const functionCallColumns = computed(() => [
           "
         >
           Previous
-        </button>
-        <small class="text-muted">
+        </Button>
+        <span class="text-sm text-muted-foreground">
           Page {{ page }} of {{ Math.ceil(total / pageSize) }} ({{ total }}
           total)
-        </small>
-        <button
-          class="small secondary"
+        </span>
+        <Button
+          size="sm"
+          variant="ghost"
           :disabled="page >= Math.ceil(total / pageSize)"
           @click="
             page++;
@@ -282,27 +326,8 @@ const functionCallColumns = computed(() => [
           "
         >
           Next
-        </button>
-      </footer>
-    </article>
+        </Button>
+      </div>
+    </Card>
   </section>
 </template>
-
-<style scoped>
-.filters {
-  margin-bottom: var(--tb-spacing-lg);
-}
-
-.filters .grid {
-  margin-bottom: var(--tb-spacing-md);
-}
-
-.server-pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--tb-spacing-md);
-  padding-top: var(--tb-spacing-md);
-  border-top: 1px solid var(--tb-border);
-}
-</style>

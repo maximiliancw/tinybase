@@ -6,7 +6,12 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api } from '../api'
+import {
+  listUsersApiAdminUsersGet,
+  createUserApiAdminUsersPost,
+  updateUserApiAdminUsersUserIdPatch,
+  deleteUserApiAdminUsersUserIdDelete,
+} from '../api'
 
 export interface AdminUser {
   id: string
@@ -31,13 +36,13 @@ export const useUsersStore = defineStore('users', () => {
     error.value = null
 
     try {
-      const response = await api.get('/api/admin/users', {
-        params: { limit, offset },
+      const response = await listUsersApiAdminUsersGet({
+        query: { limit, offset },
       })
-      users.value = response.data.users
-      return response.data
+      users.value = response.data.users as AdminUser[]
+      return response.data as { users: AdminUser[]; total: number }
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to fetch users'
+      error.value = err.error?.detail || 'Failed to fetch users'
       return { users: [], total: 0 }
     } finally {
       loading.value = false
@@ -53,11 +58,13 @@ export const useUsersStore = defineStore('users', () => {
     error.value = null
 
     try {
-      const response = await api.post('/api/admin/users', data)
+      const response = await createUserApiAdminUsersPost({
+        body: data,
+      })
       await fetchUsers()
-      return response.data
+      return response.data as AdminUser
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to create user'
+      error.value = err.error?.detail || 'Failed to create user'
       return null
     } finally {
       loading.value = false
@@ -72,11 +79,14 @@ export const useUsersStore = defineStore('users', () => {
     error.value = null
 
     try {
-      const response = await api.patch(`/api/admin/users/${id}`, data)
+      const response = await updateUserApiAdminUsersUserIdPatch({
+        path: { user_id: id },
+        body: data,
+      })
       await fetchUsers()
-      return response.data
+      return response.data as AdminUser
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to update user'
+      error.value = err.error?.detail || 'Failed to update user'
       return null
     } finally {
       loading.value = false
@@ -88,11 +98,13 @@ export const useUsersStore = defineStore('users', () => {
     error.value = null
 
     try {
-      await api.delete(`/api/admin/users/${id}`)
+      await deleteUserApiAdminUsersUserIdDelete({
+        path: { user_id: id },
+      })
       await fetchUsers()
       return true
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to delete user'
+      error.value = err.error?.detail || 'Failed to delete user'
       return false
     } finally {
       loading.value = false
@@ -111,4 +123,3 @@ export const useUsersStore = defineStore('users', () => {
     deleteUser,
   }
 })
-

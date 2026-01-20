@@ -2,22 +2,28 @@
 /**
  * DataTable Component
  *
- * Enhanced table component built on PicoCSS with search, pagination, and responsive rendering.
- * Features:
- * - Reactive search filtering across searchable columns
- * - Client-side pagination
- * - Actions column with button definitions
- * - Responsive: renders as <table> on desktop, <dl> on mobile (≤768px)
+ * Enhanced table component with search, pagination, and responsive rendering.
+ * Built on shadcn-vue Table components.
  */
 import { computed, ref, watch } from "vue";
 import type { VNode } from "vue";
 import { refDebounced, useBreakpoints } from "@vueuse/core";
 import Icon from "./Icon.vue";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface ActionButton {
   label: string | ((row: any) => string);
   action: (row: any) => void | Promise<void>;
-  variant?: "primary" | "secondary" | "contrast" | "outline";
+  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost";
   disabled?: boolean | ((row: any) => boolean);
   icon?: string;
 }
@@ -26,14 +32,14 @@ interface Column {
   key: string;
   label: string;
   render?: (value: any, row: any) => string | VNode;
-  searchable?: boolean; // default: true (ignored for actions columns)
-  actions?: ActionButton[]; // For Actions column
+  searchable?: boolean;
+  actions?: ActionButton[];
 }
 
 interface HeaderAction {
   label: string;
   action: () => void | Promise<void>;
-  variant?: "primary" | "secondary" | "contrast" | "outline";
+  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost";
   icon?: string;
 }
 
@@ -67,27 +73,22 @@ const breakpoints = useBreakpoints({
   desktop: 1024,
 });
 const isMobile = breakpoints.smaller("tablet");
-const isTablet = breakpoints.between("tablet", "desktop");
-const isDesktop = breakpoints.greaterOrEqual("desktop");
 
 // Reset to page 1 when search query changes
 watch(debouncedSearchQuery, () => {
   currentPage.value = 1;
 });
 
-// Check if a column is an Actions column
 function isActionsColumn(column: Column): boolean {
   return !!column.actions;
 }
 
-// Get searchable columns (exclude Actions columns)
 const searchableColumns = computed(() => {
   return props.columns.filter(
     (col) => !isActionsColumn(col) && col.searchable !== false
   );
 });
 
-// Filter data based on debounced search query
 const filteredData = computed(() => {
   if (!props.searchable || !debouncedSearchQuery.value.trim()) {
     return props.data;
@@ -97,7 +98,6 @@ const filteredData = computed(() => {
 
   return props.data.filter((row) => {
     return searchableColumns.value.some((column) => {
-      // If column has a render function, use it for search (handles nested data)
       if (column.render) {
         const value = getCellValue(column, row);
         const rendered = column.render(value, row);
@@ -106,7 +106,6 @@ const filteredData = computed(() => {
         return searchableText.toLowerCase().includes(query);
       }
 
-      // Otherwise, use getCellValue which handles nested keys
       const value = getCellValue(column, row);
       if (value == null) return false;
       return String(value).toLowerCase().includes(query);
@@ -114,7 +113,6 @@ const filteredData = computed(() => {
   });
 });
 
-// Paginate filtered data
 const paginatedData = computed(() => {
   if (!props.paginated) {
     return filteredData.value;
@@ -125,7 +123,6 @@ const paginatedData = computed(() => {
   return filteredData.value.slice(start, end);
 });
 
-// Pagination info
 const totalPages = computed(() => {
   if (!props.paginated) return 1;
   return Math.ceil(filteredData.value.length / props.pageSize);
@@ -149,7 +146,6 @@ const paginationInfo = computed(() => {
   };
 });
 
-// Check if button is disabled
 function isButtonDisabled(button: ActionButton, row: any): boolean {
   if (typeof button.disabled === "function") {
     return button.disabled(row);
@@ -157,7 +153,6 @@ function isButtonDisabled(button: ActionButton, row: any): boolean {
   return button.disabled ?? false;
 }
 
-// Get button label
 function getButtonLabel(button: ActionButton, row: any): string {
   if (typeof button.label === "function") {
     return button.label(row);
@@ -165,15 +160,12 @@ function getButtonLabel(button: ActionButton, row: any): string {
   return button.label;
 }
 
-// Handle button click
 async function handleAction(button: ActionButton, row: any) {
   if (isButtonDisabled(button, row)) return;
   await button.action(row);
 }
 
-// Get cell value for a column
 function getCellValue(column: Column, row: any): any {
-  // Handle nested keys (e.g., "data.field")
   if (column.key.includes(".")) {
     const keys = column.key.split(".");
     let value = row;
@@ -186,10 +178,9 @@ function getCellValue(column: Column, row: any): any {
   return row[column.key];
 }
 
-// Render cell content
 function renderCell(column: Column, row: any): string | VNode {
   if (isActionsColumn(column)) {
-    return ""; // Actions are handled separately
+    return "";
   }
 
   const value = getCellValue(column, row);
@@ -199,81 +190,74 @@ function renderCell(column: Column, row: any): string | VNode {
   return value != null ? String(value) : "";
 }
 
-// Check if rendered content is a VNode
 function isVNode(value: any): value is VNode {
   return value && typeof value === "object" && "type" in value;
 }
 </script>
 
 <template>
-  <div class="datatable">
+  <div class="space-y-4">
     <!-- Search Bar and Header Action -->
-    <div v-if="searchable || headerAction" class="datatable-header">
-      <div class="grid">
-        <div v-if="searchable" class="datatable-search-wrapper">
-          <input
-            type="search"
-            :placeholder="searchPlaceholder"
-            v-model="searchQuery"
+    <div v-if="searchable || headerAction" class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div v-if="searchable" class="flex-1 space-y-1">
+        <Input
+          v-model="searchQuery"
+          :placeholder="searchPlaceholder"
+          class="max-w-sm"
+        />
+        <p
+          v-if="debouncedSearchQuery.trim() && filteredData.length !== data.length"
+          class="text-xs text-muted-foreground"
+        >
+          Showing {{ filteredData.length }} of {{ data.length }} results
+        </p>
+      </div>
+      <div v-if="headerAction">
+        <Button
+          :variant="headerAction.variant || 'default'"
+          @click="headerAction.action"
+        >
+          <Icon
+            v-if="headerAction.icon"
+            :name="headerAction.icon"
+            :size="16"
           />
-          <small
-            v-if="
-              debouncedSearchQuery.trim() && filteredData.length !== data.length
-            "
-            class="text-muted"
-          >
-            Showing {{ filteredData.length }} of {{ data.length }} results
-          </small>
-        </div>
-        <div v-if="headerAction" class="datatable-header-action">
-          <button
-            :class="[headerAction.variant || 'primary']"
-            @click="headerAction.action"
-          >
-            <Icon
-              v-if="headerAction.icon"
-              :name="headerAction.icon"
-              :size="16"
-            />
-            {{ headerAction.label }}
-          </button>
-        </div>
+          {{ headerAction.label }}
+        </Button>
       </div>
     </div>
 
     <!-- Desktop Table View -->
-    <div class="datatable-desktop">
-      <table>
-        <thead>
-          <tr>
-            <th v-for="column in columns" :key="column.key">
+    <div class="hidden md:block rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead v-for="column in columns" :key="column.key">
               {{ column.label }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="paginatedData.length === 0">
-            <td :colspan="columns.length" class="datatable-empty">
-              <div data-empty data-empty-icon="📋">
-                <p>{{ emptyMessage }}</p>
-              </div>
-            </td>
-          </tr>
-          <tr v-for="(row, index) in paginatedData" :key="index">
-            <td v-for="column in columns" :key="column.key">
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="paginatedData.length === 0">
+            <TableCell :colspan="columns.length" class="h-24 text-center">
+              {{ emptyMessage }}
+            </TableCell>
+          </TableRow>
+          <TableRow v-for="(row, index) in paginatedData" :key="index">
+            <TableCell v-for="column in columns" :key="column.key">
               <!-- Actions Column -->
-              <div v-if="isActionsColumn(column)" class="datatable-actions">
-                <a
+              <div v-if="isActionsColumn(column)" class="flex gap-2">
+                <Button
                   v-for="(button, btnIndex) in column.actions"
                   :key="btnIndex"
-                  href="#"
-                  :class="['small', button.variant || 'secondary']"
+                  size="sm"
+                  :variant="button.variant || 'ghost'"
                   :disabled="isButtonDisabled(button, row)"
                   @click="handleAction(button, row)"
                 >
                   <Icon v-if="button.icon" :name="button.icon" :size="14" />
                   {{ getButtonLabel(button, row) }}
-                </a>
+                </Button>
               </div>
               <!-- Regular Column -->
               <template v-else>
@@ -283,256 +267,78 @@ function isVNode(value: any): value is VNode {
                 />
                 <span v-else>{{ renderCell(column, row) }}</span>
               </template>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <!-- Mobile List View -->
-    <div class="datatable-mobile">
-      <div v-if="paginatedData.length === 0" class="datatable-empty">
-        <div data-empty data-empty-icon="📋">
-          <p>{{ emptyMessage }}</p>
-        </div>
+    <div class="md:hidden space-y-4">
+      <div v-if="paginatedData.length === 0" class="flex flex-col items-center justify-center py-16 text-center border rounded-lg">
+        <p class="text-sm text-muted-foreground">{{ emptyMessage }}</p>
       </div>
       <div
         v-for="(row, index) in paginatedData"
         :key="index"
-        class="datatable-mobile-row"
+        class="rounded-lg border p-4 space-y-2"
       >
-        <dl>
-          <template v-for="column in columns" :key="column.key">
-            <!-- Actions Column -->
-            <template v-if="isActionsColumn(column)">
-              <dt>{{ column.label }}</dt>
-              <dd>
-                <div class="datatable-mobile-actions">
-                  <button
-                    v-for="(button, btnIndex) in column.actions"
-                    :key="btnIndex"
-                    :class="['small', button.variant || 'secondary']"
-                    :disabled="isButtonDisabled(button, row)"
-                    @click="handleAction(button, row)"
-                  >
-                    <Icon v-if="button.icon" :name="button.icon" :size="14" />
-                    {{ getButtonLabel(button, row) }}
-                  </button>
-                </div>
-              </dd>
-            </template>
-            <!-- Regular Column -->
-            <template v-else>
-              <dt>{{ column.label }}</dt>
-              <dd>
-                <component
-                  v-if="isVNode(renderCell(column, row))"
-                  :is="renderCell(column, row)"
-                />
-                <span v-else>{{ renderCell(column, row) }}</span>
-              </dd>
-            </template>
+        <div v-for="column in columns" :key="column.key" class="flex justify-between gap-4">
+          <!-- Actions Column -->
+          <template v-if="isActionsColumn(column)">
+            <span class="text-sm font-medium">{{ column.label }}</span>
+            <div class="flex flex-col gap-2">
+              <Button
+                v-for="(button, btnIndex) in column.actions"
+                :key="btnIndex"
+                size="sm"
+                :variant="button.variant || 'ghost'"
+                :disabled="isButtonDisabled(button, row)"
+                @click="handleAction(button, row)"
+                class="w-full"
+              >
+                <Icon v-if="button.icon" :name="button.icon" :size="14" />
+                {{ getButtonLabel(button, row) }}
+              </Button>
+            </div>
           </template>
-        </dl>
+          <!-- Regular Column -->
+          <template v-else>
+            <span class="text-sm font-medium text-muted-foreground">{{ column.label }}</span>
+            <div class="text-sm">
+              <component
+                v-if="isVNode(renderCell(column, row))"
+                :is="renderCell(column, row)"
+              />
+              <span v-else>{{ renderCell(column, row) }}</span>
+            </div>
+          </template>
+        </div>
       </div>
     </div>
 
     <!-- Pagination -->
-    <footer v-if="paginated && totalPages > 1" class="datatable-pagination">
-      <button
-        class="small secondary"
+    <div v-if="paginated && totalPages > 1" class="flex items-center justify-between border-t pt-4">
+      <Button
+        size="sm"
+        variant="outline"
         :disabled="currentPage === 1"
         @click="currentPage--"
       >
         Previous
-      </button>
-      <small v-if="paginationInfo" class="text-muted">
+      </Button>
+      <p v-if="paginationInfo" class="text-sm text-muted-foreground">
         {{ paginationInfo.start }}-{{ paginationInfo.end }} of
         {{ paginationInfo.total }}
-      </small>
-      <button
-        class="small secondary"
+      </p>
+      <Button
+        size="sm"
+        variant="outline"
         :disabled="currentPage >= totalPages"
         @click="currentPage++"
       >
         Next
-      </button>
-    </footer>
+      </Button>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.datatable {
-  width: 100%;
-}
-
-/* Header (Search Bar and Action) */
-.datatable-header {
-  margin-bottom: var(--tb-spacing-md);
-}
-
-.datatable-header .grid {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--tb-spacing-md);
-}
-
-.datatable-search-wrapper {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  max-width: 50%;
-}
-
-.datatable-header input[type="search"] {
-  width: 100%;
-}
-
-.datatable-header small {
-  display: block;
-  margin-top: var(--tb-spacing-xs);
-}
-
-.datatable-header-action {
-  display: flex;
-  align-items: flex-start;
-  padding-top: 0;
-  flex-shrink: 0;
-}
-
-.datatable-header-action button {
-  white-space: nowrap;
-  margin-top: 0;
-}
-
-/* Mobile: Stack and center */
-@media (max-width: 768px) {
-  .datatable-header .grid {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .datatable-search-wrapper {
-    width: 100%;
-  }
-
-  .datatable-header-action {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .datatable-header-action button {
-    width: auto;
-  }
-}
-
-/* Desktop Table View */
-.datatable-desktop {
-  overflow-x: auto;
-}
-
-.datatable-desktop table {
-  width: 100%;
-}
-
-/* Action buttons container */
-.datatable-actions {
-  display: flex;
-  gap: var(--tb-spacing-xs);
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.datatable-actions a {
-  padding: 5px 10px;
-}
-
-.datatable-empty {
-  text-align: center;
-  padding: var(--tb-spacing-xl) var(--tb-spacing-lg);
-}
-
-.datatable-empty [data-empty] {
-  padding: var(--tb-spacing-lg);
-  margin: 0;
-}
-
-/* Mobile List View */
-.datatable-mobile {
-  display: none;
-}
-
-.datatable-mobile-row {
-  margin-bottom: var(--tb-spacing-md);
-  padding: var(--tb-spacing-md);
-  background: var(--pico-card-background-color);
-  border: 1px solid var(--pico-card-border-color);
-  border-radius: var(--tb-radius);
-}
-
-.datatable-mobile-row dl {
-  margin: 0;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--tb-spacing-sm) var(--tb-spacing-md);
-}
-
-.datatable-mobile-row dt {
-  font-weight: 600;
-  color: var(--tb-text-secondary);
-  font-size: 0.875rem;
-}
-
-.datatable-mobile-row dd {
-  margin: 0;
-  color: var(--tb-text);
-}
-
-.datatable-mobile-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--tb-spacing-xs);
-  width: 100%;
-}
-
-.datatable-mobile-actions button {
-  width: 100%;
-  font-size: 0.8125rem;
-  padding: 0.375rem 0.875rem;
-  text-transform: uppercase;
-}
-
-/* Pagination */
-.datatable-pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--tb-spacing-md);
-  padding-top: var(--tb-spacing-md);
-  border-top: 1px solid var(--tb-border);
-}
-
-/* Responsive: Hide desktop table on mobile, show mobile list */
-@media (max-width: 768px) {
-  .datatable-desktop {
-    display: none;
-  }
-
-  .datatable-mobile {
-    display: block;
-  }
-}
-
-/* Responsive: Hide mobile list on desktop, show desktop table */
-@media (min-width: 769px) {
-  .datatable-desktop {
-    display: block;
-  }
-
-  .datatable-mobile {
-    display: none;
-  }
-}
-</style>

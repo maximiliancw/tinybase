@@ -3,18 +3,37 @@
  * Functions View
  *
  * View and invoke registered functions.
- * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, computed, h } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import {
   useFunctionsStore,
   generateTemplateFromSchema,
   type FunctionInfo,
 } from "../stores/functions";
 import { useAuthStore } from "../stores/auth";
-import Modal from "../components/Modal.vue";
 import DataTable from "../components/DataTable.vue";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const toast = useToast();
 const functionsStore = useFunctionsStore();
@@ -167,18 +186,18 @@ async function openVersionsModal(fn: FunctionInfo) {
   }
 }
 
-function getAuthStatus(
+function getAuthBadgeVariant(
   auth: string
-): "success" | "info" | "warning" | "neutral" {
+): "default" | "secondary" | "destructive" | "outline" {
   switch (auth) {
     case "public":
-      return "success";
+      return "default";
     case "auth":
-      return "info";
+      return "secondary";
     case "admin":
-      return "warning";
+      return "destructive";
     default:
-      return "neutral";
+      return "outline";
   }
 }
 
@@ -193,34 +212,31 @@ const functionColumns = computed(() => {
     {
       key: "name",
       label: "Name",
-      render: (value: any) => h("code", value),
+      render: (value: any) => h("code", { class: "text-sm" }, value),
     },
     {
       key: "description",
       label: "Description",
-      render: (value: any) => h("small", { class: "text-muted" }, value || "-"),
+      render: (value: any) => h("span", { class: "text-sm text-muted-foreground" }, value || "-"),
     },
     {
       key: "auth",
       label: "Auth",
       render: (value: any) =>
-        h("mark", { "data-status": getAuthStatus(value) }, value),
+        h(Badge, { variant: getAuthBadgeVariant(value) }, () => value),
     },
     {
       key: "tags",
       label: "Tags",
       render: (value: any, row: any) => {
         if (!row.tags || row.tags.length === 0) {
-          return h("small", { class: "text-muted" }, "-");
+          return h("span", { class: "text-sm text-muted-foreground" }, "-");
         }
         return h(
-          "span",
+          "div",
+          { class: "flex gap-1 flex-wrap" },
           row.tags.map((tag: string) =>
-            h(
-              "mark",
-              { "data-status": "neutral", style: "margin-right: 0.25rem" },
-              tag
-            )
+            h(Badge, { variant: "outline" }, () => tag)
           )
         );
       },
@@ -231,7 +247,7 @@ const functionColumns = computed(() => {
     columns.push({
       key: "module",
       label: "Module",
-      render: (value: any) => h("small", { class: "text-muted" }, value),
+      render: (value: any) => h("span", { class: "text-sm text-muted-foreground" }, value),
     });
   }
 
@@ -239,7 +255,7 @@ const functionColumns = computed(() => {
     {
       label: "Call",
       action: (row: any) => openCallModal(row),
-      variant: "primary" as const,
+      variant: "default" as const,
     },
   ];
 
@@ -263,29 +279,30 @@ const functionColumns = computed(() => {
 </script>
 
 <template>
-  <section data-animate="fade-in">
-    <header class="page-header">
-      <div>
-        <h1>Functions</h1>
-        <p>Registered server-side functions</p>
+  <section class="space-y-6 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <header class="flex items-start justify-between">
+      <div class="space-y-1">
+        <h1 class="text-3xl font-bold tracking-tight">Functions</h1>
+        <p class="text-muted-foreground">Registered server-side functions</p>
       </div>
-      <button
+      <Button
         v-if="authStore.isAdmin"
-        type="button"
-        class="primary"
         @click="openUploadModal"
       >
         Upload Function
-      </button>
+      </Button>
     </header>
 
     <!-- Loading State -->
-    <article v-if="functionsStore.loading" aria-busy="true">
-      Loading functions...
-    </article>
+    <Card v-if="functionsStore.loading">
+      <CardContent class="flex items-center justify-center py-10">
+        <p class="text-sm text-muted-foreground">Loading functions...</p>
+      </CardContent>
+    </Card>
 
     <!-- Functions Table -->
-    <article v-else>
+    <Card v-else>
       <DataTable
         :data="displayFunctions()"
         :columns="functionColumns"
@@ -293,110 +310,108 @@ const functionColumns = computed(() => {
         search-placeholder="Search functions..."
         empty-message="No functions registered. Define functions in functions.py using the @register decorator."
       />
-    </article>
+    </Card>
 
     <!-- Call Function Modal -->
-    <Modal v-model:open="showCallModal">
-      <template #header>
-        <h3>
-          Call: <code>{{ selectedFunction?.name }}</code>
-        </h3>
-      </template>
+    <Dialog v-model:open="showCallModal">
+      <DialogContent class="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>
+            Call: <code class="text-sm">{{ selectedFunction?.name }}</code>
+          </DialogTitle>
+        </DialogHeader>
 
-      <p v-if="selectedFunction?.description" class="text-muted">
-        {{ selectedFunction.description }}
-      </p>
+        <div class="space-y-4">
+          <p v-if="selectedFunction?.description" class="text-sm text-muted-foreground">
+            {{ selectedFunction.description }}
+          </p>
 
-      <form @submit.prevent="handleCall">
-        <label for="payload">
-          Payload (JSON)
-          <textarea
-            v-if="loadingSchema"
-            id="payload"
-            rows="8"
-            disabled
-            aria-busy="true"
-            class="code-editor"
-          >
-Loading schema...</textarea
-          >
-          <textarea
-            v-else
-            id="payload"
-            v-model="callPayload"
-            rows="8"
-            class="code-editor"
-            spellcheck="false"
-          ></textarea>
-        </label>
+          <form @submit.prevent="handleCall" class="space-y-4">
+            <div class="space-y-2">
+              <Label for="payload">Payload (JSON)</Label>
+              <Textarea
+                v-if="loadingSchema"
+                id="payload"
+                :rows="8"
+                disabled
+                class="font-mono text-sm"
+                value="Loading schema..."
+              />
+              <Textarea
+                v-else
+                id="payload"
+                v-model="callPayload"
+                :rows="8"
+                class="font-mono text-sm"
+                spellcheck="false"
+              />
+            </div>
 
-        <button
-          type="submit"
-          :aria-busy="functionsStore.loading"
-          :disabled="functionsStore.loading || loadingSchema"
-        >
-          {{ functionsStore.loading ? "" : "Execute" }}
-        </button>
-      </form>
+            <Button
+              type="submit"
+              :disabled="functionsStore.loading || loadingSchema"
+            >
+              {{ functionsStore.loading ? "Executing..." : "Execute" }}
+            </Button>
+          </form>
 
-      <!-- Result Display -->
-      <div v-if="callResult" class="mt-3">
-        <h4>Result</h4>
-        <p>
-          <mark
-            :data-status="
-              callResult.status === 'succeeded' ? 'success' : 'error'
-            "
-          >
-            {{ callResult.status }}
-          </mark>
-          <small
-            v-if="callResult.duration_ms"
-            class="text-muted"
-            style="margin-left: 0.5rem"
-          >
-            Duration: {{ callResult.duration_ms }}ms
-          </small>
-        </p>
-        <pre v-if="callResult.result">{{
-          JSON.stringify(callResult.result, null, 2)
-        }}</pre>
-        <p v-if="callResult.error_message" class="text-error">
-          <strong>{{ callResult.error_type }}:</strong>
-          {{ callResult.error_message }}
-        </p>
-      </div>
-    </Modal>
+          <!-- Result Display -->
+          <div v-if="callResult" class="space-y-3 rounded-lg border p-4">
+            <div class="flex items-center gap-2">
+              <h4 class="font-semibold">Result</h4>
+              <Badge :variant="callResult.status === 'succeeded' ? 'default' : 'destructive'">
+                {{ callResult.status }}
+              </Badge>
+              <span
+                v-if="callResult.duration_ms"
+                class="text-xs text-muted-foreground"
+              >
+                Duration: {{ callResult.duration_ms }}ms
+              </span>
+            </div>
+            <pre v-if="callResult.result" class="rounded bg-muted p-3 text-sm overflow-x-auto">{{
+              JSON.stringify(callResult.result, null, 2)
+            }}</pre>
+            <div v-if="callResult.error_message" class="text-sm text-destructive">
+              <strong>{{ callResult.error_type }}:</strong>
+              {{ callResult.error_message }}
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
 
     <!-- Upload Function Modal -->
-    <Modal v-model:open="showUploadModal">
-      <template #header>
-        <h3>Upload Function</h3>
-      </template>
+    <Dialog v-model:open="showUploadModal">
+      <DialogContent class="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Upload Function</DialogTitle>
+        </DialogHeader>
 
-      <form @submit.prevent="handleUpload">
-        <label for="upload-filename">
-          Filename
-          <input
-            id="upload-filename"
-            v-model="uploadFilename"
-            type="text"
-            placeholder="my_function.py"
-            required
-          />
-          <small>Must end with .py and be a valid Python identifier.</small>
-        </label>
+        <form @submit.prevent="handleUpload" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="upload-filename">Filename</Label>
+            <Input
+              id="upload-filename"
+              v-model="uploadFilename"
+              placeholder="my_function.py"
+              required
+            />
+            <p class="text-xs text-muted-foreground">
+              Must end with .py and be a valid Python identifier.
+            </p>
+          </div>
 
-        <label for="upload-content">
-          Function Code
-          <textarea
-            id="upload-content"
-            v-model="uploadContent"
-            rows="15"
-            class="code-editor"
-            spellcheck="false"
-            required
-            placeholder="# /// script
+          <div class="space-y-2">
+            <Label for="upload-content">Function Code</Label>
+            <Textarea
+              id="upload-content"
+              v-model="uploadContent"
+              :rows="15"
+              class="font-mono text-sm"
+              spellcheck="false"
+              required
+              placeholder="# /// script
 # dependencies = [
 #   &quot;tinybase-sdk&quot;,
 # ]
@@ -407,104 +422,94 @@ from tinybase_sdk import register
 
 @register(name=&quot;my_function&quot;, description=&quot;My function&quot;)
 def my_function(client, payload):
-    return {&quot;result&quot;: &quot;success&quot;}
-"
-          ></textarea>
-        </label>
+    return {&quot;result&quot;: &quot;success&quot;}"
+            />
+          </div>
 
-        <label for="upload-notes">
-          Deployment Notes (optional)
-          <textarea
-            id="upload-notes"
-            v-model="uploadNotes"
-            rows="3"
-            placeholder="What changed in this version..."
-          ></textarea>
-        </label>
+          <div class="space-y-2">
+            <Label for="upload-notes">Deployment Notes (optional)</Label>
+            <Textarea
+              id="upload-notes"
+              v-model="uploadNotes"
+              :rows="3"
+              placeholder="What changed in this version..."
+            />
+          </div>
+        </form>
 
-        <div style="display: flex; gap: 0.5rem; justify-content: flex-end">
-          <button
+        <DialogFooter>
+          <Button
             type="button"
-            class="secondary"
+            variant="ghost"
             @click="showUploadModal = false"
             :disabled="uploading"
           >
             Cancel
-          </button>
-          <button type="submit" :aria-busy="uploading" :disabled="uploading">
-            {{ uploading ? "" : "Upload" }}
-          </button>
-        </div>
-      </form>
-    </Modal>
+          </Button>
+          <Button
+            type="submit"
+            form="upload-form"
+            :disabled="uploading"
+            @click="handleUpload"
+          >
+            {{ uploading ? "Uploading..." : "Upload" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Version History Modal -->
-    <Modal v-model:open="showVersionsModal" wide>
-      <template #header>
-        <h3>
-          Version History: <code>{{ selectedFunction?.name }}</code>
-        </h3>
-      </template>
+    <Dialog v-model:open="showVersionsModal">
+      <DialogContent class="max-w-5xl">
+        <DialogHeader>
+          <DialogTitle>
+            Version History: <code class="text-sm">{{ selectedFunction?.name }}</code>
+          </DialogTitle>
+        </DialogHeader>
 
-      <div v-if="loadingVersions" aria-busy="true">Loading versions...</div>
+        <div v-if="loadingVersions" class="flex items-center justify-center py-10">
+          <p class="text-sm text-muted-foreground">Loading versions...</p>
+        </div>
 
-      <div v-else-if="selectedFunctionVersions.length === 0">
-        <p class="text-muted">No version history available.</p>
-      </div>
+        <div v-else-if="selectedFunctionVersions.length === 0" class="py-10 text-center">
+          <p class="text-sm text-muted-foreground">No version history available.</p>
+        </div>
 
-      <table v-else>
-        <thead>
-          <tr>
-            <th>Version ID</th>
-            <th>Content Hash</th>
-            <th>Deployed By</th>
-            <th>Deployed At</th>
-            <th>Executions</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="version in selectedFunctionVersions" :key="version.id">
-            <td>
-              <code style="font-size: 0.75rem">{{
-                version.id.substring(0, 8)
-              }}</code>
-            </td>
-            <td>
-              <code style="font-size: 0.75rem">{{
-                version.content_hash.substring(0, 8)
-              }}</code>
-            </td>
-            <td>
-              <small>{{ version.deployed_by_email || "-" }}</small>
-            </td>
-            <td>
-              <small>{{ new Date(version.deployed_at).toLocaleString() }}</small>
-            </td>
-            <td>{{ version.execution_count }}</td>
-            <td>
-              <small>{{ version.notes || "-" }}</small>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </Modal>
+        <div v-else class="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Version ID</TableHead>
+                <TableHead>Content Hash</TableHead>
+                <TableHead>Deployed By</TableHead>
+                <TableHead>Deployed At</TableHead>
+                <TableHead>Executions</TableHead>
+                <TableHead>Notes</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="version in selectedFunctionVersions" :key="version.id">
+                <TableCell>
+                  <code class="text-xs">{{ version.id.substring(0, 8) }}</code>
+                </TableCell>
+                <TableCell>
+                  <code class="text-xs">{{ version.content_hash.substring(0, 8) }}</code>
+                </TableCell>
+                <TableCell>
+                  <span class="text-sm">{{ version.deployed_by_email || "-" }}</span>
+                </TableCell>
+                <TableCell>
+                  <span class="text-sm">{{ new Date(version.deployed_at).toLocaleString() }}</span>
+                </TableCell>
+                <TableCell>{{ version.execution_count }}</TableCell>
+                <TableCell>
+                  <span class="text-sm">{{ version.notes || "-" }}</span>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
-
-<style scoped>
-pre {
-  font-size: 0.875rem;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.code-editor {
-  font-family: ui-monospace, "SF Mono", "Cascadia Code", "Source Code Pro",
-    Menlo, Consolas, monospace;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  tab-size: 2;
-  resize: vertical;
-}
-</style>

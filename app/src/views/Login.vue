@@ -2,17 +2,20 @@
 /**
  * Login View
  *
- * Premium authentication page with ambient effects and smooth interactions.
+ * Admin authentication page.
  */
 import { ref, onMounted } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import { useRouter, useRoute } from "vue-router";
-import { useForm } from "vee-validate";
+import { useForm, useField } from "vee-validate";
 import { useAuthStore } from "../stores/auth";
-import { api } from "../api";
 import { validationSchemas } from "../composables/useFormValidation";
 import Icon from "../components/Icon.vue";
-import FormField from "../components/FormField.vue";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const toast = useToast();
 const router = useRouter();
@@ -29,6 +32,9 @@ const { handleSubmit } = useForm({
     password: "",
   },
 });
+
+const emailField = useField("email");
+const passwordField = useField("password");
 
 const onSubmit = handleSubmit(async (values) => {
   const success = await authStore.login(values.email, values.password);
@@ -60,189 +66,78 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="login-layout">
-    <!-- Login Card -->
-    <article data-animate="fade-in">
-      <!-- Logo -->
-      <div class="login-logo">
-        <div class="logo-icon">
-          <Icon name="Box" :size="28" color="white" />
+  <div class="flex min-h-screen items-center justify-center p-6 bg-background">
+    <Card class="w-full max-w-md">
+      <CardHeader class="space-y-2 text-center">
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-lg">
+          <Icon name="Box" :size="28" class="text-primary-foreground" />
         </div>
-        <h1>{{ authStore.instanceName }}</h1>
-        <p>Admin Dashboard</p>
-      </div>
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          {{ authStore.instanceName }}
+        </h1>
+        <p class="text-sm text-muted-foreground">Admin Dashboard</p>
+      </CardHeader>
 
-      <!-- First-time setup notice -->
-      <div v-if="needsSetup && !checkingSetup" class="setup-notice">
-        <div class="setup-icon">
+      <CardContent>
+        <!-- First-time setup notice -->
+        <Alert v-if="needsSetup && !checkingSetup" class="mb-6">
           <Icon name="ThumbsUp" :size="18" />
-        </div>
-        <div class="setup-content">
-          <strong>Welcome!</strong>
-          <p>
-            No users exist yet. Enter your credentials to create the first admin
-            account.
-          </p>
-        </div>
-      </div>
+          <AlertTitle>Welcome!</AlertTitle>
+          <AlertDescription>
+            No users exist yet. Enter your credentials to create the first admin account.
+          </AlertDescription>
+        </Alert>
 
-      <!-- Login Form -->
-      <form @submit="onSubmit">
-        <FormField
-          name="email"
-          type="email"
-          label="Email"
-          placeholder="admin@example.com"
-          autocomplete="email"
-        />
+        <form @submit.prevent="onSubmit" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="email">Email</Label>
+            <Input
+              id="email"
+              v-model="emailField.value.value"
+              type="email"
+              placeholder="admin@example.com"
+              autocomplete="email"
+              :aria-invalid="emailField.errorMessage.value ? 'true' : undefined"
+            />
+            <p v-if="emailField.errorMessage.value" class="text-sm text-destructive">
+              {{ emailField.errorMessage.value }}
+            </p>
+          </div>
 
-        <FormField
-          name="password"
-          type="password"
-          label="Password"
-          placeholder="••••••••"
-          autocomplete="current-password"
-        />
+          <div class="space-y-2">
+            <Label for="password">Password</Label>
+            <Input
+              id="password"
+              v-model="passwordField.value.value"
+              type="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              :aria-invalid="passwordField.errorMessage.value ? 'true' : undefined"
+            />
+            <p v-if="passwordField.errorMessage.value" class="text-sm text-destructive">
+              {{ passwordField.errorMessage.value }}
+            </p>
+          </div>
 
-        <button
-          type="submit"
-          class="login-button"
-          :aria-busy="authStore.loading"
-          :disabled="authStore.loading"
-        >
-          {{
-            authStore.loading
-              ? ""
-              : needsSetup
-              ? "Create Admin & Sign In"
-              : "Sign In"
-          }}
-        </button>
-      </form>
+          <Button
+            type="submit"
+            class="w-full"
+            :disabled="authStore.loading"
+          >
+            {{
+              authStore.loading
+                ? "Signing in..."
+                : needsSetup
+                ? "Create Admin & Sign In"
+                : "Sign In"
+            }}
+          </Button>
+        </form>
+      </CardContent>
 
-      <!-- Footer -->
-      <div class="login-footer">
-        <small>Powered by TinyBase</small>
-      </div>
-    </article>
+      <CardFooter class="justify-center border-t">
+        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
+      </CardFooter>
+    </Card>
   </div>
 </template>
-
-<style scoped>
-/* Logo area */
-.login-logo {
-  text-align: center;
-  margin-bottom: var(--tb-spacing-xl);
-}
-
-.logo-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  background: var(--tb-gradient-primary);
-  border-radius: var(--tb-radius-lg);
-  box-shadow: var(--tb-btn-primary-shadow-hover), var(--tb-shadow-glow);
-  margin-bottom: var(--tb-spacing-md);
-}
-
-.logo-icon svg {
-  width: 1.75rem;
-  height: 1.75rem;
-  color: white;
-}
-
-.login-logo h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin: 0 0 var(--tb-spacing-xs) 0;
-  background: var(--tb-gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.login-logo p {
-  margin: 0;
-  color: var(--tb-text-muted);
-  font-size: 0.9375rem;
-}
-
-/* Setup notice */
-.setup-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--tb-spacing-md);
-  background: var(--tb-info-bg);
-  border: 1px solid var(--tb-info-bg);
-  border-radius: var(--tb-radius);
-  padding: var(--tb-spacing-md);
-  margin-bottom: var(--tb-spacing-xl);
-}
-
-.setup-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  background: var(--tb-info-bg);
-  border-radius: var(--tb-radius);
-  flex-shrink: 0;
-}
-
-.setup-icon svg {
-  width: 1.125rem;
-  height: 1.125rem;
-  color: var(--tb-info);
-}
-
-.setup-content strong {
-  display: block;
-  color: var(--tb-info);
-  font-size: 0.875rem;
-  margin-bottom: var(--tb-spacing-xs);
-}
-
-.setup-content p {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: var(--tb-text-secondary);
-  line-height: 1.5;
-}
-
-/* Form styling */
-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--tb-spacing-md);
-}
-
-form label {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--tb-text-secondary);
-}
-
-/* Login button */
-.login-button {
-  margin-top: var(--tb-spacing-sm);
-  padding: 0.875rem var(--tb-spacing-lg);
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-/* Footer */
-.login-footer {
-  margin-top: var(--tb-spacing-xl);
-  padding-top: var(--tb-spacing-lg);
-  border-top: 1px solid var(--tb-border-subtle);
-  text-align: center;
-}
-
-.login-footer small {
-  color: var(--tb-text-muted);
-  font-size: 0.75rem;
-}
-</style>

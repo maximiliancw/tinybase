@@ -3,19 +3,19 @@
  * Dashboard View
  *
  * Overview page with key metrics and quick navigation.
- * Features animated stat cards and refined layout with charts.
  */
 import { onMounted, ref, computed } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import { useTimeAgo, useDateFormat } from "@vueuse/core";
 import { useCollectionsStore } from "../stores/collections";
 import { useFunctionsStore } from "../stores/functions";
 import { useUsersStore } from "../stores/users";
 import { useAuthStore } from "../stores/auth";
-import { api } from "../api";
+import { getMetricsApiAdminMetricsGet } from "../api";
 import CollectionSizesChart from "../components/CollectionSizesChart.vue";
 import FunctionStatsChart from "../components/FunctionStatsChart.vue";
 import Icon from "../components/Icon.vue";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const toast = useToast();
 const collectionsStore = useCollectionsStore();
@@ -91,14 +91,14 @@ async function fetchMetrics() {
   metricsError.value = null;
 
   try {
-    const response = await api.get("/api/admin/metrics");
+    const response = await getMetricsApiAdminMetricsGet();
     metrics.value = {
       collection_sizes: response.data.collection_sizes || [],
       function_stats: response.data.function_stats || [],
       collected_at: response.data.collected_at || null,
     };
   } catch (err: any) {
-    metricsError.value = err.response?.data?.detail || "Failed to load metrics";
+    metricsError.value = err.error?.detail || "Failed to load metrics";
     // Don't show error to user, just log it
     console.error("Failed to fetch metrics:", err);
   } finally {
@@ -108,241 +108,175 @@ async function fetchMetrics() {
 </script>
 
 <template>
-  <section data-animate="fade-in">
-    <header class="page-header">
-      <hgroup>
-        <h1>Dashboard</h1>
-        <p>Welcome to your TinyBase instance's admin dashboard</p>
-      </hgroup>
+  <section class="space-y-6 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <header class="space-y-1">
+      <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
+      <p class="text-muted-foreground">
+        Welcome to your TinyBase instance's admin dashboard
+      </p>
     </header>
 
-    <!-- Stats Grid with stagger animation -->
-    <div class="stats-grid" data-animate="stagger">
-      <article v-if="authStore.isAdmin" class="stat-card">
-        <p>{{ stats.users }}</p>
-        <p>Users</p>
-      </article>
-      <article class="stat-card">
-        <p>{{ stats.collections }}</p>
-        <p>Collections</p>
-      </article>
-      <article class="stat-card">
-        <p>{{ stats.functions }}</p>
-        <p>Functions</p>
-      </article>
-      <article v-if="authStore.isAdmin" class="stat-card">
-        <p>{{ stats.activeSchedules }}</p>
-        <p>Active Schedules</p>
-      </article>
+    <!-- Stats Grid -->
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <Card v-if="authStore.isAdmin">
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium">Total Users</CardTitle>
+          <Icon name="Users" :size="16" class="text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ stats.users }}</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium">Collections</CardTitle>
+          <Icon name="Collections" :size="16" class="text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ stats.collections }}</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium">Functions</CardTitle>
+          <Icon name="Functions" :size="16" class="text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ stats.functions }}</div>
+        </CardContent>
+      </Card>
+
+      <Card v-if="authStore.isAdmin">
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium">Active Schedules</CardTitle>
+          <Icon name="Schedules" :size="16" class="text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ stats.activeSchedules }}</div>
+        </CardContent>
+      </Card>
     </div>
 
-    <!-- Quick Actions Card -->
-    <article class="quick-actions">
-      <header>
-        <h3>Quick Actions</h3>
-      </header>
-      <div class="action-grid">
-        <router-link
-          v-if="authStore.isAdmin"
-          to="/collections?action=create"
-          class="action-item"
-        >
-          <span class="action-icon">
-            <Icon name="FolderPlus" :size="18" />
-          </span>
-          <span class="action-label">Create Collection</span>
-          <span class="action-arrow">→</span>
-        </router-link>
+    <!-- Quick Actions -->
+    <Card>
+      <CardHeader>
+        <CardTitle>Quick Actions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="grid gap-3 md:grid-cols-3">
+          <router-link
+            v-if="authStore.isAdmin"
+            to="/collections?action=create"
+            class="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
+              <Icon name="FolderPlus" :size="20" class="text-primary" />
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-medium">Create Collection</p>
+            </div>
+            <Icon name="Arrow" :size="16" class="text-muted-foreground" />
+          </router-link>
 
-        <router-link
-          v-if="authStore.isAdmin"
-          to="/users?action=create"
-          class="action-item"
-        >
-          <span class="action-icon">
-            <Icon name="UserPlus" :size="18" />
-          </span>
-          <span class="action-label">Create User</span>
-          <span class="action-arrow">→</span>
-        </router-link>
+          <router-link
+            v-if="authStore.isAdmin"
+            to="/users?action=create"
+            class="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
+              <Icon name="UserPlus" :size="20" class="text-primary" />
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-medium">Create User</p>
+            </div>
+            <Icon name="Arrow" :size="16" class="text-muted-foreground" />
+          </router-link>
 
-        <router-link
-          v-if="authStore.isAdmin"
-          to="/schedules?action=create"
-          class="action-item"
-        >
-          <span class="action-icon">
-            <Icon name="Schedules" :size="18" />
-          </span>
-          <span class="action-label">Create Schedule</span>
-          <span class="action-arrow">→</span>
-        </router-link>
-      </div>
-    </article>
+          <router-link
+            v-if="authStore.isAdmin"
+            to="/schedules?action=create"
+            class="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
+              <Icon name="Schedules" :size="20" class="text-primary" />
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-medium">Create Schedule</p>
+            </div>
+            <Icon name="Arrow" :size="16" class="text-muted-foreground" />
+          </router-link>
+        </div>
+      </CardContent>
+    </Card>
 
     <!-- Charts Section -->
-    <div v-if="authStore.isAdmin" class="charts-grid">
+    <div v-if="authStore.isAdmin" class="grid gap-4 md:grid-cols-2">
       <!-- Collection Sizes Chart -->
-      <article>
-        <header>
-          <h3>Collection Sizes</h3>
-          <small v-if="metrics.collected_at" class="text-muted">
-            Updated {{ timeAgo.value }} ({{ formattedDate.value }})
-          </small>
-        </header>
+      <Card>
+        <CardHeader>
+          <div class="flex items-center justify-between">
+            <CardTitle>Collection Sizes</CardTitle>
+            <p v-if="metrics.collected_at" class="text-xs text-muted-foreground">
+              Updated {{ timeAgo }} ({{ formattedDate }})
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div v-if="metricsLoading" class="flex h-[300px] items-center justify-center">
+            <p class="text-sm text-muted-foreground">Loading metrics...</p>
+          </div>
 
-        <div v-if="metricsLoading" aria-busy="true" style="min-height: 300px">
-          Loading metrics...
-        </div>
+          <div
+            v-else-if="metrics.collection_sizes.length === 0"
+            class="flex h-[300px] flex-col items-center justify-center text-center"
+          >
+            <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <Icon name="Collections" :size="32" class="text-muted-foreground" />
+            </div>
+            <p class="font-medium">No metrics available yet</p>
+            <p class="text-sm text-muted-foreground">
+              Metrics will be collected automatically by the scheduler.
+            </p>
+          </div>
 
-        <div
-          v-else-if="metrics.collection_sizes.length === 0"
-          data-empty
-          data-empty-icon="📊"
-          style="min-height: 300px"
-        >
-          <p>No metrics available yet</p>
-          <p>
-            <small class="text-muted"
-              >Metrics will be collected automatically by the scheduler.</small
-            >
-          </p>
-        </div>
-
-        <CollectionSizesChart v-else :data="metrics.collection_sizes" />
-      </article>
+          <CollectionSizesChart v-else :data="metrics.collection_sizes" />
+        </CardContent>
+      </Card>
 
       <!-- Function Statistics Chart -->
-      <article>
-        <header>
-          <h3>Function Statistics</h3>
-          <small v-if="metrics.collected_at" class="text-muted">
-            Updated {{ timeAgo.value }} ({{ formattedDate.value }})
-          </small>
-        </header>
+      <Card>
+        <CardHeader>
+          <div class="flex items-center justify-between">
+            <CardTitle>Function Statistics</CardTitle>
+            <p v-if="metrics.collected_at" class="text-xs text-muted-foreground">
+              Updated {{ timeAgo }} ({{ formattedDate }})
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div v-if="metricsLoading" class="flex h-[300px] items-center justify-center">
+            <p class="text-sm text-muted-foreground">Loading metrics...</p>
+          </div>
 
-        <div v-if="metricsLoading" aria-busy="true" style="min-height: 300px">
-          Loading metrics...
-        </div>
+          <div
+            v-else-if="metrics.function_stats.length === 0"
+            class="flex h-[300px] flex-col items-center justify-center text-center"
+          >
+            <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <Icon name="Functions" :size="32" class="text-muted-foreground" />
+            </div>
+            <p class="font-medium">No function statistics available yet</p>
+            <p class="text-sm text-muted-foreground">
+              Metrics will be collected automatically by the scheduler.
+            </p>
+          </div>
 
-        <div
-          v-else-if="metrics.function_stats.length === 0"
-          data-empty
-          data-empty-icon="⚡"
-          style="min-height: 300px"
-        >
-          <p>No function statistics available yet</p>
-          <p>
-            <small class="text-muted"
-              >Metrics will be collected automatically by the scheduler.</small
-            >
-          </p>
-        </div>
-
-        <FunctionStatsChart v-else :data="metrics.function_stats" />
-      </article>
+          <FunctionStatsChart v-else :data="metrics.function_stats" />
+        </CardContent>
+      </Card>
     </div>
   </section>
 </template>
-
-<style scoped>
-/* Quick actions grid */
-.quick-actions {
-  margin-bottom: var(--tb-spacing-lg);
-}
-
-.action-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--tb-spacing-md);
-}
-
-.action-item {
-  display: flex;
-  align-items: center;
-  gap: var(--tb-spacing-md);
-  padding: var(--tb-spacing-md);
-  background: var(--tb-surface-1);
-  border: 1px solid var(--tb-border);
-  border-radius: var(--tb-radius);
-  color: var(--tb-text);
-  text-decoration: none;
-  transition: background var(--tb-transition-fast),
-    border-color var(--tb-transition-fast), transform var(--tb-transition-fast);
-}
-
-.action-item:hover {
-  background: var(--tb-surface-2);
-  border-color: var(--tb-border-strong);
-  transform: translateY(-2px);
-}
-
-.action-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  background: var(--tb-primary-focus);
-  border-radius: var(--tb-radius);
-  color: var(--tb-primary);
-  flex-shrink: 0;
-}
-
-.action-icon svg {
-  width: 1.125rem;
-  height: 1.125rem;
-}
-
-.action-label {
-  flex: 1;
-  font-weight: 500;
-  font-size: 0.875rem;
-}
-
-.action-arrow {
-  color: var(--tb-text-muted);
-  transition: transform var(--tb-transition-fast);
-}
-
-.action-item:hover .action-arrow {
-  transform: translateX(4px);
-  color: var(--tb-primary);
-}
-
-/* Page header layout */
-.page-header hgroup {
-  margin: 0;
-}
-
-.page-header hgroup h1 {
-  margin-bottom: var(--tb-spacing-xs);
-}
-
-.page-header hgroup p {
-  margin: 0;
-}
-
-/* Charts grid */
-.charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: var(--tb-spacing-lg);
-  margin-bottom: var(--tb-spacing-lg);
-}
-
-.charts-grid article {
-  min-height: 400px;
-}
-
-.charts-grid article header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--tb-spacing-md);
-}
-
-.charts-grid article header h3 {
-  margin: 0;
-}
-</style>

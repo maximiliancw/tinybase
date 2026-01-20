@@ -3,7 +3,6 @@
  * Main App Component
  *
  * Provides the main layout with sidebar navigation and router outlet.
- * Features premium styling with Lucide icons and refined interactions.
  */
 import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
@@ -12,6 +11,9 @@ import { useAuthStore } from "./stores/auth";
 import { usePortalStore } from "./stores/portal";
 import { useNetworkStatus } from "./composables/useNetworkStatus";
 import Icon from "./components/Icon.vue";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Toaster } from "vue-sonner";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -59,159 +61,176 @@ function handleLogout() {
 <template>
   <div
     id="app-root"
-    :class="{ 'has-sidebar': showSidebar, 'auth-portal': isAuthPortal }"
+    class="flex min-h-screen bg-background"
+    :class="{ 'auth-portal': isAuthPortal }"
     :style="isAuthPortal ? portalStore.styles : {}"
   >
+    <Toaster position="top-right" :duration="3000" />
     <!-- Sidebar Navigation -->
-    <aside v-if="showSidebar" class="sidebar">
-      <header
-        style="
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-        "
-      >
-        <div
-          style="
-            display: flex;
-            align-items: center;
-            gap: var(--tb-spacing-md);
-            width: 100%;
-          "
-        >
-          <div class="logo">
-            <Icon name="Box" :size="24" />
+    <aside
+      v-if="showSidebar"
+      class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r bg-card overflow-y-auto transition-transform md:translate-x-0"
+      :class="{ '-translate-x-full': isMobile }"
+    >
+      <!-- Header -->
+      <header class="flex flex-col items-center justify-center p-6 border-b">
+        <div class="flex w-full items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/80 shadow-md">
+            <Icon name="Box" :size="20" class="text-primary-foreground" />
           </div>
-          <h1>{{ authStore.instanceName }}</h1>
+          <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            {{ authStore.instanceName }}
+          </h1>
         </div>
-        <div style="width: 100%; margin-top: var(--tb-spacing-lg)">
-          <small class="text-muted">
+        <div class="w-full mt-4">
+          <p class="text-xs text-muted-foreground">
             Logged in as
-            <b>{{ authStore.user?.email }}</b>
-            <mark v-if="authStore.isAdmin" data-status="info" class="badge">
+            <span class="font-medium text-foreground">{{ authStore.user?.email }}</span>
+            <Badge v-if="authStore.isAdmin" variant="secondary" class="ml-1.5">
               Admin
-            </mark>
-          </small>
+            </Badge>
+          </p>
         </div>
       </header>
 
-      <nav aria-label="Main navigation">
-        <small>Overview</small>
-        <ul>
-          <li>
-            <router-link to="/admin">
-              <span class="nav-icon">
-                <Icon name="Dashboard" :size="20" />
-              </span>
-              Dashboard
+      <!-- Navigation -->
+      <nav aria-label="Main navigation" class="flex flex-col gap-1 p-3 flex-1">
+        <!-- Overview Section -->
+        <div class="px-3 py-2">
+          <h2 class="mb-2 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+            Overview
+          </h2>
+          <div class="flex flex-col gap-0.5">
+            <router-link
+              to="/admin"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              active-class="bg-accent/50 text-primary"
+            >
+              <Icon name="Dashboard" :size="18" />
+              <span>Dashboard</span>
             </router-link>
-          </li>
-          <li>
-            <router-link to="/admin/settings">
-              <span class="nav-icon">
-                <Icon name="Settings" :size="20" />
-              </span>
-              Settings
+            <router-link
+              to="/admin/settings"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              active-class="bg-accent/50 text-primary"
+            >
+              <Icon name="Settings" :size="18" />
+              <span>Settings</span>
             </router-link>
-          </li>
-          <li>
-            <router-link to="/admin/extensions">
-              <span class="nav-icon">
-                <Icon name="Extensions" :size="20" />
-              </span>
-              Extensions
+            <router-link
+              to="/admin/extensions"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              active-class="bg-accent/50 text-primary"
+            >
+              <Icon name="Extensions" :size="18" />
+              <span>Extensions</span>
             </router-link>
-          </li>
-        </ul>
+          </div>
+        </div>
 
-        <small>Database</small>
-        <ul>
-          <li>
-            <router-link to="/admin/users">
-              <span class="nav-icon">
-                <Icon name="Users" :size="20" />
-              </span>
-              Users
+        <!-- Database Section -->
+        <div class="px-3 py-2">
+          <h2 class="mb-2 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+            Database
+          </h2>
+          <div class="flex flex-col gap-0.5">
+            <router-link
+              to="/admin/users"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              active-class="bg-accent/50 text-primary"
+            >
+              <Icon name="Users" :size="18" />
+              <span>Users</span>
             </router-link>
-          </li>
-          <li>
-            <router-link to="/admin/collections">
-              <span class="nav-icon">
-                <Icon name="Collections" :size="20" />
-              </span>
-              Collections
+            <router-link
+              to="/admin/collections"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              active-class="bg-accent/50 text-primary"
+            >
+              <Icon name="Collections" :size="18" />
+              <span>Collections</span>
             </router-link>
-          </li>
-          <li>
-            <router-link to="/admin/files">
-              <span class="nav-icon">
-                <Icon name="Files" :size="20" />
-              </span>
-              Files
+            <router-link
+              to="/admin/files"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              active-class="bg-accent/50 text-primary"
+            >
+              <Icon name="Files" :size="18" />
+              <span>Files</span>
             </router-link>
-          </li>
-        </ul>
+          </div>
+        </div>
 
-        <small v-if="authStore.isAdmin">Functions</small>
-        <ul v-if="authStore.isAdmin">
-          <li>
-            <router-link to="/admin/functions">
-              <span class="nav-icon">
-                <Icon name="Functions" :size="20" />
-              </span>
-              Overview
+        <!-- Functions Section -->
+        <div v-if="authStore.isAdmin" class="px-3 py-2">
+          <h2 class="mb-2 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+            Functions
+          </h2>
+          <div class="flex flex-col gap-0.5">
+            <router-link
+              to="/admin/functions"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              active-class="bg-accent/50 text-primary"
+            >
+              <Icon name="Functions" :size="18" />
+              <span>Overview</span>
             </router-link>
-          </li>
-          <li>
-            <router-link to="/admin/schedules">
-              <span class="nav-icon">
-                <Icon name="Schedules" :size="20" />
-              </span>
-              Schedules
+            <router-link
+              to="/admin/schedules"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              active-class="bg-accent/50 text-primary"
+            >
+              <Icon name="Schedules" :size="18" />
+              <span>Schedules</span>
             </router-link>
-          </li>
-          <li>
-            <router-link to="/admin/function-calls">
-              <span class="nav-icon">
-                <Icon name="List" :size="20" />
-              </span>
-              Function Calls
+            <router-link
+              to="/admin/function-calls"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              active-class="bg-accent/50 text-primary"
+            >
+              <Icon name="List" :size="18" />
+              <span>Function Calls</span>
             </router-link>
-          </li>
-        </ul>
+          </div>
+        </div>
       </nav>
 
-      <footer v-if="authStore.user">
-        <button class="secondary small outline" @click.prevent="handleLogout">
-          <span class="nav-icon">
-            <Icon name="Logout" :size="20" />
-          </span>
-          Logout
-        </button>
+      <!-- Footer -->
+      <footer v-if="authStore.user" class="mt-auto p-4 border-t">
+        <Button
+          variant="ghost"
+          size="sm"
+          class="w-full justify-start"
+          @click="handleLogout"
+        >
+          <Icon name="Logout" :size="18" />
+          <span>Logout</span>
+        </Button>
       </footer>
     </aside>
 
     <!-- Network Status Banner -->
     <div
       v-if="networkStatus.message"
-      :data-status="networkStatus.type"
-      style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 1000;
-        padding: var(--tb-spacing-sm) var(--tb-spacing-md);
-        text-align: center;
-        font-size: 0.875rem;
-      "
+      class="fixed top-0 left-0 right-0 z-[100] px-4 py-2 text-center text-sm"
+      :class="{
+        'bg-destructive text-destructive-foreground': networkStatus.type === 'error',
+        'bg-yellow-500 text-yellow-50': networkStatus.type === 'warning',
+        'bg-blue-500 text-blue-50': networkStatus.type === 'info',
+        'bg-green-500 text-green-50': networkStatus.type === 'success',
+      }"
     >
       {{ networkStatus.message }}
     </div>
 
     <!-- Main Content Area -->
-    <main>
+    <main
+      class="flex-1 p-6 transition-all"
+      :class="{
+        'md:ml-64': showSidebar && !isMobile,
+        'flex items-center justify-center min-h-screen': isAuthPortal,
+      }"
+    >
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -231,29 +250,5 @@ function handleLogout() {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(4px);
-}
-
-/* Sidebar layout */
-aside.sidebar {
-  display: flex;
-  flex-direction: column;
-}
-
-aside.sidebar > footer {
-  margin-top: auto;
-  padding: var(--tb-spacing-lg);
-  padding-bottom: var(--tb-spacing-md);
-}
-
-/* Auth portal layout */
-#app-root.auth-portal {
-  min-height: 100vh;
-}
-
-#app-root.auth-portal main {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--tb-spacing-lg);
 }
 </style>
