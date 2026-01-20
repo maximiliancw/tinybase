@@ -5,7 +5,7 @@
  * View and invoke registered functions.
  */
 import { onMounted, ref, computed, h } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import {
   useFunctionsStore,
   generateTemplateFromSchema,

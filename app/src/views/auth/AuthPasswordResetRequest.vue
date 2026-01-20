@@ -5,7 +5,7 @@
  * Allows users to request a password reset email.
  */
 import { ref, onMounted } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../../composables/useToast";
 import { usePortalStore } from "../../stores/portal";
 import { api } from "../../api";
 import { usePreviewParams } from "../../composables/usePreviewParams";

@@ -6,7 +6,7 @@
  * Allows installing, uninstalling, and enabling/disabling extensions.
  */
 import { onMounted, ref } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import { useForm, useField } from "vee-validate";
 import { api } from "../api";
 import { validationSchemas } from "../composables/useFormValidation";

@@ -5,7 +5,7 @@
  * View and manage records in a collection.
  */
 import { onMounted, ref, computed, h } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import { useRoute } from "vue-router";
 import { useInfiniteScroll } from "@vueuse/core";
 import { useCollectionsStore, type Record } from "../stores/collections";

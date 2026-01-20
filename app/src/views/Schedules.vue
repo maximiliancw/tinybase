@@ -5,7 +5,7 @@
  * Manage function schedules (admin only).
  */
 import { onMounted, ref, watch, computed, h } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import { useRoute } from "vue-router";
 import { useUrlSearchParams } from "@vueuse/core";
 import { useForm, Field, useField } from "vee-validate";

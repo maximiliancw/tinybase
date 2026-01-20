@@ -5,7 +5,7 @@
  * Manage user accounts (admin only).
  */
 import { onMounted, ref, computed, h, watch } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import { useRoute } from "vue-router";
 import { useUrlSearchParams } from "@vueuse/core";
 import { useForm, useField, Field } from "vee-validate";

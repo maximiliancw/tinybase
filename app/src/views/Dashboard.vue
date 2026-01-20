@@ -5,7 +5,7 @@
  * Overview page with key metrics and quick navigation.
  */
 import { onMounted, ref, computed } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import { useTimeAgo, useDateFormat } from "@vueuse/core";
 import { useCollectionsStore } from "../stores/collections";
 import { useFunctionsStore } from "../stores/functions";

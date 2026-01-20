@@ -5,7 +5,7 @@
  * List and manage data collections.
  */
 import { onMounted, ref, computed, h, watch } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import { useRoute } from "vue-router";
 import { useUrlSearchParams } from "@vueuse/core";
 import { useField, useForm } from "vee-validate";

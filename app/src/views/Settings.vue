@@ -5,7 +5,7 @@
  * Admin page for configuring instance settings.
  */
 import { onMounted, ref, reactive, watch, computed, h } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../composables/useToast";
 import { useForm, useField } from "vee-validate";
 import { useClipboard } from "@vueuse/core";
 import { api } from "../api";

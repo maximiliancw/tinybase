@@ -5,7 +5,7 @@
  * Allows users to set a new password using a reset token.
  */
 import { ref, onMounted } from "vue";
-import { useToast } from "vue-toastification";
+import { useToast } from "../../composables/useToast";
 import { useRoute, useRouter } from "vue-router";
 import { api } from "../../api";
 import { usePortalStore } from "../../stores/portal";

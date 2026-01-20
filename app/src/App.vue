@@ -13,6 +13,7 @@ import { useNetworkStatus } from "./composables/useNetworkStatus";
 import Icon from "./components/Icon.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "vue-sonner";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -64,6 +65,7 @@ function handleLogout() {
     :class="{ 'auth-portal': isAuthPortal }"
     :style="isAuthPortal ? portalStore.styles : {}"
   >
+    <Toaster position="top-right" :duration="3000" />
     <!-- Sidebar Navigation -->
     <aside
       v-if="showSidebar"
