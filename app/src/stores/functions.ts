@@ -32,6 +32,8 @@ export interface FunctionCall {
   duration_ms: number | null
   error_message: string | null
   error_type: string | null
+  version_id: string | null
+  version_hash: string | null
   created_at: string
 }
 
