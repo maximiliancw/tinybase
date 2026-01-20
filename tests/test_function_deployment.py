@@ -2,6 +2,8 @@
 Tests for function deployment, validation, and versioning.
 """
 
+from unittest.mock import patch
+
 import pytest
 from sqlmodel import Session, select
 
@@ -292,8 +294,16 @@ def test_get_or_create_version_different_hash(client):
 # =============================================================================
 
 
-def test_upload_function_valid(client):
+@patch("tinybase.functions.loader.extract_function_metadata")
+def test_upload_function_valid(mock_extract_metadata, client):
     """Test uploading a valid function via API."""
+    # Mock metadata extraction (tested separately in test_function_loader.py)
+    mock_extract_metadata.return_value = {
+        "name": "api_test",
+        "description": "API test function",
+        "auth": "auth",
+    }
+
     admin_token = get_admin_token(client)
 
     function_content = """# /// script
@@ -373,8 +383,16 @@ def func(client, payload):
     assert "must match filename" in response.json()["detail"]
 
 
-def test_upload_function_idempotent(client):
+@patch("tinybase.functions.loader.extract_function_metadata")
+def test_upload_function_idempotent(mock_extract_metadata, client):
     """Test that uploading the same function twice is idempotent."""
+    # Mock metadata extraction (tested separately in test_function_loader.py)
+    mock_extract_metadata.return_value = {
+        "name": "idempotent_test",
+        "description": "",
+        "auth": "public",
+    }
+
     admin_token = get_admin_token(client)
 
     function_content = """# /// script
@@ -410,8 +428,16 @@ def idempotent_test(client, payload):
     assert data2["version_id"] == data1["version_id"]
 
 
-def test_list_function_versions(client):
+@patch("tinybase.functions.loader.extract_function_metadata")
+def test_list_function_versions(mock_extract_metadata, client):
     """Test listing function versions."""
+    # Mock metadata extraction (tested separately in test_function_loader.py)
+    mock_extract_metadata.return_value = {
+        "name": "versioned_func",
+        "description": "",
+        "auth": "public",
+    }
+
     admin_token = get_admin_token(client)
 
     # Upload a function
