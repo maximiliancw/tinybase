@@ -22,7 +22,14 @@ from tinybase.auth import (
     hash_password,
     revoke_application_token,
 )
-from tinybase.db.models import ApplicationToken, FunctionCall, FunctionVersion, InstanceSettings, Metrics, User
+from tinybase.db.models import (
+    ApplicationToken,
+    FunctionCall,
+    FunctionVersion,
+    InstanceSettings,
+    Metrics,
+    User,
+)
 from tinybase.utils import FunctionCallStatus, TriggerType, utcnow
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -1130,7 +1137,8 @@ def upload_function(
         session.delete(version)
         session.commit()
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to write function file: {e}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to write function file: {e}",
         )
 
     # Step 5: Validate metadata can be extracted
@@ -1195,10 +1203,12 @@ def upload_functions_batch(
             response = upload_function(func_request, admin, session)
             responses.append(response)
         except HTTPException as e:
+            # Extract function name from filename (strip .py)
+            func_name = func_request.filename[:-3] if func_request.filename.endswith(".py") else func_request.filename
             # Convert exception to response with error
             responses.append(
                 FunctionUploadResponse(
-                    function_name=func_request.filename,
+                    function_name=func_name,
                     version_id="",
                     content_hash="",
                     is_new_version=False,
@@ -1238,12 +1248,16 @@ def list_function_versions(
     versions = session.exec(stmt).all()
 
     if not versions:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No versions found for '{function_name}'")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"No versions found for '{function_name}'"
+        )
 
     result = []
     for version in versions:
         # Get execution count for this version
-        exec_count_stmt = select(func.count(FunctionCall.id)).where(FunctionCall.version_id == version.id)
+        exec_count_stmt = select(func.count(FunctionCall.id)).where(
+            FunctionCall.version_id == version.id
+        )
         exec_count = session.exec(exec_count_stmt).one()
 
         # Get deployer email

@@ -190,30 +190,3 @@ def mock_functions(client):
     yield
 
     # Cleanup handled by reset_global_registry in client fixture
-
-
-@pytest.fixture
-def session():
-    """Fixture providing a database session."""
-    from tinybase.db.core import get_engine
-
-    engine = get_engine()
-    with Session(engine) as db_session:
-        yield db_session
-
-
-@pytest.fixture
-def admin_user(session):
-    """Fixture providing an admin user."""
-    from tinybase.auth import hash_password
-    from tinybase.db.models import User
-
-    admin = User(
-        email="test_admin@test.com",
-        password_hash=hash_password("testpassword"),
-        is_admin=True,
-    )
-    session.add(admin)
-    session.commit()
-    session.refresh(admin)
-    return admin

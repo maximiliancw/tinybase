@@ -37,14 +37,22 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("function_version", schema=None) as batch_op:
-        batch_op.create_index(batch_op.f("ix_function_version_content_hash"), ["content_hash"], unique=False)
-        batch_op.create_index(batch_op.f("ix_function_version_deployed_at"), ["deployed_at"], unique=False)
-        batch_op.create_index(batch_op.f("ix_function_version_function_name"), ["function_name"], unique=False)
+        batch_op.create_index(
+            batch_op.f("ix_function_version_content_hash"), ["content_hash"], unique=False
+        )
+        batch_op.create_index(
+            batch_op.f("ix_function_version_deployed_at"), ["deployed_at"], unique=False
+        )
+        batch_op.create_index(
+            batch_op.f("ix_function_version_function_name"), ["function_name"], unique=False
+        )
 
     # Add version_id column to function_call table
     with op.batch_alter_table("function_call", schema=None) as batch_op:
         batch_op.add_column(sa.Column("version_id", sa.Uuid(), nullable=True))
-        batch_op.create_foreign_key("fk_function_call_version_id", "function_version", ["version_id"], ["id"])
+        batch_op.create_foreign_key(
+            "fk_function_call_version_id", "function_version", ["version_id"], ["id"]
+        )
 
 
 def downgrade() -> None:

@@ -8,7 +8,6 @@ comprehensive security and consistency checks.
 import ast
 import hashlib
 import keyword
-import re
 from pathlib import Path
 from uuid import UUID
 
@@ -133,7 +132,9 @@ def check_sdk_import(tree: ast.Module) -> bool:
                 if alias.name == "tinybase_sdk" or alias.name.startswith("tinybase_sdk."):
                     return True
         elif isinstance(node, ast.ImportFrom):
-            if node.module and (node.module == "tinybase_sdk" or node.module.startswith("tinybase_sdk.")):
+            if node.module and (
+                node.module == "tinybase_sdk" or node.module.startswith("tinybase_sdk.")
+            ):
                 return True
 
     raise FunctionValidationError("File must import tinybase_sdk")
@@ -208,7 +209,9 @@ def scan_dangerous_imports(tree: ast.Module) -> list[str]:
     return warnings
 
 
-def validate_function_file(filename: str, content: str, max_size_bytes: int = 1048576) -> tuple[str, list[str]]:
+def validate_function_file(
+    filename: str, content: str, max_size_bytes: int = 1048576
+) -> tuple[str, list[str]]:
     """
     Comprehensive validation of function file.
 
@@ -355,7 +358,8 @@ def get_current_function_version(
 
         # Query for matching version
         stmt = select(FunctionVersion).where(
-            FunctionVersion.function_name == function_name, FunctionVersion.content_hash == content_hash
+            FunctionVersion.function_name == function_name,
+            FunctionVersion.content_hash == content_hash,
         )
         return session.exec(stmt).first()
     except Exception:
