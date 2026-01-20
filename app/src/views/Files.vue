@@ -9,7 +9,13 @@ import { onMounted, ref, computed, h, watch } from "vue";
 import { useToast } from "../composables/useToast";
 import { useForm, Field, useField } from "vee-validate";
 import { useLocalStorage, useFileDialog, useDropZone } from "@vueuse/core";
-import { api } from "../api";
+import {
+  getStorageStatusApiFilesStatusGet,
+  uploadFileApiFilesUploadPost,
+  downloadFileApiFilesDownloadKeyGet,
+  deleteFileApiFilesKeyDelete,
+  client,
+} from "../api";
 import { validationSchemas } from "../composables/useFormValidation";
 import DataTable from "../components/DataTable.vue";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,10 +105,10 @@ async function checkStorageStatus() {
   loading.value = true;
 
   try {
-    const response = await api.get("/api/files/status");
+    const response = await getStorageStatusApiFilesStatusGet();
     storageEnabled.value = response.data.enabled;
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Failed to check storage status");
+    toast.error(err.error?.detail || "Failed to check storage status");
     storageEnabled.value = false;
   } finally {
     loading.value = false;
@@ -137,10 +143,8 @@ const onSubmit = handleSubmit(async (values) => {
       formData.append("path_prefix", values.path_prefix.trim());
     }
 
-    const response = await api.post("/api/files/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+    const response = await uploadFileApiFilesUploadPost({
+      body: formData,
     });
 
     const fileInfo: FileInfo = {
@@ -157,7 +161,7 @@ const onSubmit = handleSubmit(async (values) => {
     showUploadModal.value = false;
     toast.success(`File "${fileInfo.filename}" uploaded successfully`);
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Upload failed");
+    toast.error(err.error?.detail || "Upload failed");
   } finally {
     uploading.value = false;
   }
@@ -165,7 +169,8 @@ const onSubmit = handleSubmit(async (values) => {
 
 async function downloadFile(key: string) {
   try {
-    const response = await api.get(
+    // Use axios instance directly for blob downloads
+    const response = await client.instance.get(
       `/api/files/download/${encodeURIComponent(key)}`,
       {
         responseType: "blob",
@@ -184,7 +189,7 @@ async function downloadFile(key: string) {
     window.URL.revokeObjectURL(url);
     toast.success(`File "${filename}" downloaded successfully`);
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Download failed");
+    toast.error(err.error?.detail || "Download failed");
   }
 }
 
@@ -194,14 +199,16 @@ async function deleteFile(key: string) {
   }
 
   try {
-    await api.delete(`/api/files/${encodeURIComponent(key)}`);
+    await deleteFileApiFilesKeyDelete({
+      path: { key: encodeURIComponent(key) },
+    });
 
     // Remove from tracked files (useLocalStorage will auto-save)
     files.value = files.value.filter((f) => f.key !== key);
 
     toast.success("File deleted successfully");
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Delete failed");
+    toast.error(err.error?.detail || "Delete failed");
   }
 }
 

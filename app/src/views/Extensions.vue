@@ -8,7 +8,12 @@
 import { onMounted, ref } from "vue";
 import { useToast } from "../composables/useToast";
 import { useForm, useField } from "vee-validate";
-import { api } from "../api";
+import {
+  listExtensionsApiAdminExtensionsGet,
+  installExtensionRouteApiAdminExtensionsPost,
+  uninstallExtensionRouteApiAdminExtensionsExtensionNameDelete,
+  updateExtensionApiAdminExtensionsExtensionNamePatch,
+} from "../api";
 import { validationSchemas } from "../composables/useFormValidation";
 import Icon from "../components/Icon.vue";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,14 +84,13 @@ async function fetchExtensions() {
   loading.value = true;
 
   try {
-    const response = await api.get<ExtensionListResponse>(
-      "/api/admin/extensions",
-      { params: { check_updates: true } }
-    );
+    const response = await listExtensionsApiAdminExtensionsGet({
+      query: { check_updates: true },
+    });
     extensions.value = response.data.extensions;
     total.value = response.data.total;
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Failed to load extensions");
+    toast.error(err.error?.detail || "Failed to load extensions");
   } finally {
     loading.value = false;
   }
@@ -116,7 +120,7 @@ const onSubmit = handleSubmit(async (values) => {
 
     await fetchExtensions();
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Installation failed");
+    toast.error(err.error?.detail || "Installation failed");
   } finally {
     installing.value = false;
   }
@@ -147,7 +151,7 @@ async function handleUninstall() {
 
     await fetchExtensions();
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Uninstall failed");
+    toast.error(err.error?.detail || "Uninstall failed");
   } finally {
     uninstalling.value = false;
     extensionToUninstall.value = null;
@@ -170,7 +174,7 @@ async function toggleEnabled(ext: Extension) {
       }
     );
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Failed to update extension");
+    toast.error(err.error?.detail || "Failed to update extension");
   }
 }
 

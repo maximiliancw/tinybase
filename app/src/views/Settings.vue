@@ -8,7 +8,15 @@ import { onMounted, ref, reactive, watch, computed, h } from "vue";
 import { useToast } from "../composables/useToast";
 import { useForm, useField } from "vee-validate";
 import { useClipboard } from "@vueuse/core";
-import { api } from "../api";
+import {
+  getSettingsApiAdminSettingsGet,
+  updateSettingsApiAdminSettingsPatch,
+  listApplicationTokensApiAdminApplicationTokensGet,
+  createApplicationTokenEndpointApiAdminApplicationTokensPost,
+  updateApplicationTokenApiAdminApplicationTokensTokenIdPatch,
+  revokeApplicationTokenEndpointApiAdminApplicationTokensTokenIdDelete,
+  client,
+} from "../api";
 import { useAuthStore } from "../stores/auth";
 import { validationSchemas } from "../composables/useFormValidation";
 import { formatErrorMessage } from "../composables/useErrorHandling";
@@ -285,7 +293,7 @@ async function fetchSettings() {
   loading.value = true;
 
   try {
-    const response = await api.get("/api/admin/settings");
+    const response = await getSettingsApiAdminSettingsGet();
     Object.assign(settings, response.data);
   } catch (err: any) {
     toast.error(formatErrorMessage(err, "Failed to load settings"));
@@ -297,7 +305,7 @@ async function fetchSettings() {
 async function fetchApplicationTokens() {
   loadingTokens.value = true;
   try {
-    const response = await api.get("/api/admin/application-tokens");
+    const response = await listApplicationTokensApiAdminApplicationTokensGet();
     applicationTokens.value = response.data.tokens;
   } catch (err: any) {
     console.error("Failed to load application tokens:", err);
@@ -320,7 +328,9 @@ const onCreateToken = handleTokenSubmit(async (values) => {
       payload.expires_days = values.expires_days;
     }
 
-    const response = await api.post("/api/admin/application-tokens", payload);
+    const response = await createApplicationTokenEndpointApiAdminApplicationTokensPost({
+      body: payload,
+    });
     newlyCreatedToken.value = response.data;
     await fetchApplicationTokens();
 
@@ -345,7 +355,9 @@ async function revokeApplicationToken(tokenId: string) {
   }
 
   try {
-    await api.delete(`/api/admin/application-tokens/${tokenId}`);
+    await revokeApplicationTokenEndpointApiAdminApplicationTokensTokenIdDelete({
+      path: { token_id: tokenId },
+    });
     await fetchApplicationTokens();
     if (newlyCreatedToken.value?.token.id === tokenId) {
       newlyCreatedToken.value = null;
@@ -358,8 +370,11 @@ async function revokeApplicationToken(tokenId: string) {
 
 async function toggleTokenActive(tokenId: string, currentStatus: boolean) {
   try {
-    await api.patch(`/api/admin/application-tokens/${tokenId}`, {
-      is_active: !currentStatus,
+    await updateApplicationTokenApiAdminApplicationTokensTokenIdPatch({
+      path: { token_id: tokenId },
+      body: {
+        is_active: !currentStatus,
+      },
     });
     await fetchApplicationTokens();
     toast.success(
@@ -415,7 +430,9 @@ const saveSettings = handleSubmit(async (values) => {
       payload.storage_secret_key = storageSecretKey.value;
     }
 
-    const response = await api.patch("/api/admin/settings", payload);
+    const response = await updateSettingsApiAdminSettingsPatch({
+      body: payload,
+    });
     Object.assign(settings, response.data);
 
     // Update form values after successful save
