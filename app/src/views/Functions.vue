@@ -26,6 +26,18 @@ const callPayload = ref("{}");
 const callResult = ref<any>(null);
 const loadingSchema = ref(false);
 
+// Upload function state
+const showUploadModal = ref(false);
+const uploadFilename = ref("");
+const uploadContent = ref("");
+const uploadNotes = ref("");
+const uploading = ref(false);
+
+// Version history state
+const showVersionsModal = ref(false);
+const selectedFunctionVersions = ref<any[]>([]);
+const loadingVersions = ref(false);
+
 onMounted(async () => {
   if (authStore.isAdmin) {
     await functionsStore.fetchAdminFunctions();
@@ -87,6 +99,71 @@ async function handleCall() {
       error_type: "ExecutionError",
       error_message: errorMsg,
     };
+  }
+}
+
+function openUploadModal() {
+  uploadFilename.value = "";
+  uploadContent.value = "";
+  uploadNotes.value = "";
+  showUploadModal.value = true;
+}
+
+async function handleUpload() {
+  if (!uploadFilename.value || !uploadContent.value) {
+    toast.error("Filename and content are required");
+    return;
+  }
+
+  // Validate filename
+  if (!uploadFilename.value.endsWith(".py")) {
+    toast.error("Filename must end with .py");
+    return;
+  }
+
+  uploading.value = true;
+  try {
+    const result = await functionsStore.uploadFunction(
+      uploadFilename.value,
+      uploadContent.value,
+      uploadNotes.value || undefined
+    );
+
+    toast.success(
+      result.is_new_version
+        ? `Function "${result.function_name}" updated successfully`
+        : `Function "${result.function_name}" created successfully`
+    );
+
+    // Show warnings if any
+    if (result.warnings && result.warnings.length > 0) {
+      result.warnings.forEach((warning: string) => {
+        toast.warning(warning);
+      });
+    }
+
+    showUploadModal.value = false;
+    await functionsStore.fetchAdminFunctions();
+  } catch (err: any) {
+    toast.error(err.response?.data?.detail || "Failed to upload function");
+  } finally {
+    uploading.value = false;
+  }
+}
+
+async function openVersionsModal(fn: FunctionInfo) {
+  selectedFunction.value = fn;
+  showVersionsModal.value = true;
+  loadingVersions.value = true;
+
+  try {
+    selectedFunctionVersions.value = await functionsStore.fetchFunctionVersions(
+      fn.name
+    );
+  } catch (err) {
+    toast.error("Failed to load version history");
+  } finally {
+    loadingVersions.value = false;
   }
 }
 
@@ -158,16 +235,27 @@ const functionColumns = computed(() => {
     });
   }
 
+  const actions: any[] = [
+    {
+      label: "Call",
+      action: (row: any) => openCallModal(row),
+      variant: "primary" as const,
+    },
+  ];
+
+  // Add "Versions" action for admins
+  if (authStore.isAdmin) {
+    actions.push({
+      label: "Versions",
+      action: (row: any) => openVersionsModal(row),
+      variant: "secondary" as const,
+    });
+  }
+
   columns.push({
     key: "actions",
     label: "Actions",
-    actions: [
-      {
-        label: "Call",
-        action: (row: any) => openCallModal(row),
-        variant: "primary" as const,
-      },
-    ],
+    actions,
   });
 
   return columns;
@@ -177,8 +265,18 @@ const functionColumns = computed(() => {
 <template>
   <section data-animate="fade-in">
     <header class="page-header">
-      <h1>Functions</h1>
-      <p>Registered server-side functions</p>
+      <div>
+        <h1>Functions</h1>
+        <p>Registered server-side functions</p>
+      </div>
+      <button
+        v-if="authStore.isAdmin"
+        type="button"
+        class="primary"
+        @click="openUploadModal"
+      >
+        Upload Function
+      </button>
     </header>
 
     <!-- Loading State -->
@@ -268,6 +366,128 @@ Loading schema...</textarea
           {{ callResult.error_message }}
         </p>
       </div>
+    </Modal>
+
+    <!-- Upload Function Modal -->
+    <Modal v-model:open="showUploadModal">
+      <template #header>
+        <h3>Upload Function</h3>
+      </template>
+
+      <form @submit.prevent="handleUpload">
+        <label for="upload-filename">
+          Filename
+          <input
+            id="upload-filename"
+            v-model="uploadFilename"
+            type="text"
+            placeholder="my_function.py"
+            required
+          />
+          <small>Must end with .py and be a valid Python identifier.</small>
+        </label>
+
+        <label for="upload-content">
+          Function Code
+          <textarea
+            id="upload-content"
+            v-model="uploadContent"
+            rows="15"
+            class="code-editor"
+            spellcheck="false"
+            required
+            placeholder="# /// script
+# dependencies = [
+#   &quot;tinybase-sdk&quot;,
+# ]
+# ///
+
+from pydantic import BaseModel
+from tinybase_sdk import register
+
+@register(name=&quot;my_function&quot;, description=&quot;My function&quot;)
+def my_function(client, payload):
+    return {&quot;result&quot;: &quot;success&quot;}
+"
+          ></textarea>
+        </label>
+
+        <label for="upload-notes">
+          Deployment Notes (optional)
+          <textarea
+            id="upload-notes"
+            v-model="uploadNotes"
+            rows="3"
+            placeholder="What changed in this version..."
+          ></textarea>
+        </label>
+
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end">
+          <button
+            type="button"
+            class="secondary"
+            @click="showUploadModal = false"
+            :disabled="uploading"
+          >
+            Cancel
+          </button>
+          <button type="submit" :aria-busy="uploading" :disabled="uploading">
+            {{ uploading ? "" : "Upload" }}
+          </button>
+        </div>
+      </form>
+    </Modal>
+
+    <!-- Version History Modal -->
+    <Modal v-model:open="showVersionsModal" wide>
+      <template #header>
+        <h3>
+          Version History: <code>{{ selectedFunction?.name }}</code>
+        </h3>
+      </template>
+
+      <div v-if="loadingVersions" aria-busy="true">Loading versions...</div>
+
+      <div v-else-if="selectedFunctionVersions.length === 0">
+        <p class="text-muted">No version history available.</p>
+      </div>
+
+      <table v-else>
+        <thead>
+          <tr>
+            <th>Version ID</th>
+            <th>Content Hash</th>
+            <th>Deployed By</th>
+            <th>Deployed At</th>
+            <th>Executions</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="version in selectedFunctionVersions" :key="version.id">
+            <td>
+              <code style="font-size: 0.75rem">{{
+                version.id.substring(0, 8)
+              }}</code>
+            </td>
+            <td>
+              <code style="font-size: 0.75rem">{{
+                version.content_hash.substring(0, 8)
+              }}</code>
+            </td>
+            <td>
+              <small>{{ version.deployed_by_email || "-" }}</small>
+            </td>
+            <td>
+              <small>{{ new Date(version.deployed_at).toLocaleString() }}</small>
+            </td>
+            <td>{{ version.execution_count }}</td>
+            <td>
+              <small>{{ version.notes || "-" }}</small>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </Modal>
   </section>
 </template>

@@ -287,6 +287,44 @@ export const useFunctionsStore = defineStore('functions', () => {
     }
   }
 
+  async function uploadFunction(
+    filename: string,
+    content: string,
+    notes?: string
+  ): Promise<any> {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await api.post('/api/admin/functions/upload', {
+        filename,
+        content,
+        notes,
+      })
+      return response.data
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Failed to upload function'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchFunctionVersions(functionName: string): Promise<any[]> {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await api.get(`/api/admin/functions/${functionName}/versions`)
+      return response.data.versions || []
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Failed to fetch function versions'
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     // State
     functions,
@@ -305,6 +343,8 @@ export const useFunctionsStore = defineStore('functions', () => {
     updateSchedule,
     deleteSchedule,
     fetchFunctionSchema,
+    uploadFunction,
+    fetchFunctionVersions,
   }
 })
 
