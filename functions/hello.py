@@ -18,13 +18,11 @@ from tinybase_sdk.client import Client
 
 class HelloInput(BaseModel):
     """Input model for hello function."""
-
     name: str = "World"
 
 
 class HelloOutput(BaseModel):
     """Output model for hello function."""
-
     message: str
     user_id: str | None = None
 

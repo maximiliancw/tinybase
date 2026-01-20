@@ -13,22 +13,20 @@ Example function demonstrating uv's single-file script feature with inline depen
 This function uses the requests library which is automatically installed when loaded.
 """
 
-import requests
 from pydantic import BaseModel
 from tinybase_sdk import register, run
 from tinybase_sdk.client import Client
+import requests
 
 
 class FetchUrlInput(BaseModel):
     """Input model for fetch_url function."""
-
     url: str
     timeout: int = 10  # Timeout in seconds
 
 
 class FetchUrlOutput(BaseModel):
     """Output model for fetch_url function."""
-
     status_code: int
     title: str | None = None
     headers: dict[str, str]
@@ -64,11 +62,8 @@ def fetch_url(client: Client, payload: FetchUrlInput) -> FetchUrlOutput:
         if "text/html" in response.headers.get("content-type", ""):
             try:
                 import re
-
                 # Simple regex to extract title tag content
-                title_match = re.search(
-                    r"<title[^>]*>(.*?)</title>", response.text[:10000], re.IGNORECASE | re.DOTALL
-                )
+                title_match = re.search(r'<title[^>]*>(.*?)</title>', response.text[:10000], re.IGNORECASE | re.DOTALL)
                 if title_match:
                     title = title_match.group(1).strip()
             except Exception:
