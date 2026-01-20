@@ -3,21 +3,38 @@
  * Schedules View
  *
  * Manage function schedules (admin only).
- * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, watch, computed, h } from "vue";
 import { useToast } from "vue-toastification";
 import { useRoute } from "vue-router";
 import { useUrlSearchParams } from "@vueuse/core";
-import { useForm, Field } from "vee-validate";
+import { useForm, Field, useField } from "vee-validate";
 import {
   useFunctionsStore,
   generateTemplateFromSchema,
 } from "../stores/functions";
 import { validationSchemas } from "../composables/useFormValidation";
-import Modal from "../components/Modal.vue";
-import FormField from "../components/FormField.vue";
 import DataTable from "../components/DataTable.vue";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 const toast = useToast();
 const route = useRoute();
@@ -46,6 +63,17 @@ const { handleSubmit, resetForm, values, setFieldValue } = useForm({
     input_data: "{}",
   },
 });
+
+const nameField = useField("name");
+const functionNameField = useField("function_name");
+const methodField = useField("method");
+const timezoneField = useField("timezone");
+const unitField = useField("unit");
+const valueField = useField("value");
+const cronField = useField("cron");
+const dateField = useField("date");
+const timeField = useField("time");
+const inputDataField = useField("input_data");
 
 // Computed property to get selected function info
 const selectedFunction = computed(() => {
@@ -96,10 +124,8 @@ watch(
   () => showCreateModal.value,
   async (isOpen) => {
     if (isOpen && values.function_name) {
-      // Fetch schema if function is already selected when modal opens
       await fetchSchemaAndGenerateTemplate(values.function_name);
     } else if (!isOpen) {
-      // Reset schema when modal closes
       functionSchema.value = null;
     }
   }
@@ -111,7 +137,6 @@ watch(
   (newAction) => {
     if (newAction === "create") {
       showCreateModal.value = true;
-      // Clear the action param after opening modal
       params.action = undefined;
     }
   },
@@ -230,22 +255,22 @@ const scheduleColumns = computed(() => [
   {
     key: "function_name",
     label: "Function",
-    render: (value: any) => h("code", value),
+    render: (value: any) => h("code", { class: "text-sm" }, value),
   },
   {
     key: "schedule",
     label: "Schedule",
     render: (_value: any, row: any) =>
-      h("small", { class: "text-muted" }, formatSchedule(row.schedule)),
+      h("span", { class: "text-sm text-muted-foreground" }, formatSchedule(row.schedule)),
   },
   {
     key: "status",
     label: "Status",
     render: (_value: any, row: any) =>
       h(
-        "mark",
-        { "data-status": row.is_active ? "success" : "neutral" },
-        row.is_active ? "Active" : "Inactive"
+        Badge,
+        { variant: row.is_active ? "default" : "secondary" },
+        () => (row.is_active ? "Active" : "Inactive")
       ),
   },
   {
@@ -253,8 +278,8 @@ const scheduleColumns = computed(() => [
     label: "Next Run",
     render: (value: any) =>
       h(
-        "small",
-        { class: "text-muted" },
+        "span",
+        { class: "text-sm text-muted-foreground" },
         value ? new Date(value).toLocaleString() : "-"
       ),
   },
@@ -270,7 +295,7 @@ const scheduleColumns = computed(() => [
       {
         label: "Delete",
         action: (row: any) => handleDelete(row.id),
-        variant: "contrast" as const,
+        variant: "destructive" as const,
       },
     ],
   },
@@ -278,36 +303,38 @@ const scheduleColumns = computed(() => [
 </script>
 
 <template>
-  <section data-animate="fade-in">
-    <header class="page-header">
-      <hgroup>
-        <h1>Schedules</h1>
-        <p>Manage function schedules</p>
-      </hgroup>
+  <section class="space-y-6 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <header class="space-y-1">
+      <h1 class="text-3xl font-bold tracking-tight">Schedules</h1>
+      <p class="text-muted-foreground">Manage function schedules</p>
     </header>
 
     <!-- Loading State -->
-    <article v-if="functionsStore.loading" aria-busy="true">
-      Loading schedules...
-    </article>
+    <Card v-if="functionsStore.loading">
+      <CardContent class="flex items-center justify-center py-10">
+        <p class="text-sm text-muted-foreground">Loading schedules...</p>
+      </CardContent>
+    </Card>
 
     <!-- Empty State -->
-    <article v-else-if="functionsStore.schedules.length === 0">
-      <div data-empty data-empty-icon="⏰">
-        <p>No schedules yet</p>
-        <p>
-          <small class="text-muted"
-            >Create schedules to run functions automatically.</small
-          >
+    <Card v-else-if="functionsStore.schedules.length === 0">
+      <CardContent class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
+          ⏰
+        </div>
+        <h3 class="mb-1 text-lg font-semibold">No schedules yet</h3>
+        <p class="mb-4 text-sm text-muted-foreground">
+          Create schedules to run functions automatically.
         </p>
-        <button class="small mt-2" @click="showCreateModal = true">
+        <Button size="sm" @click="showCreateModal = true">
           Create Schedule
-        </button>
-      </div>
-    </article>
+        </Button>
+      </CardContent>
+    </Card>
 
     <!-- Schedules Table -->
-    <article v-else>
+    <Card v-else>
       <DataTable
         :data="functionsStore.schedules"
         :columns="scheduleColumns"
@@ -318,180 +345,195 @@ const scheduleColumns = computed(() => [
           action: () => {
             showCreateModal = true;
           },
-          variant: 'primary',
+          variant: 'default',
+          icon: 'Plus',
         }"
       />
-    </article>
+    </Card>
 
     <!-- Create Schedule Modal -->
-    <Modal v-model:open="showCreateModal" title="Create Schedule">
-      <form id="schedule-form" @submit="onSubmit">
-        <FormField name="name" type="text" label="Name" />
+    <Dialog v-model:open="showCreateModal">
+      <DialogContent class="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Create Schedule</DialogTitle>
+        </DialogHeader>
 
-        <FormField name="function_name" as="select" label="Function">
-          <option value="">Select a function</option>
-          <option
-            v-for="fn in functionsStore.functions"
-            :key="fn.name"
-            :value="fn.name"
-          >
-            {{ fn.name }}
-          </option>
-        </FormField>
-        <p
-          v-if="selectedFunction?.description"
-          class="text-muted"
-          style="margin-top: -20px"
-        >
-          <u>Description</u>: {{ selectedFunction.description }}
-        </p>
+        <form id="schedule-form" @submit.prevent="onSubmit" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="name">Name</Label>
+            <Input
+              id="name"
+              v-model="nameField.value.value"
+              :aria-invalid="nameField.errorMessage.value ? 'true' : undefined"
+            />
+            <p v-if="nameField.errorMessage.value" class="text-sm text-destructive">
+              {{ nameField.errorMessage.value }}
+            </p>
+          </div>
 
-        <Field name="method" v-slot="{ field }">
-          <fieldset>
-            <legend>Schedule Type</legend>
-            <div role="group">
-              <label>
-                <input type="radio" v-bind="field" value="interval" />
-                Interval
-              </label>
-              <label>
-                <input type="radio" v-bind="field" value="cron" />
-                Cron
-              </label>
-              <label>
-                <input type="radio" v-bind="field" value="once" />
-                Once
-              </label>
+          <div class="space-y-2">
+            <Label for="function_name">Function</Label>
+            <Select v-model="functionNameField.value.value">
+              <SelectTrigger>
+                <SelectValue placeholder="Select a function" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="fn in functionsStore.functions"
+                  :key="fn.name"
+                  :value="fn.name"
+                >
+                  {{ fn.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p v-if="selectedFunction?.description" class="text-xs text-muted-foreground">
+              {{ selectedFunction.description }}
+            </p>
+          </div>
+
+          <Field name="method" v-slot="{ field }">
+            <div class="space-y-2">
+              <Label>Schedule Type</Label>
+              <div class="flex gap-4">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" v-bind="field" value="interval" class="cursor-pointer" />
+                  <span class="text-sm">Interval</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" v-bind="field" value="cron" class="cursor-pointer" />
+                  <span class="text-sm">Cron</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" v-bind="field" value="once" class="cursor-pointer" />
+                  <span class="text-sm">Once</span>
+                </label>
+              </div>
             </div>
-          </fieldset>
-        </Field>
+          </Field>
 
-        <Field name="method" v-slot="{ value: method }">
-          <!-- Interval Options -->
-          <div v-if="method === 'interval'" class="grid">
-            <FormField name="value" type="number" label="Value" :min="1" />
-            <FormField name="unit" as="select" label="Unit">
-              <option value="seconds">Seconds</option>
-              <option value="minutes">Minutes</option>
-              <option value="hours">Hours</option>
-              <option value="days">Days</option>
-            </FormField>
+          <Field name="method" v-slot="{ value: method }">
+            <!-- Interval Options -->
+            <div v-if="method === 'interval'" class="grid gap-4 md:grid-cols-2">
+              <div class="space-y-2">
+                <Label for="value">Value</Label>
+                <Input
+                  id="value"
+                  v-model.number="valueField.value.value"
+                  type="number"
+                  min="1"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="unit">Unit</Label>
+                <Select v-model="unitField.value.value">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="seconds">Seconds</SelectItem>
+                    <SelectItem value="minutes">Minutes</SelectItem>
+                    <SelectItem value="hours">Hours</SelectItem>
+                    <SelectItem value="days">Days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <!-- Cron Options -->
+            <div v-if="method === 'cron'" class="space-y-2">
+              <Label for="cron">Cron Expression</Label>
+              <Input
+                id="cron"
+                v-model="cronField.value.value"
+                placeholder="0 * * * *"
+              />
+              <p class="text-xs text-muted-foreground">
+                Format: minute hour day_of_month month day_of_week
+              </p>
+            </div>
+
+            <!-- Once Options -->
+            <div v-if="method === 'once'" class="grid gap-4 md:grid-cols-2">
+              <div class="space-y-2">
+                <Label for="date">Date</Label>
+                <Input
+                  id="date"
+                  v-model="dateField.value.value"
+                  type="date"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="time">Time</Label>
+                <Input
+                  id="time"
+                  v-model="timeField.value.value"
+                  type="time"
+                />
+              </div>
+            </div>
+          </Field>
+
+          <div class="space-y-2">
+            <Label for="timezone">Timezone</Label>
+            <Input
+              id="timezone"
+              v-model="timezoneField.value.value"
+              placeholder="UTC"
+            />
           </div>
 
-          <!-- Cron Options -->
-          <FormField
-            v-if="method === 'cron'"
-            name="cron"
-            type="text"
-            label="Cron Expression"
-            placeholder="0 * * * *"
-            helper="Format: minute hour day_of_month month day_of_week"
-          />
-
-          <!-- Once Options -->
-          <div v-if="method === 'once'" class="grid">
-            <FormField name="date" type="date" label="Date" />
-            <FormField name="time" type="time" label="Time" />
-          </div>
-        </Field>
-
-        <FormField
-          name="timezone"
-          type="text"
-          label="Timezone"
-          placeholder="UTC"
-        />
-
-        <!-- Input Data -->
-        <Field name="input_data" v-slot="{ field, errors, meta }">
-          <label for="field-input_data">
-            Input Data (JSON)
-            <textarea
+          <!-- Input Data -->
+          <div class="space-y-2">
+            <Label for="input_data">Input Data (JSON)</Label>
+            <Textarea
               v-if="loadingSchema"
-              id="field-input_data"
-              rows="8"
+              id="input_data"
+              :rows="8"
               disabled
-              aria-busy="true"
-              class="code-editor"
-            >
-Loading schema...</textarea
-            >
-            <textarea
+              class="font-mono text-sm"
+              value="Loading schema..."
+            />
+            <Textarea
               v-else
-              id="field-input_data"
-              v-bind="field"
-              rows="8"
-              class="code-editor"
+              id="input_data"
+              v-model="inputDataField.value.value"
+              :rows="8"
+              class="font-mono text-sm"
               spellcheck="false"
               placeholder="{}"
-              :aria-invalid="meta.touched && !meta.valid ? 'true' : 'false'"
-            ></textarea>
-            <small v-if="meta.touched && errors[0]" class="text-error">
-              {{ errors[0] }}
-            </small>
-            <small v-else-if="functionSchema?.input_schema">
-              Schema-based template generated. Modify as needed for your use
-              case.
-            </small>
-            <small v-else-if="values.function_name">
-              This function has no input schema. Use an empty object {} or
-              provide custom data.
-            </small>
-            <small v-else>
+            />
+            <p v-if="functionSchema?.input_schema" class="text-xs text-muted-foreground">
+              Schema-based template generated. Modify as needed for your use case.
+            </p>
+            <p v-else-if="values.function_name" class="text-xs text-muted-foreground">
+              This function has no input schema. Use an empty object {} or provide custom data.
+            </p>
+            <p v-else class="text-xs text-muted-foreground">
               Select a function to generate input data template from its schema.
-            </small>
-          </label>
-        </Field>
-      </form>
-      <template #footer>
-        <button
-          type="button"
-          class="secondary"
-          @click="showCreateModal = false"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          form="schedule-form"
-          :aria-busy="functionsStore.loading"
-          :disabled="functionsStore.loading"
-        >
-          {{ functionsStore.loading ? "" : "Create Schedule" }}
-        </button>
-      </template>
-    </Modal>
+            </p>
+          </div>
+        </form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="ghost"
+            @click="showCreateModal = false"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="schedule-form"
+            :disabled="functionsStore.loading"
+          >
+            {{ functionsStore.loading ? "Creating..." : "Create Schedule" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
-
-<style scoped>
-/* Page header layout */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.page-header hgroup {
-  margin: 0;
-}
-
-.page-header hgroup h1 {
-  margin-bottom: var(--tb-spacing-xs);
-}
-
-.page-header hgroup p {
-  margin: 0;
-  color: var(--pico-muted-color);
-}
-
-/* Code editor textarea */
-.code-editor {
-  font-family: ui-monospace, "SF Mono", "Cascadia Code", "Source Code Pro",
-    Menlo, Consolas, monospace;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  tab-size: 2;
-  resize: vertical;
-}
-</style>

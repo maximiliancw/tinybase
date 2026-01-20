@@ -7,11 +7,24 @@
  */
 import { onMounted, ref } from "vue";
 import { useToast } from "vue-toastification";
-import { useForm } from "vee-validate";
+import { useForm, useField } from "vee-validate";
 import { api } from "../api";
 import { validationSchemas } from "../composables/useFormValidation";
-import Modal from "../components/Modal.vue";
-import FormField from "../components/FormField.vue";
+import Icon from "../components/Icon.vue";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Extension {
   id: string;
@@ -50,6 +63,8 @@ const { handleSubmit, resetForm } = useForm({
     repo_url: "",
   },
 });
+
+const repoUrlField = useField("repo_url");
 
 // Uninstall confirmation
 const showUninstallModal = ref(false);
@@ -169,343 +184,218 @@ function formatDate(dateStr: string): string {
 </script>
 
 <template>
-  <section data-animate="fade-in">
-    <header class="page-header">
-      <div>
-        <h1>Extensions</h1>
-        <p>Manage TinyBase plugins and integrations</p>
+  <section class="space-y-6 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <header class="flex items-start justify-between">
+      <div class="space-y-1">
+        <h1 class="text-3xl font-bold tracking-tight">Extensions</h1>
+        <p class="text-muted-foreground">Manage TinyBase plugins and integrations</p>
       </div>
-      <button @click="openInstallModal">Install Extension</button>
+      <Button @click="openInstallModal">
+        Install Extension
+      </Button>
     </header>
 
     <!-- Loading State -->
-    <article v-if="loading" aria-busy="true">Loading extensions...</article>
+    <Card v-if="loading">
+      <CardContent class="flex items-center justify-center py-10">
+        <p class="text-sm text-muted-foreground">Loading extensions...</p>
+      </CardContent>
+    </Card>
 
     <!-- Empty State -->
-    <article v-else-if="extensions.length === 0">
-      <div data-empty data-empty-icon="🧩">
-        <p>No extensions installed</p>
-        <p>
-          <small class="text-muted">
-            Install extensions from GitHub to add new features to TinyBase.
-          </small>
+    <Card v-else-if="extensions.length === 0">
+      <CardContent class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
+          🧩
+        </div>
+        <h3 class="mb-1 text-lg font-semibold">No extensions installed</h3>
+        <p class="mb-4 text-sm text-muted-foreground">
+          Install extensions from GitHub to add new features to TinyBase.
         </p>
-        <button @click="openInstallModal" class="mt-3">
+        <Button @click="openInstallModal">
           Install Your First Extension
-        </button>
-      </div>
-    </article>
+        </Button>
+      </CardContent>
+    </Card>
 
-    <!-- Extensions List -->
-    <div v-else class="extensions-grid">
-      <article v-for="ext in extensions" :key="ext.id" class="extension-card">
-        <header>
-          <div class="extension-header">
-            <h3>{{ ext.name }}</h3>
-            <mark :data-status="ext.is_enabled ? 'success' : 'neutral'">
+    <!-- Extensions Grid -->
+    <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <Card v-for="ext in extensions" :key="ext.id" class="flex flex-col">
+        <CardHeader class="border-b pb-4">
+          <div class="flex items-start justify-between gap-2">
+            <CardTitle class="text-lg">{{ ext.name }}</CardTitle>
+            <Badge :variant="ext.is_enabled ? 'default' : 'secondary'">
               {{ ext.is_enabled ? "Enabled" : "Disabled" }}
-            </mark>
+            </Badge>
           </div>
-          <small class="text-muted">v{{ ext.version }}</small>
-          <mark
+          <p class="text-xs text-muted-foreground">v{{ ext.version }}</p>
+          <Badge
             v-if="ext.update_available"
-            data-status="info"
-            class="update-badge"
+            variant="outline"
+            class="mt-2 w-fit"
           >
             Update available: v{{ ext.update_available }}
-          </mark>
-        </header>
+          </Badge>
+        </CardHeader>
 
-        <p v-if="ext.description" class="extension-description">
-          {{ ext.description }}
-        </p>
-        <p v-else class="extension-description text-muted">
-          No description provided.
-        </p>
+        <CardContent class="flex-1 pt-4">
+          <p v-if="ext.description" class="text-sm mb-4">
+            {{ ext.description }}
+          </p>
+          <p v-else class="text-sm text-muted-foreground mb-4">
+            No description provided.
+          </p>
 
-        <div class="extension-meta">
-          <small v-if="ext.author" class="text-muted">
-            By {{ ext.author }}
-          </small>
-          <small class="text-muted">
-            Installed {{ formatDate(ext.installed_at) }}
-          </small>
-        </div>
+          <div class="space-y-1 text-xs text-muted-foreground">
+            <p v-if="ext.author">By {{ ext.author }}</p>
+            <p>Installed {{ formatDate(ext.installed_at) }}</p>
+          </div>
+        </CardContent>
 
-        <footer>
-          <div class="extension-actions">
-            <label class="toggle-label">
-              <input
-                type="checkbox"
-                role="switch"
-                :checked="ext.is_enabled"
-                @change="toggleEnabled(ext)"
-              />
+        <CardFooter class="flex items-center justify-between border-t pt-4">
+          <div class="flex items-center gap-2">
+            <Switch
+              :checked="ext.is_enabled"
+              @update:checked="toggleEnabled(ext)"
+              :id="`ext-${ext.id}`"
+            />
+            <Label :for="`ext-${ext.id}`" class="text-sm cursor-pointer">
               {{ ext.is_enabled ? "Enabled" : "Disabled" }}
-            </label>
-            <div class="action-buttons">
+            </Label>
+          </div>
+          <div class="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              as-child
+            >
               <a
                 :href="ext.repo_url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="button small outline"
               >
+                <Icon name="ExternalLink" :size="14" />
                 GitHub
               </a>
-              <button
-                class="small outline danger"
-                @click="openUninstallModal(ext)"
-              >
-                Uninstall
-              </button>
-            </div>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              @click="openUninstallModal(ext)"
+            >
+              Uninstall
+            </Button>
           </div>
-        </footer>
-      </article>
+        </CardFooter>
+      </Card>
     </div>
 
     <!-- Install Modal -->
-    <Modal v-model:open="showInstallModal" title="Install Extension">
-      <div v-if="!showWarningAccepted" class="warning-box">
-        <h4>Security Warning</h4>
-        <p>
-          Extensions can execute arbitrary Python code on your server. Only
-          install extensions from sources you trust.
-        </p>
-        <p>
-          <small class="text-muted">
-            Before installing, review the extension's source code on GitHub.
-          </small>
-        </p>
-        <button class="secondary" @click="showWarningAccepted = true">
-          I understand, continue
-        </button>
-      </div>
+    <Dialog v-model:open="showInstallModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Install Extension</DialogTitle>
+        </DialogHeader>
 
-      <form id="install-form" v-else @submit="onSubmit">
-        <FormField
-          name="repo_url"
-          type="url"
-          label="GitHub Repository URL"
-          placeholder="https://github.com/username/tinybase-extension"
-          :disabled="installing"
-          helper="The repository must contain an extension.toml manifest."
-        />
-      </form>
-      <template #footer>
-        <button
-          type="button"
-          class="outline"
-          @click="showInstallModal = false"
-          :disabled="installing"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          form="install-form"
-          :aria-busy="installing"
-          :disabled="installing"
-        >
-          {{ installing ? "" : "Install" }}
-        </button>
-      </template>
-    </Modal>
+        <div v-if="!showWarningAccepted">
+          <Alert variant="destructive" class="mb-4">
+            <AlertTitle>Security Warning</AlertTitle>
+            <AlertDescription class="space-y-2">
+              <p>
+                Extensions can execute arbitrary Python code on your server. Only
+                install extensions from sources you trust.
+              </p>
+              <p class="text-xs">
+                Before installing, review the extension's source code on GitHub.
+              </p>
+            </AlertDescription>
+          </Alert>
+          <Button
+            variant="secondary"
+            class="w-full"
+            @click="showWarningAccepted = true"
+          >
+            I understand, continue
+          </Button>
+        </div>
+
+        <form id="install-form" v-else @submit.prevent="onSubmit" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="repo_url">GitHub Repository URL</Label>
+            <Input
+              id="repo_url"
+              v-model="repoUrlField.value.value"
+              type="url"
+              placeholder="https://github.com/username/tinybase-extension"
+              :disabled="installing"
+              :aria-invalid="repoUrlField.errorMessage.value ? 'true' : undefined"
+            />
+            <p class="text-xs text-muted-foreground">
+              The repository must contain an extension.toml manifest.
+            </p>
+            <p v-if="repoUrlField.errorMessage.value" class="text-sm text-destructive">
+              {{ repoUrlField.errorMessage.value }}
+            </p>
+          </div>
+        </form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="ghost"
+            @click="showInstallModal = false"
+            :disabled="installing"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="install-form"
+            :disabled="installing"
+          >
+            {{ installing ? "Installing..." : "Install" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Uninstall Confirmation Modal -->
-    <Modal v-model:open="showUninstallModal" title="Uninstall Extension">
-      <p>
-        Are you sure you want to uninstall
-        <strong>{{ extensionToUninstall?.name }}</strong
-        >?
-      </p>
-      <p class="text-muted">
-        This will remove the extension files. Any functions registered by this
-        extension will no longer be available after the server restarts.
-      </p>
+    <Dialog v-model:open="showUninstallModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Uninstall Extension</DialogTitle>
+        </DialogHeader>
 
-      <template #footer>
-        <button
-          type="button"
-          class="outline"
-          @click="showUninstallModal = false"
-          :disabled="uninstalling"
-        >
-          Cancel
-        </button>
-        <button
-          class="danger"
-          @click="handleUninstall"
-          :aria-busy="uninstalling"
-          :disabled="uninstalling"
-        >
-          {{ uninstalling ? "" : "Uninstall" }}
-        </button>
-      </template>
-    </Modal>
+        <div class="space-y-4">
+          <p>
+            Are you sure you want to uninstall
+            <strong>{{ extensionToUninstall?.name }}</strong>?
+          </p>
+          <p class="text-sm text-muted-foreground">
+            This will remove the extension files. Any functions registered by this
+            extension will no longer be available after the server restarts.
+          </p>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="ghost"
+            @click="showUninstallModal = false"
+            :disabled="uninstalling"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            @click="handleUninstall"
+            :disabled="uninstalling"
+          >
+            {{ uninstalling ? "Uninstalling..." : "Uninstall" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
-
-<style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.page-header > div {
-  flex: 1;
-}
-
-.page-header > button {
-  white-space: nowrap;
-}
-
-.extensions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: var(--tb-spacing-lg);
-}
-
-.extension-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.extension-card header {
-  padding-bottom: var(--tb-spacing-md);
-  border-bottom: 1px solid var(--tb-border);
-  margin-bottom: var(--tb-spacing-md);
-}
-
-.extension-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--tb-spacing-sm);
-}
-
-.extension-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.update-badge {
-  display: inline-block;
-  margin-top: var(--tb-spacing-xs);
-}
-
-.extension-description {
-  flex: 1;
-  margin-bottom: var(--tb-spacing-md);
-}
-
-.extension-meta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--tb-spacing-xs);
-  margin-bottom: var(--tb-spacing-md);
-}
-
-.extension-card footer {
-  padding-top: var(--tb-spacing-md);
-  border-top: 1px solid var(--tb-border);
-  margin-top: auto;
-}
-
-.extension-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--tb-spacing-md);
-}
-
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: var(--tb-spacing-sm);
-  cursor: pointer;
-  margin: 0;
-}
-
-.toggle-label input[type="checkbox"] {
-  margin: 0;
-}
-
-.action-buttons {
-  display: flex;
-  gap: var(--tb-spacing-sm);
-}
-
-.action-buttons .button,
-.action-buttons button {
-  margin: 0;
-}
-
-.warning-box {
-  background: var(--tb-warning-bg);
-  border: 1px solid var(--tb-warning);
-  border-radius: var(--tb-radius);
-  padding: var(--tb-spacing-lg);
-  margin-bottom: var(--tb-spacing-lg);
-}
-
-.warning-box h4 {
-  color: var(--tb-warning);
-  margin-top: 0;
-}
-
-button.danger,
-.button.danger {
-  --pico-background-color: var(--tb-error);
-  --pico-border-color: var(--tb-error);
-}
-
-button.danger:hover,
-.button.danger:hover {
-  --pico-background-color: var(--tb-error);
-  --pico-border-color: var(--tb-error);
-  filter: brightness(0.9);
-}
-
-button.outline.danger {
-  --pico-color: var(--tb-error);
-  --pico-border-color: var(--tb-error);
-  --pico-background-color: transparent;
-}
-
-button.outline.danger:hover {
-  --pico-background-color: var(--tb-error);
-  --pico-color: white;
-}
-
-.mt-3 {
-  margin-top: var(--tb-spacing-lg);
-}
-
-.button {
-  display: inline-block;
-  padding: calc(var(--pico-spacing) * 0.5) var(--pico-spacing);
-  border-radius: var(--pico-border-radius);
-  text-decoration: none;
-  text-align: center;
-  cursor: pointer;
-}
-
-.button.outline {
-  background: transparent;
-  border: 1px solid var(--pico-primary);
-  color: var(--pico-primary);
-}
-
-.button.outline:hover {
-  background: var(--pico-primary);
-  color: white;
-}
-
-.button.small,
-button.small {
-  padding: calc(var(--pico-spacing) * 0.25) calc(var(--pico-spacing) * 0.5);
-  font-size: 0.875rem;
-}
-</style>

@@ -7,13 +7,22 @@
  */
 import { onMounted, ref, computed, h, watch } from "vue";
 import { useToast } from "vue-toastification";
-import { useForm, Field } from "vee-validate";
+import { useForm, Field, useField } from "vee-validate";
 import { useLocalStorage, useFileDialog, useDropZone } from "@vueuse/core";
 import { api } from "../api";
 import { validationSchemas } from "../composables/useFormValidation";
-import Modal from "../components/Modal.vue";
-import FormField from "../components/FormField.vue";
 import DataTable from "../components/DataTable.vue";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface FileInfo {
   key: string;
@@ -53,6 +62,9 @@ const { handleSubmit, resetForm, setFieldValue } = useForm({
     path_prefix: "",
   },
 });
+
+const fileField = useField("file");
+const pathPrefixField = useField("path_prefix");
 
 // File dialog
 const { open: openFileDialog, onChange: onFileDialogChange } = useFileDialog({
@@ -197,30 +209,30 @@ const fileColumns = computed(() => [
   {
     key: "filename",
     label: "Filename",
-    render: (value: any) => h("code", value),
+    render: (value: any) => h("code", { class: "text-sm" }, value),
   },
   {
     key: "key",
     label: "Key",
     render: (value: any) =>
-      h("code", { class: "text-muted", style: "font-size: 0.75rem" }, value),
+      h("code", { class: "text-xs text-muted-foreground" }, value),
   },
   {
     key: "content_type",
     label: "Type",
-    render: (value: any) => h("small", { class: "text-muted" }, value),
+    render: (value: any) => h("span", { class: "text-sm text-muted-foreground" }, value),
   },
   {
     key: "size",
     label: "Size",
     render: (value: any) =>
-      h("small", { class: "text-muted" }, formatFileSize(value)),
+      h("span", { class: "text-sm text-muted-foreground" }, formatFileSize(value)),
   },
   {
     key: "uploaded_at",
     label: "Uploaded",
     render: (value: any) =>
-      h("small", { class: "text-muted" }, formatDate(value)),
+      h("span", { class: "text-sm text-muted-foreground" }, formatDate(value)),
   },
   {
     key: "actions",
@@ -229,12 +241,12 @@ const fileColumns = computed(() => [
       {
         label: "Download",
         action: (row: any) => downloadFile(row.key),
-        variant: "primary" as const,
+        variant: "default" as const,
       },
       {
         label: "Delete",
         action: (row: any) => deleteFile(row.key),
-        variant: "contrast" as const,
+        variant: "destructive" as const,
       },
     ],
   },
@@ -251,7 +263,6 @@ function formatFileSize(bytes: number): string {
 function formatDate(dateStr: string): string {
   if (!dateStr) return "-";
   const date = new Date(dateStr);
-  // Use a simple format for now - composables can't be called in render functions
   const now = Date.now();
   const diff = now - date.getTime();
   const seconds = Math.floor(diff / 1000);
@@ -300,256 +311,214 @@ async function handleKeyAction(action: "download" | "delete") {
 </script>
 
 <template>
-  <section data-animate="fade-in">
-    <header class="page-header">
-      <hgroup>
-        <h1>Files</h1>
-        <p>Manage files in storage</p>
-      </hgroup>
-      <div class="header-actions">
-        <button class="secondary" @click="openKeyModal">Access by Key</button>
+  <section class="space-y-6 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <header class="flex items-start justify-between">
+      <div class="space-y-1">
+        <h1 class="text-3xl font-bold tracking-tight">Files</h1>
+        <p class="text-muted-foreground">Manage files in storage</p>
       </div>
+      <Button variant="ghost" @click="openKeyModal">
+        Access by Key
+      </Button>
     </header>
 
     <!-- Loading State -->
-    <article v-if="loading" aria-busy="true">
-      Checking storage status...
-    </article>
+    <Card v-if="loading">
+      <CardContent class="flex items-center justify-center py-10">
+        <p class="text-sm text-muted-foreground">Checking storage status...</p>
+      </CardContent>
+    </Card>
 
     <!-- Storage Not Enabled -->
-    <article v-else-if="!storageEnabled">
-      <div data-empty data-empty-icon="📦">
-        <p>File storage is not enabled</p>
-        <p>
-          <small class="text-muted">
-            Configure file storage in Settings to enable file uploads and
-            management.
-          </small>
+    <Card v-else-if="!storageEnabled">
+      <CardContent class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
+          📦
+        </div>
+        <h3 class="mb-1 text-lg font-semibold">File storage is not enabled</h3>
+        <p class="mb-4 text-sm text-muted-foreground">
+          Configure file storage in Settings to enable file uploads and management.
         </p>
-        <router-link to="/settings" role="button" class="mt-3">
-          Go to Settings
-        </router-link>
-      </div>
-    </article>
+        <Button as-child>
+          <router-link to="/settings">Go to Settings</router-link>
+        </Button>
+      </CardContent>
+    </Card>
 
     <!-- Storage Enabled - File Management -->
-    <div v-else>
+    <template v-else>
       <!-- Uploaded Files Table -->
-      <article v-if="files.length > 0">
-        <header>
-          <h3>Recent Files</h3>
-          <small class="text-muted">
+      <Card v-if="files.length > 0">
+        <CardHeader>
+          <CardTitle>Recent Files</CardTitle>
+          <p class="text-sm text-muted-foreground">
             Files you've uploaded in this session. Use "Access by Key" to manage
             other files.
-          </small>
-        </header>
-
-        <DataTable
-          :data="files"
-          :columns="fileColumns"
-          :page-size="20"
-          search-placeholder="Search files..."
-          :header-action="
-            storageEnabled
-              ? {
-                  label: 'Upload File',
-                  action: () => {
-                    openUploadModal();
-                  },
-                  variant: 'primary',
-                }
-              : undefined
-          "
-        />
-      </article>
+          </p>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            :data="files"
+            :columns="fileColumns"
+            :page-size="20"
+            search-placeholder="Search files..."
+            :header-action="{
+              label: 'Upload File',
+              action: () => {
+                openUploadModal();
+              },
+              variant: 'default',
+              icon: 'Plus',
+            }"
+          />
+        </CardContent>
+      </Card>
 
       <!-- Empty State -->
-      <article v-else>
-        <div data-empty data-empty-icon="📁">
-          <p>No files uploaded yet</p>
-          <p>
-            <small class="text-muted">
-              Upload files to get started, or use "Access by Key" to manage
-              existing files.
-            </small>
+      <Card v-else>
+        <CardContent class="flex flex-col items-center justify-center py-16 text-center">
+          <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
+            📁
+          </div>
+          <h3 class="mb-1 text-lg font-semibold">No files uploaded yet</h3>
+          <p class="mb-4 text-sm text-muted-foreground">
+            Upload files to get started, or use "Access by Key" to manage existing files.
           </p>
-          <button @click="openUploadModal" class="mt-3">
+          <Button @click="openUploadModal">
             Upload Your First File
-          </button>
-        </div>
-      </article>
-    </div>
+          </Button>
+        </CardContent>
+      </Card>
+    </template>
 
     <!-- Upload Modal -->
-    <Modal v-model:open="showUploadModal" title="Upload File">
-      <form id="upload-form" @submit="onSubmit">
-        <div
-          ref="dropZoneRef"
-          :class="{ 'drop-zone-active': isOverDropZone }"
-          style="
-            border: 2px dashed var(--tb-border);
-            border-radius: var(--tb-radius);
-            padding: var(--tb-spacing-lg);
-            text-align: center;
-            margin-bottom: var(--tb-spacing-md);
-            transition: all 0.2s;
-          "
-        >
-          <p v-if="!isOverDropZone">Drag and drop a file here, or</p>
-          <p v-else style="color: var(--tb-primary); font-weight: 600">
-            Drop file here
-          </p>
-          <button
-            type="button"
-            class="secondary"
-            @click="handleFileDialogClick"
-            :disabled="uploading"
-            style="margin-top: var(--tb-spacing-sm)"
+    <Dialog v-model:open="showUploadModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Upload File</DialogTitle>
+        </DialogHeader>
+
+        <form id="upload-form" @submit.prevent="onSubmit" class="space-y-4">
+          <div
+            ref="dropZoneRef"
+            class="border-2 border-dashed rounded-lg p-8 text-center transition-colors"
+            :class="{
+              'border-primary bg-primary/10': isOverDropZone,
+              'border-border': !isOverDropZone,
+            }"
           >
-            Browse Files
-          </button>
-        </div>
-        <Field name="file" v-slot="{ field, errors, meta }">
-          <label for="field-file" style="display: none">
-            File
+            <p v-if="!isOverDropZone" class="mb-3 text-sm text-muted-foreground">
+              Drag and drop a file here, or
+            </p>
+            <p v-else class="mb-3 text-sm font-semibold text-primary">
+              Drop file here
+            </p>
+            <Button
+              type="button"
+              variant="secondary"
+              @click="handleFileDialogClick"
+              :disabled="uploading"
+            >
+              Browse Files
+            </Button>
+          </div>
+
+          <Field name="file" v-slot="{ errors, meta }">
             <input
-              id="field-file"
               type="file"
+              class="sr-only"
               @change="handleFileSelect"
               :disabled="uploading"
               :aria-invalid="meta.touched && !meta.valid ? 'true' : 'false'"
             />
-            <small v-if="meta.touched && errors[0]" class="text-error">
+            <p v-if="meta.touched && errors[0]" class="text-sm text-destructive">
               {{ errors[0] }}
-            </small>
-          </label>
-          <small
-            v-if="meta.touched && errors[0]"
-            class="text-error"
-            style="display: block; margin-top: var(--tb-spacing-xs)"
-          >
-            {{ errors[0] }}
-          </small>
-        </Field>
+            </p>
+          </Field>
 
-        <FormField
-          name="path_prefix"
-          type="text"
-          label="Path Prefix (optional)"
-          placeholder="uploads/images/"
-          :disabled="uploading"
-          helper="Optional prefix to organize files (e.g., 'uploads/images/'). Trailing slash is optional."
-        />
-      </form>
-      <template #footer>
-        <button
-          type="button"
-          class="secondary"
-          @click="showUploadModal = false"
-          :disabled="uploading"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          form="upload-form"
-          :aria-busy="uploading"
-          :disabled="uploading"
-        >
-          {{ uploading ? "" : "Upload" }}
-        </button>
-      </template>
-    </Modal>
+          <div class="space-y-2">
+            <Label for="path_prefix">Path Prefix (optional)</Label>
+            <Input
+              id="path_prefix"
+              v-model="pathPrefixField.value.value"
+              placeholder="uploads/images/"
+              :disabled="uploading"
+            />
+            <p class="text-xs text-muted-foreground">
+              Optional prefix to organize files (e.g., 'uploads/images/'). Trailing slash is optional.
+            </p>
+          </div>
+        </form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="ghost"
+            @click="showUploadModal = false"
+            :disabled="uploading"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="upload-form"
+            :disabled="uploading"
+          >
+            {{ uploading ? "Uploading..." : "Upload" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Access by Key Modal -->
-    <Modal v-model:open="showKeyModal" title="Access File by Key">
-      <p class="text-muted">
-        Enter the storage key (path) of a file to download or delete it.
-      </p>
+    <Dialog v-model:open="showKeyModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Access File by Key</DialogTitle>
+        </DialogHeader>
 
-      <label for="manual_key">
-        Storage Key
-        <input
-          id="manual_key"
-          v-model="manualKey"
-          type="text"
-          placeholder="uploads/images/abc123.jpg"
-          required
-        />
-      </label>
+        <div class="space-y-4">
+          <p class="text-sm text-muted-foreground">
+            Enter the storage key (path) of a file to download or delete it.
+          </p>
 
-      <template #footer>
-        <button type="button" class="secondary" @click="showKeyModal = false">
-          Cancel
-        </button>
-        <button
-          type="button"
-          class="contrast"
-          @click="handleKeyAction('delete')"
-          :disabled="!manualKey.trim()"
-        >
-          Delete
-        </button>
-        <button
-          type="button"
-          @click="handleKeyAction('download')"
-          :disabled="!manualKey.trim()"
-        >
-          Download
-        </button>
-      </template>
-    </Modal>
+          <div class="space-y-2">
+            <Label for="manual_key">Storage Key</Label>
+            <Input
+              id="manual_key"
+              v-model="manualKey"
+              placeholder="uploads/images/abc123.jpg"
+              required
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="ghost"
+            @click="showKeyModal = false"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            @click="handleKeyAction('delete')"
+            :disabled="!manualKey.trim()"
+          >
+            Delete
+          </Button>
+          <Button
+            type="button"
+            @click="handleKeyAction('download')"
+            :disabled="!manualKey.trim()"
+          >
+            Download
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
-
-<style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--tb-spacing-lg);
-}
-
-.page-header hgroup {
-  margin: 0;
-}
-
-.page-header hgroup h1 {
-  margin-bottom: var(--tb-spacing-xs);
-}
-
-.page-header hgroup p {
-  margin: 0;
-  color: var(--pico-muted-color);
-}
-
-.header-actions {
-  display: flex;
-  gap: var(--tb-spacing-sm);
-}
-
-.action-buttons {
-  display: flex;
-  gap: var(--tb-spacing-xs);
-}
-
-.action-buttons button {
-  margin: 0;
-}
-
-.mt-3 {
-  margin-top: var(--tb-spacing-lg);
-}
-
-code {
-  font-size: 0.875rem;
-  background: var(--tb-surface-1);
-  padding: 0.125rem 0.25rem;
-  border-radius: var(--tb-radius);
-}
-
-.drop-zone-active {
-  border-color: var(--tb-primary) !important;
-  background: var(--tb-primary-focus);
-}
-</style>

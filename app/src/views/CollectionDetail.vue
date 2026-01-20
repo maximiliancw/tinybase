@@ -3,7 +3,6 @@
  * Collection Detail View
  *
  * View and manage records in a collection.
- * Uses semantic HTML elements following PicoCSS conventions.
  */
 import { onMounted, ref, computed, h } from "vue";
 import { useToast } from "vue-toastification";
@@ -11,8 +10,19 @@ import { useRoute } from "vue-router";
 import { useInfiniteScroll } from "@vueuse/core";
 import { useCollectionsStore, type Record } from "../stores/collections";
 import { useAuthStore } from "../stores/auth";
-import Modal from "../components/Modal.vue";
 import DataTable from "../components/DataTable.vue";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 
 const toast = useToast();
 const route = useRoute();
@@ -120,7 +130,7 @@ const recordColumns = computed(() => {
       key: "id",
       label: "ID",
       render: (value: any) =>
-        h("code", { class: "text-muted" }, `${value.slice(0, 8)}...`),
+        h("code", { class: "text-xs text-muted-foreground" }, `${value.slice(0, 8)}...`),
     },
   ];
 
@@ -143,7 +153,7 @@ const recordColumns = computed(() => {
     key: "created_at",
     label: "Created",
     render: (value: any) =>
-      h("small", { class: "text-muted" }, [
+      h("span", { class: "text-sm text-muted-foreground" }, [
         new Date(value).toLocaleDateString(),
       ]),
   });
@@ -155,7 +165,7 @@ const recordColumns = computed(() => {
       {
         label: "Delete",
         action: (row: any) => handleDeleteRecord(row.id),
-        variant: "contrast" as const,
+        variant: "destructive" as const,
         disabled: (row: any) =>
           !authStore.isAdmin && row.owner_id !== authStore.user?.id,
       },
@@ -167,185 +177,156 @@ const recordColumns = computed(() => {
 </script>
 
 <template>
-  <section data-animate="fade-in">
-    <header class="page-header">
-      <hgroup>
-        <h1>
-          {{ collectionsStore.currentCollection?.label || collectionName }}
-        </h1>
-        <p>
-          Collection: <code>{{ collectionName }}</code>
-        </p>
-      </hgroup>
+  <section class="space-y-6 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <header class="space-y-1">
+      <h1 class="text-3xl font-bold tracking-tight">
+        {{ collectionsStore.currentCollection?.label || collectionName }}
+      </h1>
+      <p class="text-muted-foreground">
+        Collection: <code class="text-sm">{{ collectionName }}</code>
+      </p>
     </header>
 
     <!-- Schema Info -->
-    <article class="schema-card">
-      <header>
-        <h3>Schema</h3>
-      </header>
-      <div v-if="collectionsStore.currentCollection" class="schema-fields">
-        <mark
-          v-for="field in collectionsStore.currentCollection.schema?.fields ||
-          []"
-          :key="field.name"
-          data-status="neutral"
-        >
-          {{ field.name }}
-          <small class="text-muted">({{ field.type }})</small>
-          <small v-if="field.required" class="text-warning">*</small>
-        </mark>
-      </div>
-    </article>
+    <Card>
+      <CardHeader>
+        <CardTitle>Schema</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div v-if="collectionsStore.currentCollection" class="flex flex-wrap gap-2">
+          <Badge
+            v-for="field in collectionsStore.currentCollection.schema?.fields || []"
+            :key="field.name"
+            variant="outline"
+            class="gap-1"
+          >
+            {{ field.name }}
+            <span class="text-xs text-muted-foreground">({{ field.type }})</span>
+            <span v-if="field.required" class="text-yellow-500">*</span>
+          </Badge>
+        </div>
+      </CardContent>
+    </Card>
 
     <!-- Records Table -->
-    <article>
-      <header>
-        <h3>Records ({{ total }})</h3>
-      </header>
+    <Card>
+      <CardHeader>
+        <CardTitle>Records ({{ total }})</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <!-- Loading State -->
+        <div v-if="collectionsStore.loading" class="flex items-center justify-center py-10">
+          <p class="text-sm text-muted-foreground">Loading records...</p>
+        </div>
 
-      <!-- Loading State -->
-      <div v-if="collectionsStore.loading" aria-busy="true">
-        Loading records...
-      </div>
+        <!-- Empty State -->
+        <div
+          v-else-if="records.length === 0"
+          class="flex flex-col items-center justify-center py-16 text-center"
+        >
+          <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
+            📄
+          </div>
+          <p class="mb-4 text-sm text-muted-foreground">No records yet</p>
+          <Button size="sm" @click="showCreateModal = true">
+            Create Record
+          </Button>
+        </div>
 
-      <!-- Empty State -->
-      <div v-else-if="records.length === 0" data-empty data-empty-icon="📄">
-        <p>No records yet</p>
-        <button class="small mt-2" @click="showCreateModal = true">
-          Create Record
-        </button>
-      </div>
+        <!-- Records Table -->
+        <div v-else ref="scrollContainer">
+          <DataTable
+            :data="records"
+            :columns="recordColumns"
+            :paginated="false"
+            search-placeholder="Search records..."
+            :header-action="{
+              label: '+ New Record',
+              action: () => {
+                showCreateModal = true;
+              },
+              variant: 'default',
+              icon: 'Plus',
+            }"
+          />
 
-      <!-- Records Table -->
-      <div v-else ref="scrollContainer">
-        <DataTable
-          :data="records"
-          :columns="recordColumns"
-          :paginated="false"
-          search-placeholder="Search records..."
-          :header-action="{
-            label: '+ New Record',
-            action: () => {
-              showCreateModal = true;
-            },
-            variant: 'primary',
-          }"
-        />
-
-        <!-- Server-side Pagination -->
-        <footer v-if="total > pageSize" class="server-pagination">
-          <button
-            class="small secondary"
-            :disabled="page === 1"
-            @click="
-              page--;
-              loadRecords(true);
-            "
+          <!-- Server-side Pagination -->
+          <div
+            v-if="total > pageSize"
+            class="flex items-center justify-between border-t pt-4 mt-4"
           >
-            Previous
-          </button>
-          <small class="text-muted">
-            Page {{ page }} of {{ Math.ceil(total / pageSize) }} ({{ total }}
-            total)
-          </small>
-          <button
-            class="small secondary"
-            :disabled="page >= Math.ceil(total / pageSize)"
-            @click="
-              page++;
-              loadRecords(true);
-            "
-          >
-            Next
-          </button>
-        </footer>
-      </div>
-    </article>
+            <Button
+              size="sm"
+              variant="ghost"
+              :disabled="page === 1"
+              @click="
+                page--;
+                loadRecords(true);
+              "
+            >
+              Previous
+            </Button>
+            <span class="text-sm text-muted-foreground">
+              Page {{ page }} of {{ Math.ceil(total / pageSize) }} ({{ total }}
+              total)
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              :disabled="page >= Math.ceil(total / pageSize)"
+              @click="
+                page++;
+                loadRecords(true);
+              "
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
 
     <!-- Create Record Modal -->
-    <Modal v-model:open="showCreateModal" title="Create Record">
-      <form id="record-form" @submit.prevent="handleCreateRecord">
-        <label for="data">
-          Record Data (JSON)
-          <textarea
-            id="data"
-            v-model="newRecordData"
-            rows="10"
-            style="font-family: monospace; font-size: 0.875rem"
-            required
-          ></textarea>
-          <small class="text-muted">
-            Fields: {{ getFieldNames().join(", ") }}
-          </small>
-        </label>
-      </form>
-      <template #footer>
-        <button
-          type="button"
-          class="secondary"
-          @click="showCreateModal = false"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          form="record-form"
-          :aria-busy="collectionsStore.loading"
-          :disabled="collectionsStore.loading"
-        >
-          {{ collectionsStore.loading ? "" : "Create Record" }}
-        </button>
-      </template>
-    </Modal>
+    <Dialog v-model:open="showCreateModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create Record</DialogTitle>
+        </DialogHeader>
+
+        <form id="record-form" @submit.prevent="handleCreateRecord" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="data">Record Data (JSON)</Label>
+            <Textarea
+              id="data"
+              v-model="newRecordData"
+              :rows="10"
+              class="font-mono text-sm"
+              required
+            />
+            <p class="text-xs text-muted-foreground">
+              Fields: {{ getFieldNames().join(", ") }}
+            </p>
+          </div>
+        </form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="ghost"
+            @click="showCreateModal = false"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="record-form"
+            :disabled="collectionsStore.loading"
+          >
+            {{ collectionsStore.loading ? "Creating..." : "Create Record" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
-
-<style scoped>
-/* Page header layout */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.page-header hgroup {
-  margin: 0;
-}
-
-.page-header hgroup h1 {
-  margin-bottom: var(--tb-spacing-xs);
-}
-
-.page-header hgroup p {
-  margin: 0;
-  color: var(--pico-muted-color);
-}
-
-/* Schema card */
-.schema-card {
-  margin-bottom: var(--tb-spacing-lg);
-}
-
-.schema-fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--tb-spacing-sm);
-}
-
-.schema-fields mark {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--tb-spacing-xs);
-}
-
-/* Server-side Pagination footer */
-.server-pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--tb-spacing-md);
-  padding-top: var(--tb-spacing-md);
-  border-top: 1px solid var(--tb-border);
-}
-</style>
