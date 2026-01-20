@@ -28,7 +28,7 @@ export const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('tinybase_token')
+    const token = localStorage.getItem('tb_access_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -45,8 +45,9 @@ api.interceptors.response.use(
   (error) => {
     // Handle 401 errors (unauthorized)
     if (error.response?.status === 401) {
-      // Clear stored token and redirect to login
-      localStorage.removeItem('tinybase_token')
+      // Clear stored tokens and redirect to login
+      localStorage.removeItem('tb_access_token')
+      localStorage.removeItem('tb_refresh_token')
       if (window.location.pathname !== '/admin/login') {
         window.location.href = '/admin/login'
       }

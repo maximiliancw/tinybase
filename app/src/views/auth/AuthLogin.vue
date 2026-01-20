@@ -61,8 +61,9 @@ async function handleLogin() {
       password: password.value,
     });
 
-    // Store token
-    localStorage.setItem("tinybase_token", response.data.token);
+    // Store JWT tokens
+    localStorage.setItem("tb_access_token", response.data.access_token);
+    localStorage.setItem("tb_refresh_token", response.data.refresh_token);
 
     // Redirect to configured URL or query parameter
     try {

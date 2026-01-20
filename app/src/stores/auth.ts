@@ -18,8 +18,9 @@ export interface User {
 }
 
 export const useAuthStore = defineStore("auth", () => {
-  // State
-  const token = useLocalStorage<string | null>("tinybase_token", null);
+  // State - JWT tokens
+  const accessToken = useLocalStorage<string | null>("tb_access_token", null);
+  const refreshToken = useLocalStorage<string | null>("tb_refresh_token", null);
   const user = ref<User | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -28,7 +29,7 @@ export const useAuthStore = defineStore("auth", () => {
   const storageEnabled = ref(false);
 
   // Getters
-  const isAuthenticated = computed(() => !!token.value && !!user.value);
+  const isAuthenticated = computed(() => !!accessToken.value && !!user.value);
   const isAdmin = computed(() => user.value?.is_admin ?? false);
 
   // Actions
@@ -41,7 +42,9 @@ export const useAuthStore = defineStore("auth", () => {
       const response = await api.post("/api/auth/login", { email, password });
       const data = response.data;
 
-      token.value = data.token;
+      // Store JWT tokens
+      accessToken.value = data.access_token;
+      refreshToken.value = data.refresh_token;
 
       // Check if admin was auto-created
       if (data.admin_created) {
@@ -61,7 +64,7 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function fetchUser(): Promise<void> {
-    if (!token.value) {
+    if (!accessToken.value) {
       throw new Error("No token available");
     }
 
@@ -70,13 +73,29 @@ export const useAuthStore = defineStore("auth", () => {
       user.value = response.data;
     } catch (err) {
       // Token might be invalid
-      logout();
+      clearTokens();
       throw err;
     }
   }
 
-  function logout(): void {
-    token.value = null;
+  async function logout(): Promise<void> {
+    try {
+      // Call backend logout to revoke all tokens
+      if (accessToken.value) {
+        await api.post("/api/auth/logout");
+      }
+    } catch (err) {
+      // Log error but continue with local logout
+      console.error("Logout API call failed:", err);
+    } finally {
+      // Always clear local tokens
+      clearTokens();
+    }
+  }
+
+  function clearTokens(): void {
+    accessToken.value = null;
+    refreshToken.value = null;
     user.value = null;
   }
 
@@ -116,7 +135,8 @@ export const useAuthStore = defineStore("auth", () => {
 
   return {
     // State
-    token,
+    accessToken,
+    refreshToken,
     user,
     loading,
     error,
@@ -130,6 +150,7 @@ export const useAuthStore = defineStore("auth", () => {
     login,
     fetchUser,
     logout,
+    clearTokens,
     clearAdminCreated,
     fetchInstanceInfo,
     checkStorageStatus,

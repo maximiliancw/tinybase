@@ -246,7 +246,7 @@ const previewUrl = computed(() => {
     );
   }
   // Include auth token for preview mode (iframe needs it for API calls)
-  const token = localStorage.getItem("tinybase_token");
+  const token = localStorage.getItem("tb_access_token");
   if (token) {
     params.append("token", token);
   }
