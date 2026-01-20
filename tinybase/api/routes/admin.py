@@ -22,7 +22,7 @@ from tinybase.auth import (
     hash_password,
     revoke_application_token,
 )
-from tinybase.db.models import ApplicationToken, FunctionCall, InstanceSettings, Metrics, User
+from tinybase.db.models import ApplicationToken, FunctionCall, FunctionVersion, InstanceSettings, Metrics, User
 from tinybase.utils import FunctionCallStatus, TriggerType, utcnow
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -92,6 +92,44 @@ class UserUpdate(BaseModel):
     email: str | None = Field(default=None, description="New email")
     password: str | None = Field(default=None, min_length=8, description="New password")
     is_admin: bool | None = Field(default=None, description="New admin status")
+
+
+class FunctionUploadRequest(BaseModel):
+    """Function upload request."""
+
+    filename: str = Field(description="Function filename (e.g., my_func.py)")
+    content: str = Field(description="Function file content")
+    notes: str | None = Field(default=None, description="Optional deployment notes")
+
+
+class FunctionUploadResponse(BaseModel):
+    """Function upload response."""
+
+    function_name: str = Field(description="Function name")
+    version_id: str = Field(description="Version ID")
+    content_hash: str = Field(description="Content hash")
+    is_new_version: bool = Field(description="Whether this is a new version")
+    message: str = Field(description="Status message")
+    warnings: list[str] = Field(default_factory=list, description="Security/validation warnings")
+
+
+class FunctionVersionInfo(BaseModel):
+    """Function version information."""
+
+    id: str = Field(description="Version ID")
+    function_name: str = Field(description="Function name")
+    content_hash: str = Field(description="Content hash")
+    file_size: int = Field(description="File size in bytes")
+    deployed_by_email: str | None = Field(default=None, description="Email of deploying user")
+    deployed_at: str = Field(description="Deployment timestamp")
+    notes: str | None = Field(default=None, description="Deployment notes")
+    execution_count: int = Field(description="Number of executions using this version")
+
+
+class BatchUploadRequest(BaseModel):
+    """Batch function upload request."""
+
+    functions: list[FunctionUploadRequest] = Field(description="List of functions to upload")
 
 
 # =============================================================================
@@ -1009,3 +1047,222 @@ def revoke_application_token_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Application token '{token_id}' not found",
         )
+
+
+# =============================================================================
+# Function Deployment Routes
+# =============================================================================
+
+
+@router.post(
+    "/functions/upload",
+    response_model=FunctionUploadResponse,
+    summary="Upload function file",
+    description="Upload a function file and trigger hot-reload. Admin only.",
+)
+def upload_function(
+    request: FunctionUploadRequest,
+    admin: CurrentAdminUser,
+    session: DbSession,
+) -> FunctionUploadResponse:
+    """
+    Upload a function file and trigger hot-reload.
+
+    Process:
+    1. Validate filename and content
+    2. Calculate content hash
+    3. Check if version already exists
+    4. Write file to functions directory
+    5. Create version record
+    6. Trigger hot-reload
+
+    Returns:
+        Upload response with version information and warnings
+    """
+    from pathlib import Path
+
+    from tinybase.config import settings
+    from tinybase.functions.deployment import (
+        FunctionValidationError,
+        calculate_content_hash,
+        get_or_create_version,
+        validate_function_file,
+        write_function_file,
+    )
+    from tinybase.functions.loader import extract_function_metadata, reload_single_function
+
+    config = settings()
+
+    # Step 1: Validate function file
+    try:
+        function_name, warnings = validate_function_file(
+            request.filename, request.content, config.max_function_payload_bytes
+        )
+    except FunctionValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    # Step 2: Calculate content hash
+    content_hash = calculate_content_hash(request.content)
+    file_size = len(request.content.encode("utf-8"))
+
+    # Step 3: Check if version already exists (idempotent)
+    version, is_new = get_or_create_version(
+        session, function_name, content_hash, file_size, admin.id, request.notes
+    )
+
+    if not is_new:
+        # Version already exists, just return it
+        return FunctionUploadResponse(
+            function_name=function_name,
+            version_id=str(version.id),
+            content_hash=content_hash,
+            is_new_version=False,
+            message=f"Function '{function_name}' already at this version (hash: {content_hash[:8]}...)",
+            warnings=warnings,
+        )
+
+    # Step 4: Write file to functions directory
+    functions_dir = Path(config.functions_path)
+    try:
+        file_path = write_function_file(functions_dir, request.filename, request.content)
+    except Exception as e:
+        # Rollback version creation
+        session.delete(version)
+        session.commit()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to write function file: {e}"
+        )
+
+    # Step 5: Validate metadata can be extracted
+    try:
+        metadata = extract_function_metadata(file_path)
+        if not metadata:
+            raise Exception("Metadata extraction returned None")
+    except Exception as e:
+        # Rollback: delete file and version
+        try:
+            file_path.unlink()
+        except Exception:
+            pass
+        session.delete(version)
+        session.commit()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to extract function metadata: {e}. Function may have runtime errors.",
+        )
+
+    # Step 6: Trigger hot-reload
+    try:
+        success = reload_single_function(file_path)
+        if not success:
+            raise Exception("reload_single_function returned False")
+    except Exception as e:
+        # Warn but don't fail - file is written and version is created
+        warnings.append(f"Hot-reload failed: {e}. Server restart may be required.")
+
+    return FunctionUploadResponse(
+        function_name=function_name,
+        version_id=str(version.id),
+        content_hash=content_hash,
+        is_new_version=True,
+        message=f"Successfully uploaded function '{function_name}' (version {content_hash[:8]}...)",
+        warnings=warnings,
+    )
+
+
+@router.post(
+    "/functions/upload-batch",
+    response_model=list[FunctionUploadResponse],
+    summary="Upload multiple functions",
+    description="Upload multiple function files at once. Admin only.",
+)
+def upload_functions_batch(
+    request: BatchUploadRequest,
+    admin: CurrentAdminUser,
+    session: DbSession,
+) -> list[FunctionUploadResponse]:
+    """
+    Upload multiple functions at once.
+
+    Each function is processed independently. If one fails, others continue.
+    Returns a list of responses with success/failure for each function.
+    """
+    responses = []
+
+    for func_request in request.functions:
+        try:
+            # Call upload_function for each
+            response = upload_function(func_request, admin, session)
+            responses.append(response)
+        except HTTPException as e:
+            # Convert exception to response with error
+            responses.append(
+                FunctionUploadResponse(
+                    function_name=func_request.filename,
+                    version_id="",
+                    content_hash="",
+                    is_new_version=False,
+                    message=f"Upload failed: {e.detail}",
+                    warnings=[],
+                )
+            )
+
+    return responses
+
+
+@router.get(
+    "/functions/{function_name}/versions",
+    response_model=list[FunctionVersionInfo],
+    summary="List function versions",
+    description="Get deployment history for a function. Admin only.",
+)
+def list_function_versions(
+    function_name: str,
+    _admin: CurrentAdminUser,
+    session: DbSession,
+    limit: int = Query(50, ge=1, le=100, description="Number of versions to return"),
+) -> list[FunctionVersionInfo]:
+    """
+    List deployment history for a function.
+
+    Returns versions ordered by deployment time (newest first),
+    along with execution count for each version.
+    """
+    # Get versions
+    stmt = (
+        select(FunctionVersion)
+        .where(FunctionVersion.function_name == function_name)
+        .order_by(FunctionVersion.deployed_at.desc())
+        .limit(limit)
+    )
+    versions = session.exec(stmt).all()
+
+    if not versions:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No versions found for '{function_name}'")
+
+    result = []
+    for version in versions:
+        # Get execution count for this version
+        exec_count_stmt = select(func.count(FunctionCall.id)).where(FunctionCall.version_id == version.id)
+        exec_count = session.exec(exec_count_stmt).one()
+
+        # Get deployer email
+        deployer_email = None
+        if version.deployed_by_user_id:
+            user_stmt = select(User.email).where(User.id == version.deployed_by_user_id)
+            deployer_email = session.exec(user_stmt).first()
+
+        result.append(
+            FunctionVersionInfo(
+                id=str(version.id),
+                function_name=version.function_name,
+                content_hash=version.content_hash,
+                file_size=version.file_size,
+                deployed_by_email=deployer_email,
+                deployed_at=version.deployed_at.isoformat(),
+                notes=version.notes,
+                execution_count=exec_count,
+            )
+        )
+
+    return result
