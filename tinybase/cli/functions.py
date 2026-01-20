@@ -142,7 +142,7 @@ def functions_deploy(
 
     try:
         from tinybase_sdk.config import ConfigurationError, load_deployment_config
-        from tinybase_sdk.deployment import DeploymentClient, DeploymentError, DeploymentResult
+        from tinybase_sdk.deployment import DeploymentClient, DeploymentError
     except ImportError:
         typer.echo("Error: tinybase-sdk not installed", err=True)
         typer.echo("Install it with: pip install tinybase-sdk", err=True)
