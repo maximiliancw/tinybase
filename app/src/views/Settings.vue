@@ -4,12 +4,13 @@
  *
  * Admin page for configuring instance settings.
  */
-import { onMounted, ref, reactive, watch, computed, h } from "vue";
+import { onMounted, onBeforeUnmount, ref, watch, computed, h } from "vue";
 import { useToast } from "../composables/useToast";
 import { useForm, useField } from "vee-validate";
 import { useClipboard } from "@vueuse/core";
-import { api } from "../api";
+import { onBeforeRouteLeave } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import { useSettingsStore } from "../stores/settings";
 import { validationSchemas } from "../composables/useFormValidation";
 import { formatErrorMessage } from "../composables/useErrorHandling";
 import Icon from "../components/Icon.vue";
@@ -46,6 +47,7 @@ import {
 
 const toast = useToast();
 const authStore = useAuthStore();
+const settingsStore = useSettingsStore();
 const { copy: copyToClipboard, copied } = useClipboard();
 
 // Watch for clipboard copy success
@@ -55,79 +57,78 @@ watch(copied, (isCopied) => {
   }
 });
 
-interface InstanceSettings {
-  instance_name: string;
-  allow_public_registration: boolean;
-  server_timezone: string;
-  token_cleanup_interval: number;
-  metrics_collection_interval: number;
-  scheduler_function_timeout_seconds: number | null;
-  scheduler_max_schedules_per_tick: number | null;
-  scheduler_max_concurrent_executions: number | null;
-  max_concurrent_functions_per_user: number | null;
-  storage_enabled: boolean;
-  storage_endpoint: string | null;
-  storage_bucket: string | null;
-  storage_region: string | null;
-  auth_portal_enabled: boolean;
-  auth_portal_logo_url: string | null;
-  auth_portal_primary_color: string | null;
-  auth_portal_background_image_url: string | null;
-  auth_portal_login_redirect_url: string | null;
-  auth_portal_register_redirect_url: string | null;
-  updated_at: string;
-}
-
-interface ApplicationToken {
-  id: string;
-  name: string;
-  description: string | null;
-  created_at: string;
-  last_used_at: string | null;
-  expires_at: string | null;
-  is_active: boolean;
-  is_valid: boolean;
-}
-
-const loading = ref(true);
+// Local UI state
 const saving = ref(false);
-
-const settings = reactive<InstanceSettings>({
-  instance_name: "TinyBase",
-  allow_public_registration: true,
-  server_timezone: "UTC",
-  token_cleanup_interval: 60,
-  metrics_collection_interval: 360,
-  scheduler_function_timeout_seconds: null,
-  scheduler_max_schedules_per_tick: null,
-  scheduler_max_concurrent_executions: null,
-  max_concurrent_functions_per_user: null,
-  storage_enabled: false,
-  storage_endpoint: null,
-  storage_bucket: null,
-  storage_region: null,
-  auth_portal_enabled: false,
-  auth_portal_logo_url: null,
-  auth_portal_primary_color: null,
-  auth_portal_background_image_url: null,
-  auth_portal_login_redirect_url: null,
-  auth_portal_register_redirect_url: null,
-  updated_at: "",
-});
-
-// Storage credentials (not returned by API, only for updates)
 const storageAccessKey = ref("");
 const storageSecretKey = ref("");
-
-// Application Tokens
-const applicationTokens = ref<ApplicationToken[]>([]);
-const loadingTokens = ref(false);
 const showCreateTokenForm = ref(false);
 const newlyCreatedToken = ref<{
-  token: ApplicationToken;
+  token: any;
   token_value: string;
 } | null>(null);
 const creatingToken = ref(false);
+
+// Computed properties from store
+const loading = computed(() => settingsStore.loading);
+const applicationTokens = computed(() => settingsStore.applicationTokens);
+const loadingTokens = computed(() => settingsStore.loadingTokens);
+
+// Setup vee-validate form
+const { handleSubmit, values, setValues, resetForm, meta } = useForm({
+  validationSchema: validationSchemas.settings,
+  initialValues: {
+    instance_name: "TinyBase",
+    allow_public_registration: true,
+    server_timezone: "UTC",
+    token_cleanup_interval: 60,
+    metrics_collection_interval: 360,
+    scheduler_function_timeout_seconds: null,
+    scheduler_max_schedules_per_tick: null,
+    scheduler_max_concurrent_executions: null,
+    max_concurrent_functions_per_user: null,
+    storage_enabled: false,
+    storage_endpoint: null,
+    storage_bucket: null,
+    storage_region: null,
+    auth_portal_enabled: false,
+    auth_portal_logo_url: null,
+    auth_portal_primary_color: null,
+    auth_portal_background_image_url: null,
+    auth_portal_login_redirect_url: null,
+    auth_portal_register_redirect_url: null,
+  },
+});
+
+// Load settings from store when available
+watch(() => settingsStore.settings, (settings) => {
+  if (settings) {
+    setValues(settings);
+  }
+}, { immediate: true });
+
+// Warn about unsaved changes when navigating away
+onBeforeRouteLeave((to, from, next) => {
+  if (meta.value.dirty && !saving.value) {
+    const answer = window.confirm(
+      "You have unsaved changes. Are you sure you want to leave?"
+    );
+    if (answer) {
+      next();
+    } else {
+      next(false);
+    }
+  } else {
+    next();
+  }
+});
+
+// Warn about unsaved changes when closing/refreshing browser
+const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (meta.value.dirty && !saving.value) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+};
 
 const { handleSubmit: handleTokenSubmit, resetForm: resetTokenForm } = useForm({
   validationSchema: validationSchemas.createToken,
@@ -159,115 +160,33 @@ const commonTimezones = [
 ];
 
 onMounted(async () => {
-  await fetchSettings();
-  await fetchApplicationTokens();
+  await settingsStore.fetchSettings();
+  await settingsStore.fetchApplicationTokens();
+  window.addEventListener("beforeunload", handleBeforeUnload);
 });
 
-// Disable auth portal when public registration is disabled
-watch(
-  () => settings.allow_public_registration,
-  (enabled) => {
-    if (!enabled) {
-      settings.auth_portal_enabled = false;
-    }
-  }
-);
-
-// Setup vee-validate form with settings schema for validation
-const { handleSubmit, setValues, setFieldValue } = useForm({
-  validationSchema: validationSchemas.settings,
-  initialValues: settings,
+onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", handleBeforeUnload);
 });
 
-// Use useField for redirect URL fields to get proper validation
-const {
-  value: loginRedirectUrl,
-  errorMessage: loginRedirectUrlError,
-  handleChange: handleLoginRedirectUrlChange,
-  meta: loginRedirectUrlMeta,
-} = useField("auth_portal_login_redirect_url", undefined, {
-  initialValue: settings.auth_portal_login_redirect_url || "",
-  syncVModel: false,
-});
+// Use useField for fields that need validation
+const loginRedirectUrlField = useField("auth_portal_login_redirect_url");
+const registerRedirectUrlField = useField("auth_portal_register_redirect_url");
 
-const {
-  value: registerRedirectUrl,
-  errorMessage: registerRedirectUrlError,
-  handleChange: handleRegisterRedirectUrlChange,
-  meta: registerRedirectUrlMeta,
-} = useField("auth_portal_register_redirect_url", undefined, {
-  initialValue: settings.auth_portal_register_redirect_url || "",
-  syncVModel: false,
-});
-
-// Sync field values with settings and form
-watch(loginRedirectUrl, (newValue) => {
-  settings.auth_portal_login_redirect_url = newValue || null;
-  setFieldValue("auth_portal_login_redirect_url", newValue || null);
-});
-
-watch(registerRedirectUrl, (newValue) => {
-  settings.auth_portal_register_redirect_url = newValue || null;
-  setFieldValue("auth_portal_register_redirect_url", newValue || null);
-});
-
-// Sync settings back to fields when loaded from API
-watch(
-  () => settings.auth_portal_login_redirect_url,
-  (newValue) => {
-    const stringValue = newValue || "";
-    if (stringValue !== loginRedirectUrl.value) {
-      loginRedirectUrl.value = stringValue;
-      setFieldValue("auth_portal_login_redirect_url", newValue || null);
-    }
-  }
-);
-
-watch(
-  () => settings.auth_portal_register_redirect_url,
-  (newValue) => {
-    const stringValue = newValue || "";
-    if (stringValue !== registerRedirectUrl.value) {
-      registerRedirectUrl.value = stringValue;
-      setFieldValue("auth_portal_register_redirect_url", newValue || null);
-    }
-  }
-);
-
-// Update form values when settings change
-watch(
-  () => settings.auth_portal_enabled,
-  (newValue) => {
-    setFieldValue("auth_portal_enabled", newValue);
-  }
-);
-
-// Update all form values when settings are loaded from API
-watch(
-  () => settings,
-  (newSettings) => {
-    setValues(newSettings);
-    loginRedirectUrl.value = newSettings.auth_portal_login_redirect_url || "";
-    registerRedirectUrl.value =
-      newSettings.auth_portal_register_redirect_url || "";
-  },
-  { deep: true }
-);
-
-// Generate preview URL with current (unsaved) settings
+// Generate preview URL with current form values
 const previewUrl = computed(() => {
   const params = new URLSearchParams();
   params.append("preview", "true");
-  if (settings.auth_portal_logo_url) {
-    params.append("logo_url", settings.auth_portal_logo_url);
+  if (values.auth_portal_logo_url) {
+    params.append("logo_url", values.auth_portal_logo_url);
   }
-  if (settings.auth_portal_primary_color) {
-    params.append("primary_color", settings.auth_portal_primary_color);
+  if (values.auth_portal_primary_color) {
+    params.append("primary_color", values.auth_portal_primary_color);
   }
-  if (settings.auth_portal_background_image_url) {
+  if (values.auth_portal_background_image_url) {
     params.append(
       "background_image_url",
-      settings.auth_portal_background_image_url
+      values.auth_portal_background_image_url
     );
   }
   const token = localStorage.getItem("tb_access_token");
@@ -281,36 +200,16 @@ function openPreviewInNewTab() {
   window.open(previewUrl.value, "_blank", "noopener,noreferrer");
 }
 
-async function fetchSettings() {
-  loading.value = true;
-
-  try {
-    const response = await api.admin.getSettings();
-    Object.assign(settings, response.data);
-  } catch (err: any) {
-    toast.error(formatErrorMessage(err, "Failed to load settings"));
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function fetchApplicationTokens() {
-  loadingTokens.value = true;
-  try {
-    const response = await api.admin.listApplicationTokens();
-    applicationTokens.value = response.data.tokens;
-  } catch (err: any) {
-    console.error("Failed to load application tokens:", err);
-  } finally {
-    loadingTokens.value = false;
-  }
-}
 
 const onCreateToken = handleTokenSubmit(async (values) => {
   creatingToken.value = true;
 
   try {
-    const payload: Record<string, any> = {
+    const payload: {
+      name: string;
+      description?: string;
+      expires_days?: number;
+    } = {
       name: values.name,
     };
     if (values.description) {
@@ -320,11 +219,8 @@ const onCreateToken = handleTokenSubmit(async (values) => {
       payload.expires_days = values.expires_days;
     }
 
-    const response = await api.admin.createApplicationToken({
-      body: payload,
-    });
-    newlyCreatedToken.value = response.data;
-    await fetchApplicationTokens();
+    const response = await settingsStore.createApplicationToken(payload);
+    newlyCreatedToken.value = response;
 
     // Reset form and close modal
     resetTokenForm();
@@ -347,10 +243,7 @@ async function revokeApplicationToken(tokenId: string) {
   }
 
   try {
-    await api.admin.revokeApplicationToken({
-      path: { token_id: tokenId },
-    });
-    await fetchApplicationTokens();
+    await settingsStore.revokeApplicationToken(tokenId);
     if (newlyCreatedToken.value?.token.id === tokenId) {
       newlyCreatedToken.value = null;
     }
@@ -362,13 +255,9 @@ async function revokeApplicationToken(tokenId: string) {
 
 async function toggleTokenActive(tokenId: string, currentStatus: boolean) {
   try {
-    await api.admin.updateApplicationToken({
-      path: { token_id: tokenId },
-      body: {
-        is_active: !currentStatus,
-      },
+    await settingsStore.updateApplicationToken(tokenId, {
+      is_active: !currentStatus,
     });
-    await fetchApplicationTokens();
     toast.success(
       `Token ${!currentStatus ? "activated" : "deactivated"} successfully`
     );
@@ -385,34 +274,11 @@ function dismissNewToken() {
   newlyCreatedToken.value = null;
 }
 
-const saveSettings = handleSubmit(async (values) => {
+const saveSettings = handleSubmit(async (formValues) => {
   saving.value = true;
 
   try {
-    const payload: Record<string, any> = {
-      instance_name: values.instance_name,
-      allow_public_registration: values.allow_public_registration,
-      server_timezone: values.server_timezone,
-      token_cleanup_interval: values.token_cleanup_interval,
-      metrics_collection_interval: values.metrics_collection_interval,
-      scheduler_function_timeout_seconds:
-        values.scheduler_function_timeout_seconds,
-      scheduler_max_schedules_per_tick: values.scheduler_max_schedules_per_tick,
-      scheduler_max_concurrent_executions:
-        values.scheduler_max_concurrent_executions,
-      max_concurrent_functions_per_user: values.max_concurrent_functions_per_user,
-      storage_enabled: values.storage_enabled,
-      storage_endpoint: values.storage_endpoint,
-      storage_bucket: values.storage_bucket,
-      storage_region: values.storage_region,
-      auth_portal_enabled: values.auth_portal_enabled,
-      auth_portal_logo_url: values.auth_portal_logo_url,
-      auth_portal_primary_color: values.auth_portal_primary_color,
-      auth_portal_background_image_url: values.auth_portal_background_image_url,
-      auth_portal_login_redirect_url: values.auth_portal_login_redirect_url,
-      auth_portal_register_redirect_url:
-        values.auth_portal_register_redirect_url,
-    };
+    const payload: any = { ...formValues };
 
     // Only include credentials if they're filled in
     if (storageAccessKey.value) {
@@ -422,20 +288,16 @@ const saveSettings = handleSubmit(async (values) => {
       payload.storage_secret_key = storageSecretKey.value;
     }
 
-    const response = await api.admin.updateSettings({
-      body: payload,
-    });
-    Object.assign(settings, response.data);
-
-    // Update form values after successful save
-    setValues(response.data);
-    loginRedirectUrl.value = response.data.auth_portal_login_redirect_url || "";
-    registerRedirectUrl.value =
-      response.data.auth_portal_register_redirect_url || "";
+    await settingsStore.updateSettings(payload);
 
     // Clear credentials after save
     storageAccessKey.value = "";
     storageSecretKey.value = "";
+
+    // Reset form dirty state since changes are saved
+    if (settingsStore.settings) {
+      resetForm({ values: settingsStore.settings });
+    }
 
     toast.success("Settings saved successfully");
     authStore.fetchInstanceInfo(); // Update instance name in header
@@ -474,13 +336,13 @@ const saveSettings = handleSubmit(async (values) => {
               <Label for="instance_name">Instance Name</Label>
               <Input
                 id="instance_name"
-                v-model="settings.instance_name"
+                v-model="values.instance_name"
               />
             </div>
 
             <div class="space-y-2">
               <Label for="server_timezone">Server Timezone</Label>
-              <Select v-model="settings.server_timezone">
+              <Select v-model="values.server_timezone">
                 <SelectTrigger>
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
@@ -498,7 +360,7 @@ const saveSettings = handleSubmit(async (values) => {
               <Label for="token_cleanup_interval">Token Cleanup Interval (minutes)</Label>
               <Input
                 id="token_cleanup_interval"
-                v-model.number="settings.token_cleanup_interval"
+                v-model.number="values.token_cleanup_interval"
                 type="number"
                 min="1"
               />
@@ -508,7 +370,7 @@ const saveSettings = handleSubmit(async (values) => {
               <Label for="metrics_collection_interval">Metrics Collection Interval (minutes)</Label>
               <Input
                 id="metrics_collection_interval"
-                v-model.number="settings.metrics_collection_interval"
+                v-model.number="values.metrics_collection_interval"
                 type="number"
                 min="1"
               />
@@ -526,32 +388,32 @@ const saveSettings = handleSubmit(async (values) => {
           <div class="flex items-center space-x-2">
             <Switch
               id="allow_public_registration"
-              :checked="settings.allow_public_registration"
-              @update:checked="settings.allow_public_registration = $event"
+              :checked="values.allow_public_registration"
+              @update:checked="values.allow_public_registration = $event"
             />
             <Label for="allow_public_registration" class="cursor-pointer">
               Allow public registration
             </Label>
           </div>
 
-          <div v-if="settings.allow_public_registration" class="space-y-4 pl-6 border-l-2 border-muted">
+          <div v-if="values.allow_public_registration" class="space-y-4 pl-6 border-l-2 border-muted">
             <div class="flex items-center space-x-2">
               <Switch
                 id="auth_portal_enabled"
-                :checked="settings.auth_portal_enabled"
-                @update:checked="settings.auth_portal_enabled = $event"
+                :checked="values.auth_portal_enabled"
+                @update:checked="values.auth_portal_enabled = $event"
               />
               <Label for="auth_portal_enabled" class="cursor-pointer">
                 Enable custom auth portal
               </Label>
             </div>
 
-            <div v-if="settings.auth_portal_enabled" class="space-y-4 pl-6 border-l-2 border-muted">
+            <div v-if="values.auth_portal_enabled" class="space-y-4 pl-6 border-l-2 border-muted">
               <div class="space-y-2">
                 <Label for="auth_portal_logo_url">Logo URL</Label>
                 <Input
                   id="auth_portal_logo_url"
-                  v-model="settings.auth_portal_logo_url"
+                  v-model="values.auth_portal_logo_url"
                   placeholder="https://example.com/logo.png"
                 />
               </div>
@@ -560,7 +422,7 @@ const saveSettings = handleSubmit(async (values) => {
                 <Label for="auth_portal_primary_color">Primary Color</Label>
                 <Input
                   id="auth_portal_primary_color"
-                  v-model="settings.auth_portal_primary_color"
+                  v-model="values.auth_portal_primary_color"
                   type="color"
                 />
               </div>
@@ -569,7 +431,7 @@ const saveSettings = handleSubmit(async (values) => {
                 <Label for="auth_portal_background_image_url">Background Image URL</Label>
                 <Input
                   id="auth_portal_background_image_url"
-                  v-model="settings.auth_portal_background_image_url"
+                  v-model="values.auth_portal_background_image_url"
                   placeholder="https://example.com/bg.jpg"
                 />
               </div>
@@ -578,12 +440,12 @@ const saveSettings = handleSubmit(async (values) => {
                 <Label for="auth_portal_login_redirect_url">Login Redirect URL</Label>
                 <Input
                   id="auth_portal_login_redirect_url"
-                  v-model="loginRedirectUrl"
+                  v-model="loginRedirectUrlField.value.value"
                   placeholder="https://example.com/dashboard"
-                  :aria-invalid="loginRedirectUrlError ? 'true' : undefined"
+                  :aria-invalid="loginRedirectUrlField.errorMessage.value ? 'true' : undefined"
                 />
-                <p v-if="loginRedirectUrlError" class="text-sm text-destructive">
-                  {{ loginRedirectUrlError }}
+                <p v-if="loginRedirectUrlField.errorMessage.value" class="text-sm text-destructive">
+                  {{ loginRedirectUrlField.errorMessage.value }}
                 </p>
               </div>
 
@@ -591,12 +453,12 @@ const saveSettings = handleSubmit(async (values) => {
                 <Label for="auth_portal_register_redirect_url">Register Redirect URL</Label>
                 <Input
                   id="auth_portal_register_redirect_url"
-                  v-model="registerRedirectUrl"
+                  v-model="registerRedirectUrlField.value.value"
                   placeholder="https://example.com/onboarding"
-                  :aria-invalid="registerRedirectUrlError ? 'true' : undefined"
+                  :aria-invalid="registerRedirectUrlField.errorMessage.value ? 'true' : undefined"
                 />
-                <p v-if="registerRedirectUrlError" class="text-sm text-destructive">
-                  {{ registerRedirectUrlError }}
+                <p v-if="registerRedirectUrlField.errorMessage.value" class="text-sm text-destructive">
+                  {{ registerRedirectUrlField.errorMessage.value }}
                 </p>
               </div>
 
@@ -626,7 +488,7 @@ const saveSettings = handleSubmit(async (values) => {
               </Label>
               <Input
                 id="scheduler_function_timeout_seconds"
-                v-model.number="settings.scheduler_function_timeout_seconds"
+                v-model.number="values.scheduler_function_timeout_seconds"
                 type="number"
                 min="1"
                 placeholder="null = no limit"
@@ -639,7 +501,7 @@ const saveSettings = handleSubmit(async (values) => {
               </Label>
               <Input
                 id="scheduler_max_schedules_per_tick"
-                v-model.number="settings.scheduler_max_schedules_per_tick"
+                v-model.number="values.scheduler_max_schedules_per_tick"
                 type="number"
                 min="1"
                 placeholder="null = no limit"
@@ -652,7 +514,7 @@ const saveSettings = handleSubmit(async (values) => {
               </Label>
               <Input
                 id="scheduler_max_concurrent_executions"
-                v-model.number="settings.scheduler_max_concurrent_executions"
+                v-model.number="values.scheduler_max_concurrent_executions"
                 type="number"
                 min="1"
                 placeholder="null = no limit"
@@ -665,7 +527,7 @@ const saveSettings = handleSubmit(async (values) => {
               </Label>
               <Input
                 id="max_concurrent_functions_per_user"
-                v-model.number="settings.max_concurrent_functions_per_user"
+                v-model.number="values.max_concurrent_functions_per_user"
                 type="number"
                 min="1"
                 placeholder="null = no limit"
@@ -684,21 +546,21 @@ const saveSettings = handleSubmit(async (values) => {
           <div class="flex items-center space-x-2">
             <Switch
               id="storage_enabled"
-              :checked="settings.storage_enabled"
-              @update:checked="settings.storage_enabled = $event"
+              :checked="values.storage_enabled"
+              @update:checked="values.storage_enabled = $event"
             />
             <Label for="storage_enabled" class="cursor-pointer">
               Enable S3 storage
             </Label>
           </div>
 
-          <div v-if="settings.storage_enabled" class="space-y-4 pl-6 border-l-2 border-muted">
+          <div v-if="values.storage_enabled" class="space-y-4 pl-6 border-l-2 border-muted">
             <div class="grid gap-4 md:grid-cols-2">
               <div class="space-y-2">
                 <Label for="storage_endpoint">Endpoint</Label>
                 <Input
                   id="storage_endpoint"
-                  v-model="settings.storage_endpoint"
+                  v-model="values.storage_endpoint"
                   placeholder="https://s3.amazonaws.com"
                 />
               </div>
@@ -707,7 +569,7 @@ const saveSettings = handleSubmit(async (values) => {
                 <Label for="storage_bucket">Bucket</Label>
                 <Input
                   id="storage_bucket"
-                  v-model="settings.storage_bucket"
+                  v-model="values.storage_bucket"
                   placeholder="my-bucket"
                 />
               </div>
@@ -716,7 +578,7 @@ const saveSettings = handleSubmit(async (values) => {
                 <Label for="storage_region">Region</Label>
                 <Input
                   id="storage_region"
-                  v-model="settings.storage_region"
+                  v-model="values.storage_region"
                   placeholder="us-east-1"
                 />
               </div>
