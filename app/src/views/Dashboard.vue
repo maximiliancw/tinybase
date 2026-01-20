@@ -11,7 +11,7 @@ import { useCollectionsStore } from "../stores/collections";
 import { useFunctionsStore } from "../stores/functions";
 import { useUsersStore } from "../stores/users";
 import { useAuthStore } from "../stores/auth";
-import { api } from "../api";
+import { getMetricsApiAdminMetricsGet } from "../api";
 import CollectionSizesChart from "../components/CollectionSizesChart.vue";
 import FunctionStatsChart from "../components/FunctionStatsChart.vue";
 import Icon from "../components/Icon.vue";
@@ -91,14 +91,14 @@ async function fetchMetrics() {
   metricsError.value = null;
 
   try {
-    const response = await api.get("/api/admin/metrics");
+    const response = await getMetricsApiAdminMetricsGet();
     metrics.value = {
       collection_sizes: response.data.collection_sizes || [],
       function_stats: response.data.function_stats || [],
       collected_at: response.data.collected_at || null,
     };
   } catch (err: any) {
-    metricsError.value = err.response?.data?.detail || "Failed to load metrics";
+    metricsError.value = err.error?.detail || "Failed to load metrics";
     // Don't show error to user, just log it
     console.error("Failed to fetch metrics:", err);
   } finally {

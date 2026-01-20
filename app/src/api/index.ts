@@ -50,10 +50,6 @@ client.interceptors.response.use(
 
 // Re-export the configured client and all service functions
 export { client }
-
-// Export client as 'api' for backward compatibility with existing code
-export const api = client.instance
-
 export * from '@/client/services.gen'
 export * from '@/client/types.gen'
 export * from '@/client/schemas.gen'

@@ -6,7 +6,17 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api } from '../api'
+import {
+  listCollectionsApiCollectionsGet,
+  getCollectionApiCollectionsCollectionNameGet,
+  createCollectionApiCollectionsPost,
+  deleteCollectionApiCollectionsCollectionNameDelete,
+  listRecordsApiCollectionsCollectionNameRecordsGet,
+  createRecordApiCollectionsCollectionNameRecordsPost,
+  deleteRecordApiCollectionsCollectionNameRecordsRecordIdDelete,
+  type Collection as ApiCollection,
+  type RecordResponse,
+} from '../api'
 
 export interface Collection {
   id: string
@@ -53,10 +63,10 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      const response = await api.get('/api/collections')
-      collections.value = response.data
+      const response = await listCollectionsApiCollectionsGet()
+      collections.value = response.data as Collection[]
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to fetch collections'
+      error.value = err.error?.detail || 'Failed to fetch collections'
     } finally {
       loading.value = false
     }
@@ -67,11 +77,13 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      const response = await api.get(`/api/collections/${name}`)
-      currentCollection.value = response.data
-      return response.data
+      const response = await getCollectionApiCollectionsCollectionNameGet({
+        path: { collection_name: name },
+      })
+      currentCollection.value = response.data as Collection
+      return response.data as Collection
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to fetch collection'
+      error.value = err.error?.detail || 'Failed to fetch collection'
       return null
     } finally {
       loading.value = false
@@ -88,11 +100,13 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      const response = await api.post('/api/collections', data)
+      const response = await createCollectionApiCollectionsPost({
+        body: data,
+      })
       await fetchCollections()
-      return response.data
+      return response.data as Collection
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to create collection'
+      error.value = err.error?.detail || 'Failed to create collection'
       return null
     } finally {
       loading.value = false
@@ -104,11 +118,13 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      await api.delete(`/api/collections/${name}`)
+      await deleteCollectionApiCollectionsCollectionNameDelete({
+        path: { collection_name: name },
+      })
       await fetchCollections()
       return true
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to delete collection'
+      error.value = err.error?.detail || 'Failed to delete collection'
       return false
     } finally {
       loading.value = false
@@ -124,14 +140,14 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      const response = await api.get(
-        `/api/collections/${collectionName}/records`,
-        { params: { limit, offset } }
-      )
-      records.value = response.data.records
-      return response.data
+      const response = await listRecordsApiCollectionsCollectionNameRecordsGet({
+        path: { collection_name: collectionName },
+        query: { limit, offset },
+      })
+      records.value = response.data.records as Record[]
+      return response.data as { records: Record[]; total: number }
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to fetch records'
+      error.value = err.error?.detail || 'Failed to fetch records'
       return { records: [], total: 0 }
     } finally {
       loading.value = false
@@ -146,13 +162,13 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      const response = await api.post(
-        `/api/collections/${collectionName}/records`,
-        { data }
-      )
-      return response.data
+      const response = await createRecordApiCollectionsCollectionNameRecordsPost({
+        path: { collection_name: collectionName },
+        body: { data },
+      })
+      return response.data as Record
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to create record'
+      error.value = err.error?.detail || 'Failed to create record'
       return null
     } finally {
       loading.value = false
@@ -167,10 +183,12 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = null
 
     try {
-      await api.delete(`/api/collections/${collectionName}/records/${recordId}`)
+      await deleteRecordApiCollectionsCollectionNameRecordsRecordIdDelete({
+        path: { collection_name: collectionName, record_id: recordId },
+      })
       return true
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to delete record'
+      error.value = err.error?.detail || 'Failed to delete record'
       return false
     } finally {
       loading.value = false
@@ -194,4 +212,3 @@ export const useCollectionsStore = defineStore('collections', () => {
     deleteRecord,
   }
 })
-

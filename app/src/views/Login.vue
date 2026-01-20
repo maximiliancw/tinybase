@@ -9,7 +9,6 @@ import { useToast } from "../composables/useToast";
 import { useRouter, useRoute } from "vue-router";
 import { useForm, useField } from "vee-validate";
 import { useAuthStore } from "../stores/auth";
-import { api } from "../api";
 import { validationSchemas } from "../composables/useFormValidation";
 import Icon from "../components/Icon.vue";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";

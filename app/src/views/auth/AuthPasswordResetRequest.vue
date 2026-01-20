@@ -7,7 +7,7 @@
 import { ref, onMounted } from "vue";
 import { useToast } from "../../composables/useToast";
 import { usePortalStore } from "../../stores/portal";
-import { api } from "../../api";
+import { requestPasswordResetApiAuthPasswordResetRequestPost } from "../../api";
 import { usePreviewParams } from "../../composables/usePreviewParams";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,8 +29,10 @@ async function handleRequestReset() {
   loading.value = true;
 
   try {
-    await api.post("/api/auth/password-reset/request", {
-      email: email.value,
+    await requestPasswordResetApiAuthPasswordResetRequestPost({
+      body: {
+        email: email.value,
+      },
     });
 
     // Always show success message (security best practice)
@@ -38,7 +40,7 @@ async function handleRequestReset() {
     email.value = "";
   } catch (err: any) {
     toast.error(
-      err.response?.data?.detail || "Failed to request password reset"
+      err.error?.detail || "Failed to request password reset"
     );
   } finally {
     loading.value = false;

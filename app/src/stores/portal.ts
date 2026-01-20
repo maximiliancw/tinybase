@@ -7,7 +7,7 @@
 
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { api } from "../api";
+import { getPortalConfigApiAuthPortalConfigGet, client } from "../api";
 
 interface PortalConfig {
   instance_name: string;
@@ -42,11 +42,7 @@ export const usePortalStore = defineStore("portal", () => {
       ] = `url(${config.value.background_image_url})`;
     }
     if (config.value.primary_color) {
-      // Apply primary color to PicoCSS variables
-      style["--pico-primary"] = config.value.primary_color;
-      style["--pico-primary-background"] = config.value.primary_color;
-      style["--pico-primary-underline"] = config.value.primary_color;
-      // Also apply to buttons directly
+      // Apply primary color to CSS variables
       style["--auth-primary-color"] = config.value.primary_color;
     }
     return style;
@@ -61,42 +57,51 @@ export const usePortalStore = defineStore("portal", () => {
       const urlParams = new URLSearchParams(window.location.search);
       const isPreview = urlParams.get("preview") === "true";
 
-      let url = "/api/auth/portal-config";
-      let headers: Record<string, string> = {};
-
       if (isPreview) {
-        const params = new URLSearchParams();
-        params.append("preview", "true");
+        const queryParams: Record<string, string> = {
+          preview: "true",
+        };
 
         // Get preview values from URL
-        // Only include params if they exist (were provided in URL)
         const logoUrl = urlParams.get("logo_url");
         const primaryColor = urlParams.get("primary_color");
         const backgroundImageUrl = urlParams.get("background_image_url");
 
-        if (logoUrl !== null) params.append("logo_url", logoUrl);
-        if (primaryColor !== null) params.append("primary_color", primaryColor);
+        if (logoUrl !== null) queryParams.logo_url = logoUrl;
+        if (primaryColor !== null) queryParams.primary_color = primaryColor;
         if (backgroundImageUrl !== null)
-          params.append("background_image_url", backgroundImageUrl);
+          queryParams.background_image_url = backgroundImageUrl;
 
-        url = `${url}?${params.toString()}`;
-
-        // If token is provided in URL (for iframe preview), add it to headers
+        // If token is provided in URL (for iframe preview), add it to client
         const previewToken = urlParams.get("token");
         if (previewToken) {
-          headers.Authorization = `Bearer ${previewToken}`;
+          const response = await getPortalConfigApiAuthPortalConfigGet({
+            query: queryParams,
+            client: {
+              ...client,
+              getConfig: () => ({
+                ...client.getConfig(),
+                headers: {
+                  ...client.getConfig().headers,
+                  Authorization: `Bearer ${previewToken}`,
+                },
+              }),
+            },
+          });
+          config.value = response.data as PortalConfig;
+        } else {
+          const response = await getPortalConfigApiAuthPortalConfigGet({
+            query: queryParams,
+          });
+          config.value = response.data as PortalConfig;
         }
+      } else {
+        const response = await getPortalConfigApiAuthPortalConfigGet();
+        config.value = response.data as PortalConfig;
       }
-
-      // Make API call with custom headers if in preview mode
-      // Note: Custom headers will override interceptor headers for the same key
-      const requestConfig =
-        Object.keys(headers).length > 0 ? { headers } : undefined;
-      const response = await api.get(url, requestConfig);
-      config.value = response.data;
     } catch (err: any) {
       error.value =
-        err.response?.data?.detail || "Failed to load portal configuration";
+        err.error?.detail || "Failed to load portal configuration";
       console.error("Failed to fetch portal config:", err);
     } finally {
       loading.value = false;

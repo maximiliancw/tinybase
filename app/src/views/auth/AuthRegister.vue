@@ -7,7 +7,7 @@
 import { ref, onMounted } from "vue";
 import { useToast } from "../../composables/useToast";
 import { useRouter, useRoute } from "vue-router";
-import { api } from "../../api";
+import { registerApiAuthRegisterPost } from "../../api";
 import { usePortalStore } from "../../stores/portal";
 import { usePreviewParams } from "../../composables/usePreviewParams";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -55,9 +55,11 @@ async function handleRegister() {
   }
 
   try {
-    await api.post("/api/auth/register", {
-      email: email.value,
-      password: password.value,
+    await registerApiAuthRegisterPost({
+      body: {
+        email: email.value,
+        password: password.value,
+      },
     });
 
     toast.success("Registration successful! Redirecting...");
@@ -89,7 +91,7 @@ async function handleRegister() {
       }
     }, 1000);
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Registration failed");
+    toast.error(err.error?.detail || "Registration failed");
   } finally {
     loading.value = false;
   }

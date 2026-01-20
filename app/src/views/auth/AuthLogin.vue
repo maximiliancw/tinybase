@@ -7,7 +7,7 @@
 import { ref, onMounted } from "vue";
 import { useToast } from "../../composables/useToast";
 import { useRouter, useRoute } from "vue-router";
-import { api } from "../../api";
+import { loginApiAuthLoginPost } from "../../api";
 import { usePortalStore } from "../../stores/portal";
 import { usePreviewParams } from "../../composables/usePreviewParams";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -59,9 +59,11 @@ async function handleLogin() {
   loading.value = true;
 
   try {
-    const response = await api.post("/api/auth/login", {
-      email: email.value,
-      password: password.value,
+    const response = await loginApiAuthLoginPost({
+      body: {
+        email: email.value,
+        password: password.value,
+      },
     });
 
     // Store JWT tokens
@@ -86,7 +88,7 @@ async function handleLogin() {
       return;
     }
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Login failed");
+    toast.error(err.error?.detail || "Login failed");
   } finally {
     loading.value = false;
   }

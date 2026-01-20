@@ -7,7 +7,7 @@
 import { ref, onMounted } from "vue";
 import { useToast } from "../../composables/useToast";
 import { useRoute, useRouter } from "vue-router";
-import { api } from "../../api";
+import { confirmPasswordResetApiAuthPasswordResetConfirmPost } from "../../api";
 import { usePortalStore } from "../../stores/portal";
 import { usePreviewParams } from "../../composables/usePreviewParams";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -48,9 +48,11 @@ async function handleResetPassword() {
   }
 
   try {
-    await api.post("/api/auth/password-reset/confirm", {
-      token: token.value,
-      password: password.value,
+    await confirmPasswordResetApiAuthPasswordResetConfirmPost({
+      body: {
+        token: token.value,
+        password: password.value,
+      },
     });
 
     toast.success("Password reset successful! Redirecting to login...");
@@ -60,7 +62,7 @@ async function handleResetPassword() {
       router.push(withPreviewParams("/auth/login"));
     }, 2000);
   } catch (err: any) {
-    toast.error(err.response?.data?.detail || "Failed to reset password");
+    toast.error(err.error?.detail || "Failed to reset password");
   } finally {
     loading.value = false;
   }
