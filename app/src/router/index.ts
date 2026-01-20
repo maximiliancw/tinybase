@@ -147,7 +147,7 @@ router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
 
   // Try to load user from stored token
-  if (!authStore.user && authStore.token) {
+  if (!authStore.user && authStore.accessToken) {
     try {
       await authStore.fetchUser();
     } catch {
