@@ -246,6 +246,13 @@ class FunctionCall(SQLModel, table=True):
     # User who initiated the call (None for scheduled/system calls)
     requested_by_user_id: UUID | None = Field(default=None, foreign_key="user.id")
 
+    # Function version that was executed
+    version_id: UUID | None = Field(
+        default=None,
+        foreign_key="function_version.id",
+        description="Version of function that was executed",
+    )
+
     # Timing information
     started_at: datetime | None = Field(default=None)
     finished_at: datetime | None = Field(default=None)
@@ -260,6 +267,25 @@ class FunctionCall(SQLModel, table=True):
     cpu_time_ms: int | None = Field(default=None)
 
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class FunctionVersion(SQLModel, table=True):
+    """
+    Function deployment version tracking.
+
+    Tracks each deployment of a function with content hash for version identification.
+    Provides audit trail of who deployed what and when.
+    """
+
+    __tablename__ = "function_version"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    function_name: str = Field(index=True, max_length=100)
+    content_hash: str = Field(index=True, max_length=64)  # SHA256 hex
+    file_size: int = Field(description="File size in bytes")
+    deployed_by_user_id: UUID | None = Field(default=None, foreign_key="user.id")
+    deployed_at: datetime = Field(default_factory=utcnow, index=True)
+    notes: str | None = Field(default=None, max_length=500)
 
 
 class FunctionSchedule(SQLModel, table=True):
