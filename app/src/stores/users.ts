@@ -6,15 +6,10 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api } from '../api'
+import { api, type TinybaseApiRoutesAdminUserInfo as AdminUser } from '../api'
 
-export interface AdminUser {
-  id: string
-  email: string
-  is_admin: boolean
-  created_at: string
-  updated_at: string
-}
+// Re-export type for convenience
+export type { AdminUser }
 
 export const useUsersStore = defineStore('users', () => {
   // State

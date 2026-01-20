@@ -8,14 +8,10 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { useLocalStorage } from "@vueuse/core";
-import { api } from "../api";
+import { api, type TinybaseApiRoutesAuthUserInfo as User } from "../api";
 
-export interface User {
-  id: string;
-  email: string;
-  is_admin: boolean;
-  created_at: string;
-}
+// Re-export the User type for convenience
+export type { User };
 
 export const useAuthStore = defineStore("auth", () => {
   // State - JWT tokens

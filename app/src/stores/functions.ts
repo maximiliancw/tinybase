@@ -6,67 +6,16 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api } from '../api'
+import { 
+  api,
+  type FunctionInfo,
+  type FunctionCallInfo as FunctionCall,
+  type ScheduleResponse as Schedule,
+  type FunctionSchemaResponse as FunctionSchema
+} from '../api'
 
-export interface FunctionInfo {
-  name: string
-  description: string | null
-  auth: 'public' | 'auth' | 'admin'
-  tags: string[]
-  module?: string
-  file_path?: string
-  last_loaded_at?: string
-  has_input_model?: boolean
-  has_output_model?: boolean
-}
-
-export interface FunctionCall {
-  id: string
-  function_name: string
-  status: 'running' | 'succeeded' | 'failed'
-  trigger_type: 'manual' | 'schedule'
-  trigger_id: string | null
-  requested_by_user_id: string | null
-  started_at: string | null
-  finished_at: string | null
-  duration_ms: number | null
-  error_message: string | null
-  error_type: string | null
-  version_id: string | null
-  version_hash: string | null
-  created_at: string
-}
-
-export interface Schedule {
-  id: string
-  name: string
-  function_name: string
-  schedule: {
-    method: 'once' | 'interval' | 'cron'
-    timezone?: string
-    date?: string
-    time?: string
-    unit?: string
-    value?: number
-    cron?: string
-    description?: string
-  }
-  input_data: Record<string, any>
-  is_active: boolean
-  last_run_at: string | null
-  next_run_at: string | null
-  created_by_user_id: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface FunctionSchema {
-  name: string
-  has_input_model: boolean
-  has_output_model: boolean
-  input_schema: Record<string, any> | null
-  output_schema: Record<string, any> | null
-}
+// Re-export types for convenience
+export type { FunctionInfo, FunctionCall, Schedule, FunctionSchema }
 
 /**
  * Generate a template object from a JSON schema.

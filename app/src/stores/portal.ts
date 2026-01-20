@@ -7,18 +7,11 @@
 
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { api } from "../api";
+import { api, type PortalConfigResponse as PortalConfig } from "../api";
 import { client as baseClient } from "../client/client.gen";
 
-interface PortalConfig {
-  instance_name: string;
-  logo_url: string | null;
-  primary_color: string | null;
-  background_image_url: string | null;
-  registration_enabled: boolean;
-  login_redirect_url: string | null;
-  register_redirect_url: string | null;
-}
+// Re-export type for convenience
+export type { PortalConfig };
 
 export const usePortalStore = defineStore("portal", () => {
   const config = ref<PortalConfig>({

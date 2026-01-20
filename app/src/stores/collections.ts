@@ -6,38 +6,14 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api } from '../api'
+import { 
+  api, 
+  type CollectionResponse as Collection,
+  type RecordResponse as Record 
+} from '../api'
 
-export interface Collection {
-  id: string
-  name: string
-  label: string
-  schema: {
-    fields: Array<{
-      name: string
-      type: string
-      required: boolean
-      default?: any
-      min_length?: number
-      max_length?: number
-      min?: number
-      max?: number
-      description?: string
-    }>
-  }
-  options: Record<string, any>
-  created_at: string
-  updated_at: string
-}
-
-export interface Record {
-  id: string
-  collection_id: string
-  owner_id: string | null
-  data: Record<string, any>
-  created_at: string
-  updated_at: string
-}
+// Re-export types for convenience
+export type { Collection, Record }
 
 export const useCollectionsStore = defineStore('collections', () => {
   // State
