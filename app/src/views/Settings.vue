@@ -37,6 +37,7 @@ interface InstanceSettings {
   scheduler_function_timeout_seconds: number | null;
   scheduler_max_schedules_per_tick: number | null;
   scheduler_max_concurrent_executions: number | null;
+  max_concurrent_functions_per_user: number | null;
   storage_enabled: boolean;
   storage_endpoint: string | null;
   storage_bucket: string | null;
@@ -73,6 +74,7 @@ const settings = reactive<InstanceSettings>({
   scheduler_function_timeout_seconds: null,
   scheduler_max_schedules_per_tick: null,
   scheduler_max_concurrent_executions: null,
+  max_concurrent_functions_per_user: null,
   storage_enabled: false,
   storage_endpoint: null,
   storage_bucket: null,
@@ -369,6 +371,7 @@ const saveSettings = handleSubmit(async (values) => {
       scheduler_max_schedules_per_tick: values.scheduler_max_schedules_per_tick,
       scheduler_max_concurrent_executions:
         values.scheduler_max_concurrent_executions,
+      max_concurrent_functions_per_user: values.max_concurrent_functions_per_user,
       storage_enabled: values.storage_enabled,
       storage_endpoint: values.storage_endpoint,
       storage_bucket: values.storage_bucket,
@@ -701,10 +704,10 @@ const saveSettings = handleSubmit(async (values) => {
         </div>
       </article>
 
-      <!-- Scheduler Settings -->
+      <!-- Scheduler & Rate Limiting Settings -->
       <article>
         <header>
-          <h3>Scheduler</h3>
+          <h3>Scheduler & Rate Limiting</h3>
         </header>
 
         <div class="grid grid-3">
@@ -787,6 +790,25 @@ const saveSettings = handleSubmit(async (values) => {
             <small
               >Maximum number of schedules to execute concurrently. Leave empty
               to use default (10).</small
+            >
+          </label>
+        </div>
+
+        <div style="margin-top: var(--pico-block-spacing-vertical)">
+          <label for="max_concurrent_functions_per_user">
+            Max Concurrent Functions Per User
+            <input
+              id="max_concurrent_functions_per_user"
+              v-model.number="settings.max_concurrent_functions_per_user"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Unlimited"
+            />
+            <small
+              >Maximum number of functions a single user can execute
+              concurrently. Leave empty for unlimited. Helps prevent resource
+              exhaustion from individual users.</small
             >
           </label>
         </div>
