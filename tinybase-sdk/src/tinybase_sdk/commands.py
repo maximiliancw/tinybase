@@ -98,9 +98,7 @@ def deploy(
             console.print(f"[red]Error:[/red] Not a Python file: {path}")
             raise typer.Exit(1)
     elif path.is_dir():
-        function_files = [
-            f for f in path.glob("*.py") if not f.name.startswith("_")
-        ]
+        function_files = [f for f in path.glob("*.py") if not f.name.startswith("_")]
         if not function_files:
             console.print(f"[yellow]Warning:[/yellow] No function files found in {path}")
             raise typer.Exit(0)
@@ -128,7 +126,11 @@ def deploy(
                 if isinstance(result, DeploymentError):
                     console.print("[red]✗ Failed[/red]")
                 else:
-                    status = "[green]✓ New version[/green]" if result.is_new_version else "[yellow]○ Same version[/yellow]"
+                    status = (
+                        "[green]✓ New version[/green]"
+                        if result.is_new_version
+                        else "[yellow]○ Same version[/yellow]"
+                    )
                     console.print(status)
 
         else:
@@ -247,9 +249,7 @@ def _display_results(results: list[DeploymentResult | DeploymentError]) -> None:
     if error_count == 0:
         console.print(f"[green]✓ All {total} function(s) deployed successfully[/green]")
     else:
-        console.print(
-            f"[yellow]⚠ {success_count}/{total} deployed, {error_count} failed[/yellow]"
-        )
+        console.print(f"[yellow]⚠ {success_count}/{total} deployed, {error_count} failed[/yellow]")
 
 
 def main():
