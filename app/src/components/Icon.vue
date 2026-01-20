@@ -7,7 +7,7 @@
  *
  * Usage:
  *   <Icon name="X" :size="20" />
- *   <Icon name="Settings" color="var(--tb-primary)" />
+ *   <Icon name="Settings" class="text-primary" />
  *
  * Note: This component imports all Lucide icons for convenience. For optimal
  * bundle size in production, import icons directly:
@@ -114,10 +114,7 @@ const IconComponent = computed(() => {
 
 <style scoped>
 .icon-placeholder {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.5;
+  @apply inline-flex items-center justify-center opacity-50;
   color: currentColor;
 }
 </style>
