@@ -12,6 +12,7 @@
     "generate:client": "node scripts/generate-client.js"
   },
   "dependencies": {
+    "@radix-icons/vue": "^1.0.0",
     "@vee-validate/zod": "^4.15.1",
     "@vueuse/core": "^14.1.0",
     "@vueuse/integrations": "^14.1.0",
