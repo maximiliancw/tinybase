@@ -11,11 +11,8 @@ import { createPinia } from "pinia";
 import App from "./App.vue";
 import router from "./router";
 
-// Import PicoCSS
-import "@picocss/pico/css/pico.min.css";
-
-// Import custom styles (single entry point)
-import "./static/index.css";
+// Import Tailwind CSS and base styles
+import "./index.css";
 
 import Toast, { PluginOptions, POSITION } from "vue-toastification";
 import "vue-toastification/dist/index.css";

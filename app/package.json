@@ -30,7 +30,11 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.54.0",
     "@picocss/pico": "^2.0.6",
+    "@tailwindcss/forms": "^0.5.11",
     "@vitejs/plugin-vue": "^5.1.4",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
     "vite": "^5.4.10"
   }
 }
