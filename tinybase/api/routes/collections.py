@@ -24,7 +24,7 @@ from tinybase.extensions.hooks import (
     run_record_update_hooks,
 )
 
-router = APIRouter(prefix="/collections", tags=["Collections"])
+router = APIRouter(prefix="/collections", tags=["collections"])
 
 
 # =============================================================================

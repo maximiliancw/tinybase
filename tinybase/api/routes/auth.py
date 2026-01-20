@@ -41,7 +41,7 @@ from tinybase.extensions.hooks import (
 )
 from tinybase.utils import utcnow
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Rate limiter for auth routes
 # Uses environment variable TINYBASE_RATE_LIMIT_ENABLED to disable in tests

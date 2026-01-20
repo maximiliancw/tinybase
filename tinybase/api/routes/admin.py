@@ -32,7 +32,7 @@ from tinybase.db.models import (
 )
 from tinybase.utils import FunctionCallStatus, TriggerType, utcnow
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
+router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 # =============================================================================
@@ -979,17 +979,19 @@ def list_application_tokens(
     summary="Create application token",
     description="Create a new application token for client applications.",
 )
-def create_application_token_endpoint(
+def create_application_token(
     request: ApplicationTokenCreate,
     session: DbSession,
     _admin: CurrentAdminUser,
 ) -> ApplicationTokenCreateResponse:
     """Create a new application token."""
+    from tinybase.auth import create_application_token as create_token
+
     expires_at = None
     if request.expires_days:
         expires_at = utcnow() + timedelta(days=request.expires_days)
 
-    token = create_application_token(
+    token = create_token(
         session=session,
         name=request.name,
         description=request.description,
@@ -1043,13 +1045,15 @@ def update_application_token(
     summary="Revoke application token",
     description="Revoke (deactivate) an application token.",
 )
-def revoke_application_token_endpoint(
+def revoke_application_token(
     token_id: UUID,
     session: DbSession,
     _admin: CurrentAdminUser,
 ) -> None:
     """Revoke an application token."""
-    if not revoke_application_token(session, token_id):
+    from tinybase.auth import revoke_application_token as revoke_token
+
+    if not revoke_token(session, token_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Application token '{token_id}' not found",

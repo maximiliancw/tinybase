@@ -16,7 +16,7 @@ from tinybase.db.models import FunctionSchedule, utcnow
 from tinybase.functions.core import get_global_registry
 from tinybase.schedule import parse_schedule_config
 
-router = APIRouter(prefix="/admin/schedules", tags=["Schedules"])
+router = APIRouter(prefix="/admin/schedules", tags=["schedules"])
 
 
 # =============================================================================

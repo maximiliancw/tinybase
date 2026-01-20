@@ -15,15 +15,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from tinybase.api.routes import (
-    admin,
-    auth,
-    collections,
-    extensions,
-    files,
-    functions,
-    schedules,
-)
+from tinybase.api.routes import admin, auth, collections, extensions, files, functions, schedules
 from tinybase.api.routes.static_admin import mount_admin_ui
 from tinybase.api.routes.static_auth import mount_auth_portal
 from tinybase.collections.service import load_collections_into_registry
@@ -32,6 +24,7 @@ from tinybase.db.core import create_db_and_tables, get_engine
 from tinybase.extensions import load_enabled_extensions, run_shutdown_hooks, run_startup_hooks
 from tinybase.functions.loader import load_functions_from_settings
 from tinybase.schedule import start_scheduler, stop_scheduler
+from tinybase.utils import generate_operation_id
 from tinybase.version import __version__
 
 # Rate limiter instance
@@ -132,7 +125,11 @@ def create_app() -> FastAPI:
     """
     config = settings()
 
-    # Create FastAPI app
+    # Reset the operation ID tracker for this app instance
+    if hasattr(generate_operation_id, "_seen_ids"):
+        generate_operation_id._seen_ids = set()  # type: ignore
+
+    # Create FastAPI app with custom operation ID generator
     app = FastAPI(
         title="TinyBase",
         description="A lightweight, self-hosted Backend-as-a-Service framework for Python developers",
@@ -141,6 +138,7 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
+        generate_unique_id_function=generate_operation_id,
     )
 
     # Initialize readiness state
@@ -180,8 +178,8 @@ def create_app() -> FastAPI:
         logger.warning("Auth portal static files not found - /auth will not be available")
 
     # Root endpoint
-    @app.get("/", tags=["Root"])
-    def root() -> dict:
+    @app.get("/", tags=["system"])
+    def get_root() -> dict:
         """Root endpoint returning API information."""
         return {
             "name": "TinyBase",
@@ -193,8 +191,8 @@ def create_app() -> FastAPI:
         }
 
     # Basic health check endpoints (no auth required)
-    @app.get("/health", tags=["Health"])
-    def health() -> dict:
+    @app.get("/health", tags=["system"])
+    def get_health() -> dict:
         """
         Basic health check endpoint (liveness probe).
 
@@ -204,8 +202,8 @@ def create_app() -> FastAPI:
         """
         return {"status": "healthy"}
 
-    @app.get("/healthz", tags=["Health"])
-    def healthz() -> dict:
+    @app.get("/healthz", tags=["system"])
+    def get_healthz() -> dict:
         """
         Kubernetes-style health check endpoint.
 

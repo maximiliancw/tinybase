@@ -17,7 +17,7 @@ from tinybase.functions.core import execute_function, get_global_registry
 from tinybase.rate_limit import check_rate_limit
 from tinybase.utils import AuthLevel, FunctionCallStatus, TriggerType
 
-router = APIRouter(prefix="/functions", tags=["Functions"])
+router = APIRouter(prefix="/functions", tags=["functions"])
 
 
 # =============================================================================

@@ -24,7 +24,7 @@ from tinybase.extensions import (
 )
 from tinybase.utils import utcnow
 
-router = APIRouter(prefix="/admin/extensions", tags=["Extensions"])
+router = APIRouter(prefix="/admin/extensions", tags=["extensions"])
 
 
 # =============================================================================
@@ -152,7 +152,7 @@ def list_extensions(
     summary="Install extension",
     description="Install an extension from a GitHub repository.",
 )
-def install_extension_route(
+def create_extension(
     request: ExtensionInstallRequest,
     session: DbSession,
     admin: CurrentAdminUser,
@@ -240,7 +240,7 @@ def update_extension(
     summary="Uninstall extension",
     description="Uninstall an extension and remove its files.",
 )
-def uninstall_extension_route(
+def delete_extension(
     extension_name: str,
     session: DbSession,
     _admin: CurrentAdminUser,

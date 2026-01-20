@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from tinybase.auth import CurrentUser, DbSession
 from tinybase.storage import StorageError, StorageService
 
-router = APIRouter(prefix="/files", tags=["Files"])
+router = APIRouter(prefix="/files", tags=["files"])
 
 
 # =============================================================================
