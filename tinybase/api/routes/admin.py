@@ -1204,7 +1204,11 @@ def upload_functions_batch(
             responses.append(response)
         except HTTPException as e:
             # Extract function name from filename (strip .py)
-            func_name = func_request.filename[:-3] if func_request.filename.endswith(".py") else func_request.filename
+            func_name = (
+                func_request.filename[:-3]
+                if func_request.filename.endswith(".py")
+                else func_request.filename
+            )
             # Convert exception to response with error
             responses.append(
                 FunctionUploadResponse(
