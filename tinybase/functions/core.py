@@ -229,6 +229,18 @@ def execute_function(
         requested_by_user_id=user_id,
         started_at=now,
     )
+
+    # Link to function version (if available)
+    try:
+        from tinybase.functions.deployment import get_current_function_version
+
+        version = get_current_function_version(session, meta.name, meta.file_path)
+        if version:
+            function_call.version_id = version.id
+    except Exception as e:
+        # Don't fail execution if version lookup fails
+        logger.warning(f"Failed to link function version: {e}")
+
     session.add(function_call)
     session.commit()
 
