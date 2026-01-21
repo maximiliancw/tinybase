@@ -10,6 +10,7 @@ import { useBreakpoints } from '@vueuse/core';
 import { useAuthStore } from './stores/auth';
 import { usePortalStore } from './stores/portal';
 import { useNetworkStatus } from './composables/useNetworkStatus';
+import { useDarkMode } from './composables/useDarkMode';
 import Icon from './components/Icon.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,9 @@ const router = useRouter();
 const authStore = useAuthStore();
 const portalStore = usePortalStore();
 const { status: networkStatus } = useNetworkStatus();
+
+// Initialize dark mode detection (auto-syncs with system preference)
+useDarkMode();
 
 // Responsive breakpoints for sidebar behavior
 const breakpoints = useBreakpoints({
