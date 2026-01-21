@@ -1,10 +1,5 @@
-"""
-Auto-generated TinyBase API client.
+"""TinyBase API client (auto-generated from OpenAPI spec)."""
 
-This package is generated from the TinyBase OpenAPI specification.
-Regenerate using: python scripts/generate_client.py
-"""
+from tinybase_sdk.client.client.client import Client
 
-# Client will be generated here by openapi-python-client
-# Placeholder until first generation
-__all__ = []
+__all__ = ["Client"]
