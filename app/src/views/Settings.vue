@@ -51,12 +51,16 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Key } from 'lucide-vue-next';
 
 const toast = useToast();
 const authStore = useAuthStore();
 const settingsStore = useSettingsStore();
 const { copy: copyToClipboard, copied } = useClipboard();
+
+// Active tab
+const activeTab = ref('system');
 
 // Watch for clipboard copy success
 watch(copied, (isCopied) => {
@@ -82,7 +86,7 @@ const applicationTokens = computed(() => settingsStore.applicationTokens);
 const loadingTokens = computed(() => settingsStore.loadingTokens);
 
 // Setup vee-validate form
-const { handleSubmit, values, setValues, resetForm, meta } = useForm({
+const { handleSubmit, defineField, resetForm, meta } = useForm({
   validationSchema: validationSchemas.settings,
   initialValues: {
     instance_name: 'TinyBase',
@@ -108,11 +112,12 @@ const { handleSubmit, values, setValues, resetForm, meta } = useForm({
 });
 
 // Load settings from store when available
+// Use resetForm instead of setValues to properly reset dirty state
 watch(
   () => settingsStore.settings,
   (settings) => {
     if (settings) {
-      setValues(settings);
+      resetForm({ values: settings });
     }
   },
   { immediate: true }
@@ -179,22 +184,39 @@ onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload);
 });
 
-// Use useField for fields that need validation
-const loginRedirectUrlField = useField('auth_portal_login_redirect_url');
-const registerRedirectUrlField = useField('auth_portal_register_redirect_url');
+// Define fields using defineField for proper two-way binding
+const [instanceName] = defineField('instance_name');
+const [allowPublicRegistration] = defineField('allow_public_registration');
+const [serverTimezone] = defineField('server_timezone');
+const [tokenCleanupInterval] = defineField('token_cleanup_interval');
+const [metricsCollectionInterval] = defineField('metrics_collection_interval');
+const [schedulerFunctionTimeout] = defineField('scheduler_function_timeout_seconds');
+const [schedulerMaxSchedulesPerTick] = defineField('scheduler_max_schedules_per_tick');
+const [schedulerMaxConcurrentExecutions] = defineField('scheduler_max_concurrent_executions');
+const [maxConcurrentFunctionsPerUser] = defineField('max_concurrent_functions_per_user');
+const [storageEnabled] = defineField('storage_enabled');
+const [storageEndpoint] = defineField('storage_endpoint');
+const [storageBucket] = defineField('storage_bucket');
+const [storageRegion] = defineField('storage_region');
+const [authPortalEnabled] = defineField('auth_portal_enabled');
+const [authPortalLogoUrl] = defineField('auth_portal_logo_url');
+const [authPortalPrimaryColor] = defineField('auth_portal_primary_color');
+const [authPortalBackgroundImageUrl] = defineField('auth_portal_background_image_url');
+const [loginRedirectUrl, loginRedirectUrlAttrs] = defineField('auth_portal_login_redirect_url');
+const [registerRedirectUrl, registerRedirectUrlAttrs] = defineField('auth_portal_register_redirect_url');
 
 // Generate preview URL with current form values
 const previewUrl = computed(() => {
   const params = new URLSearchParams();
   params.append('preview', 'true');
-  if (values.auth_portal_logo_url) {
-    params.append('logo_url', values.auth_portal_logo_url);
+  if (authPortalLogoUrl.value) {
+    params.append('logo_url', authPortalLogoUrl.value);
   }
-  if (values.auth_portal_primary_color) {
-    params.append('primary_color', values.auth_portal_primary_color);
+  if (authPortalPrimaryColor.value) {
+    params.append('primary_color', authPortalPrimaryColor.value);
   }
-  if (values.auth_portal_background_image_url) {
-    params.append('background_image_url', values.auth_portal_background_image_url);
+  if (authPortalBackgroundImageUrl.value) {
+    params.append('background_image_url', authPortalBackgroundImageUrl.value);
   }
   const token = localStorage.getItem('tb_access_token');
   if (token) {
@@ -280,6 +302,22 @@ const saveSettings = handleSubmit(async (formValues) => {
   try {
     const payload: any = { ...formValues };
 
+    // Convert empty strings to null for numeric fields
+    const numericFields = [
+      'token_cleanup_interval',
+      'metrics_collection_interval',
+      'scheduler_function_timeout_seconds',
+      'scheduler_max_schedules_per_tick',
+      'scheduler_max_concurrent_executions',
+      'max_concurrent_functions_per_user',
+    ];
+    
+    numericFields.forEach(field => {
+      if (payload[field] === '' || payload[field] === null || payload[field] === undefined) {
+        payload[field] = null;
+      }
+    });
+
     // Only include credentials if they're filled in
     if (storageAccessKey.value) {
       payload.storage_access_key = storageAccessKey.value;
@@ -295,12 +333,10 @@ const saveSettings = handleSubmit(async (formValues) => {
     storageSecretKey.value = '';
 
     // Reset form dirty state since changes are saved
-    if (settingsStore.settings) {
-      resetForm({ values: settingsStore.settings });
-    }
-
+    // This will be handled by the watch after the store updates
+    
     toast.success('Settings saved successfully');
-    authStore.fetchInstanceInfo(); // Update instance name in header
+    await authStore.fetchInstanceInfo(); // Update instance name in header
   } catch (err: any) {
     toast.error(formatErrorMessage(err, 'Failed to save settings'));
   } finally {
@@ -325,415 +361,424 @@ const saveSettings = handleSubmit(async (formValues) => {
     </Card>
 
     <form v-else class="space-y-6" @submit.prevent="saveSettings">
-      <!-- General Settings -->
-      <Card>
-        <CardHeader>
-          <CardTitle>General</CardTitle>
-        </CardHeader>
-        <CardContent class="space-y-4">
-          <div class="grid gap-4 md:grid-cols-2">
-            <div class="space-y-2">
-              <Label for="instance_name">Instance Name</Label>
-              <Input id="instance_name" v-model="values.instance_name" />
-            </div>
+      <Tabs v-model="activeTab" class="space-y-6">
+        <TabsList class="grid w-full grid-cols-3">
+          <TabsTrigger value="system">System</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
+        </TabsList>
 
-            <div class="space-y-2">
-              <Label for="server_timezone">Server Timezone</Label>
-              <Select v-model="values.server_timezone">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select timezone" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem v-for="tz in commonTimezones" :key="tz" :value="tz">
-                    {{ tz }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        <!-- System Tab -->
+        <TabsContent value="system" class="space-y-6">
+          <!-- General Settings -->
+          <Card>
+            <CardHeader>
+              <CardTitle>General</CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-4">
+              <div class="grid gap-4 md:grid-cols-2">
+                <div class="space-y-2">
+                  <Label for="instance_name">Instance Name</Label>
+                  <Input id="instance_name" v-model="instanceName" />
+                </div>
 
-          <div class="grid gap-4 md:grid-cols-2">
-            <div class="space-y-2">
-              <Label for="token_cleanup_interval">Token Cleanup Interval (minutes)</Label>
-              <Input
-                id="token_cleanup_interval"
-                v-model.number="values.token_cleanup_interval"
-                type="number"
-                min="1"
-              />
-            </div>
-
-            <div class="space-y-2">
-              <Label for="metrics_collection_interval">Metrics Collection Interval (minutes)</Label>
-              <Input
-                id="metrics_collection_interval"
-                v-model.number="values.metrics_collection_interval"
-                type="number"
-                min="1"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Authentication Settings -->
-      <Card>
-        <CardHeader>
-          <CardTitle>Authentication</CardTitle>
-        </CardHeader>
-        <CardContent class="space-y-4">
-          <div class="flex items-center space-x-2">
-            <Switch
-              id="allow_public_registration"
-              :checked="values.allow_public_registration"
-              @update:checked="values.allow_public_registration = $event"
-            />
-            <Label for="allow_public_registration" class="cursor-pointer">
-              Allow public registration
-            </Label>
-          </div>
-
-          <div
-            v-if="values.allow_public_registration"
-            class="space-y-4 pl-6 border-l-2 border-muted"
-          >
-            <div class="flex items-center space-x-2">
-              <Switch
-                id="auth_portal_enabled"
-                :checked="values.auth_portal_enabled"
-                @update:checked="values.auth_portal_enabled = $event"
-              />
-              <Label for="auth_portal_enabled" class="cursor-pointer">
-                Enable custom auth portal
-              </Label>
-            </div>
-
-            <div v-if="values.auth_portal_enabled" class="space-y-4 pl-6 border-l-2 border-muted">
-              <div class="space-y-2">
-                <Label for="auth_portal_logo_url">Logo URL</Label>
-                <Input
-                  id="auth_portal_logo_url"
-                  v-model="values.auth_portal_logo_url"
-                  placeholder="https://example.com/logo.png"
-                />
+                <div class="space-y-2">
+                  <Label for="server_timezone">Server Timezone</Label>
+                  <Select v-model="serverTimezone">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select timezone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem v-for="tz in commonTimezones" :key="tz" :value="tz">
+                        {{ tz }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div class="space-y-2">
-                <Label for="auth_portal_primary_color">Primary Color</Label>
-                <Input
-                  id="auth_portal_primary_color"
-                  v-model="values.auth_portal_primary_color"
-                  type="color"
+              <div class="grid gap-4 md:grid-cols-2">
+                <div class="space-y-2">
+                  <Label for="token_cleanup_interval">Token Cleanup Interval (minutes)</Label>
+                  <Input
+                    id="token_cleanup_interval"
+                    v-model.number="tokenCleanupInterval"
+                    type="number"
+                    min="1"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <Label for="metrics_collection_interval">Metrics Collection Interval (minutes)</Label>
+                  <Input
+                    id="metrics_collection_interval"
+                    v-model.number="metricsCollectionInterval"
+                    type="number"
+                    min="1"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <!-- Scheduler & Rate Limiting Settings -->
+          <Card>
+            <CardHeader>
+              <CardTitle>Scheduler & Rate Limiting</CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-4">
+              <div class="grid gap-4 md:grid-cols-2">
+                <div class="space-y-2">
+                  <Label for="scheduler_function_timeout_seconds"> Function Timeout (seconds) </Label>
+                  <Input
+                    id="scheduler_function_timeout_seconds"
+                    v-model.number="schedulerFunctionTimeout"
+                    type="number"
+                    min="1"
+                    placeholder="null = no limit"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <Label for="scheduler_max_schedules_per_tick"> Max Schedules Per Tick </Label>
+                  <Input
+                    id="scheduler_max_schedules_per_tick"
+                    v-model.number="schedulerMaxSchedulesPerTick"
+                    type="number"
+                    min="1"
+                    placeholder="null = no limit"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <Label for="scheduler_max_concurrent_executions"> Max Concurrent Executions </Label>
+                  <Input
+                    id="scheduler_max_concurrent_executions"
+                    v-model.number="schedulerMaxConcurrentExecutions"
+                    type="number"
+                    min="1"
+                    placeholder="null = no limit"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <Label for="max_concurrent_functions_per_user">
+                    Max Concurrent Functions Per User
+                  </Label>
+                  <Input
+                    id="max_concurrent_functions_per_user"
+                    v-model.number="maxConcurrentFunctionsPerUser"
+                    type="number"
+                    min="1"
+                    placeholder="null = no limit"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <!-- Security Tab -->
+        <TabsContent value="security" class="space-y-6">
+          <!-- Authentication Settings -->
+          <Card>
+            <CardHeader>
+              <CardTitle>Authentication</CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-4">
+              <div class="flex items-center space-x-2">
+                <Switch
+                  id="allow_public_registration"
+                  :checked="allowPublicRegistration"
+                  @update:checked="allowPublicRegistration = $event"
                 />
+                <Label for="allow_public_registration" class="cursor-pointer">
+                  Allow public registration
+                </Label>
               </div>
 
-              <div class="space-y-2">
-                <Label for="auth_portal_background_image_url">Background Image URL</Label>
-                <Input
-                  id="auth_portal_background_image_url"
-                  v-model="values.auth_portal_background_image_url"
-                  placeholder="https://example.com/bg.jpg"
-                />
+              <div
+                v-if="allowPublicRegistration"
+                class="space-y-4 pl-6 border-l-2 border-muted"
+              >
+                <div class="flex items-center space-x-2">
+                  <Switch
+                    id="auth_portal_enabled"
+                    :checked="authPortalEnabled"
+                    @update:checked="authPortalEnabled = $event"
+                  />
+                  <Label for="auth_portal_enabled" class="cursor-pointer">
+                    Enable custom auth portal
+                  </Label>
+                </div>
+
+                <div v-if="authPortalEnabled" class="space-y-4 pl-6 border-l-2 border-muted">
+                  <div class="space-y-2">
+                    <Label for="auth_portal_logo_url">Logo URL</Label>
+                    <Input
+                      id="auth_portal_logo_url"
+                      v-model="authPortalLogoUrl"
+                      placeholder="https://example.com/logo.png"
+                    />
+                  </div>
+
+                  <div class="space-y-2">
+                    <Label for="auth_portal_primary_color">Primary Color</Label>
+                    <Input
+                      id="auth_portal_primary_color"
+                      v-model="authPortalPrimaryColor"
+                      type="color"
+                    />
+                  </div>
+
+                  <div class="space-y-2">
+                    <Label for="auth_portal_background_image_url">Background Image URL</Label>
+                    <Input
+                      id="auth_portal_background_image_url"
+                      v-model="authPortalBackgroundImageUrl"
+                      placeholder="https://example.com/bg.jpg"
+                    />
+                  </div>
+
+                  <div class="space-y-2">
+                    <Label for="auth_portal_login_redirect_url">Login Redirect URL</Label>
+                    <Input
+                      id="auth_portal_login_redirect_url"
+                      v-model="loginRedirectUrl"
+                      v-bind="loginRedirectUrlAttrs"
+                      placeholder="https://example.com/dashboard"
+                    />
+                  </div>
+
+                  <div class="space-y-2">
+                    <Label for="auth_portal_register_redirect_url">Register Redirect URL</Label>
+                    <Input
+                      id="auth_portal_register_redirect_url"
+                      v-model="registerRedirectUrl"
+                      v-bind="registerRedirectUrlAttrs"
+                      placeholder="https://example.com/onboarding"
+                    />
+                  </div>
+
+                  <Button type="button" variant="outline" @click="openPreviewInNewTab">
+                    <Icon name="ExternalLink" :size="16" />
+                    Preview Auth Portal
+                  </Button>
+                </div>
               </div>
+            </CardContent>
+          </Card>
 
-              <div class="space-y-2">
-                <Label for="auth_portal_login_redirect_url">Login Redirect URL</Label>
-                <Input
-                  id="auth_portal_login_redirect_url"
-                  v-model="loginRedirectUrlField.value.value"
-                  placeholder="https://example.com/dashboard"
-                  :aria-invalid="loginRedirectUrlField.errorMessage.value ? 'true' : undefined"
-                />
-                <p v-if="loginRedirectUrlField.errorMessage.value" class="text-sm text-destructive">
-                  {{ loginRedirectUrlField.errorMessage.value }}
-                </p>
-              </div>
-
-              <div class="space-y-2">
-                <Label for="auth_portal_register_redirect_url">Register Redirect URL</Label>
-                <Input
-                  id="auth_portal_register_redirect_url"
-                  v-model="registerRedirectUrlField.value.value"
-                  placeholder="https://example.com/onboarding"
-                  :aria-invalid="registerRedirectUrlField.errorMessage.value ? 'true' : undefined"
-                />
-                <p
-                  v-if="registerRedirectUrlField.errorMessage.value"
-                  class="text-sm text-destructive"
-                >
-                  {{ registerRedirectUrlField.errorMessage.value }}
-                </p>
-              </div>
-
-              <Button type="button" variant="outline" @click="openPreviewInNewTab">
-                <Icon name="ExternalLink" :size="16" />
-                Preview Auth Portal
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Scheduler & Rate Limiting Settings -->
-      <Card>
-        <CardHeader>
-          <CardTitle>Scheduler & Rate Limiting</CardTitle>
-        </CardHeader>
-        <CardContent class="space-y-4">
-          <div class="grid gap-4 md:grid-cols-2">
-            <div class="space-y-2">
-              <Label for="scheduler_function_timeout_seconds"> Function Timeout (seconds) </Label>
-              <Input
-                id="scheduler_function_timeout_seconds"
-                v-model.number="values.scheduler_function_timeout_seconds"
-                type="number"
-                min="1"
-                placeholder="null = no limit"
-              />
-            </div>
-
-            <div class="space-y-2">
-              <Label for="scheduler_max_schedules_per_tick"> Max Schedules Per Tick </Label>
-              <Input
-                id="scheduler_max_schedules_per_tick"
-                v-model.number="values.scheduler_max_schedules_per_tick"
-                type="number"
-                min="1"
-                placeholder="null = no limit"
-              />
-            </div>
-
-            <div class="space-y-2">
-              <Label for="scheduler_max_concurrent_executions"> Max Concurrent Executions </Label>
-              <Input
-                id="scheduler_max_concurrent_executions"
-                v-model.number="values.scheduler_max_concurrent_executions"
-                type="number"
-                min="1"
-                placeholder="null = no limit"
-              />
-            </div>
-
-            <div class="space-y-2">
-              <Label for="max_concurrent_functions_per_user">
-                Max Concurrent Functions Per User
-              </Label>
-              <Input
-                id="max_concurrent_functions_per_user"
-                v-model.number="values.max_concurrent_functions_per_user"
-                type="number"
-                min="1"
-                placeholder="null = no limit"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Storage Settings -->
-      <Card>
-        <CardHeader>
-          <CardTitle>Storage (S3-Compatible)</CardTitle>
-        </CardHeader>
-        <CardContent class="space-y-4">
-          <div class="flex items-center space-x-2">
-            <Switch
-              id="storage_enabled"
-              :checked="values.storage_enabled"
-              @update:checked="values.storage_enabled = $event"
-            />
-            <Label for="storage_enabled" class="cursor-pointer"> Enable S3 storage </Label>
-          </div>
-
-          <div v-if="values.storage_enabled" class="space-y-4 pl-6 border-l-2 border-muted">
-            <div class="grid gap-4 md:grid-cols-2">
-              <div class="space-y-2">
-                <Label for="storage_endpoint">Endpoint</Label>
-                <Input
-                  id="storage_endpoint"
-                  v-model="values.storage_endpoint"
-                  placeholder="https://s3.amazonaws.com"
-                />
-              </div>
-
-              <div class="space-y-2">
-                <Label for="storage_bucket">Bucket</Label>
-                <Input
-                  id="storage_bucket"
-                  v-model="values.storage_bucket"
-                  placeholder="my-bucket"
-                />
-              </div>
-
-              <div class="space-y-2">
-                <Label for="storage_region">Region</Label>
-                <Input
-                  id="storage_region"
-                  v-model="values.storage_region"
-                  placeholder="us-east-1"
-                />
-              </div>
-            </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <div class="space-y-2">
-                <Label for="storage_access_key">Access Key (leave empty to keep current)</Label>
-                <Input
-                  id="storage_access_key"
-                  v-model="storageAccessKey"
-                  type="password"
-                  autocomplete="off"
-                />
-              </div>
-
-              <div class="space-y-2">
-                <Label for="storage_secret_key">Secret Key (leave empty to keep current)</Label>
-                <Input
-                  id="storage_secret_key"
-                  v-model="storageSecretKey"
-                  type="password"
-                  autocomplete="off"
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Application Tokens -->
-      <Card>
-        <CardHeader>
-          <div class="flex items-center justify-between">
-            <div>
-              <CardTitle>Application Tokens</CardTitle>
-              <CardDescription class="mt-1">
-                Create API tokens for programmatic access
-              </CardDescription>
-            </div>
-            <Button type="button" @click="showCreateTokenForm = true">
-              <Icon name="Plus" :size="16" />
-              Create Token
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <!-- New Token Alert -->
-          <Alert v-if="newlyCreatedToken" class="mb-4">
-            <AlertDescription class="space-y-2">
-              <p class="font-semibold">Token created successfully!</p>
-              <p class="text-sm">
-                Make sure to copy your token now. You won't be able to see it again.
-              </p>
-              <div class="flex items-center gap-2">
-                <Input :value="newlyCreatedToken.token_value" readonly class="font-mono text-sm" />
-                <Button
-                  type="button"
-                  size="sm"
-                  @click="copyTokenToClipboard(newlyCreatedToken.token_value)"
-                >
-                  <Icon name="Copy" :size="14" />
-                  Copy
-                </Button>
-                <Button type="button" variant="ghost" size="sm" @click="dismissNewToken">
-                  Dismiss
+          <!-- Application Tokens -->
+          <Card>
+            <CardHeader>
+              <div class="flex items-center justify-between">
+                <div>
+                  <CardTitle>Application Tokens</CardTitle>
+                  <CardDescription class="mt-1">
+                    Create API tokens for programmatic access
+                  </CardDescription>
+                </div>
+                <Button type="button" @click="showCreateTokenForm = true">
+                  <Icon name="Plus" :size="16" />
+                  Create Token
                 </Button>
               </div>
-            </AlertDescription>
-          </Alert>
-
-          <div v-if="loadingTokens" class="flex items-center justify-center py-10">
-            <p class="text-sm text-muted-foreground">Loading tokens...</p>
-          </div>
-
-          <Empty v-else-if="applicationTokens.length === 0">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <Key />
-              </EmptyMedia>
-              <EmptyTitle>No application tokens yet</EmptyTitle>
-              <EmptyDescription>
-                Create an application token to authenticate programmatic access.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-
-          <div v-else class="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead>Last Used</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow v-for="token in applicationTokens" :key="token.id">
-                  <TableCell>{{ token.name }}</TableCell>
-                  <TableCell>
-                    <span class="text-sm text-muted-foreground">
-                      {{ token.description || '-' }}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      :variant="
-                        !token.is_valid ? 'destructive' : token.is_active ? 'default' : 'secondary'
-                      "
+            </CardHeader>
+            <CardContent>
+              <!-- New Token Alert -->
+              <Alert v-if="newlyCreatedToken" class="mb-4">
+                <AlertDescription class="space-y-2">
+                  <p class="font-semibold">Token created successfully!</p>
+                  <p class="text-sm">
+                    Make sure to copy your token now. You won't be able to see it again.
+                  </p>
+                  <div class="flex items-center gap-2">
+                    <Input :value="newlyCreatedToken.token_value" readonly class="font-mono text-sm" />
+                    <Button
+                      type="button"
+                      size="sm"
+                      @click="copyTokenToClipboard(newlyCreatedToken.token_value)"
                     >
-                      {{ !token.is_valid ? 'Invalid' : token.is_active ? 'Active' : 'Inactive' }}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span class="text-sm">
-                      {{ new Date(token.created_at).toLocaleDateString() }}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span class="text-sm">
-                      {{
-                        token.expires_at ? new Date(token.expires_at).toLocaleDateString() : 'Never'
-                      }}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span class="text-sm">
-                      {{
-                        token.last_used_at
-                          ? new Date(token.last_used_at).toLocaleDateString()
-                          : 'Never'
-                      }}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div class="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        @click="toggleTokenActive(token.id, token.is_active)"
-                      >
-                        {{ token.is_active ? 'Deactivate' : 'Activate' }}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        @click="revokeApplicationToken(token.id)"
-                      >
-                        Revoke
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                      <Icon name="Copy" :size="14" />
+                      Copy
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" @click="dismissNewToken">
+                      Dismiss
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+
+              <div v-if="loadingTokens" class="flex items-center justify-center py-10">
+                <p class="text-sm text-muted-foreground">Loading tokens...</p>
+              </div>
+
+              <Empty v-else-if="applicationTokens.length === 0">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <Key />
+                  </EmptyMedia>
+                  <EmptyTitle>No application tokens yet</EmptyTitle>
+                  <EmptyDescription>
+                    Create an application token to authenticate programmatic access.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+
+              <div v-else class="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Expires</TableHead>
+                      <TableHead>Last Used</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-for="token in applicationTokens" :key="token.id">
+                      <TableCell>{{ token.name }}</TableCell>
+                      <TableCell>
+                        <span class="text-sm text-muted-foreground">
+                          {{ token.description || '-' }}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          :variant="
+                            !token.is_valid ? 'destructive' : token.is_active ? 'default' : 'secondary'
+                          "
+                        >
+                          {{ !token.is_valid ? 'Invalid' : token.is_active ? 'Active' : 'Inactive' }}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span class="text-sm">
+                          {{ new Date(token.created_at).toLocaleDateString() }}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span class="text-sm">
+                          {{
+                            token.expires_at ? new Date(token.expires_at).toLocaleDateString() : 'Never'
+                          }}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span class="text-sm">
+                          {{
+                            token.last_used_at
+                              ? new Date(token.last_used_at).toLocaleDateString()
+                              : 'Never'
+                          }}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div class="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            @click="toggleTokenActive(token.id, token.is_active)"
+                          >
+                            {{ token.is_active ? 'Deactivate' : 'Activate' }}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            @click="revokeApplicationToken(token.id)"
+                          >
+                            Revoke
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <!-- Integrations Tab -->
+        <TabsContent value="integrations" class="space-y-6">
+          <!-- Storage Settings -->
+          <Card>
+            <CardHeader>
+              <CardTitle>Storage (S3-Compatible)</CardTitle>
+              <CardDescription>Configure S3-compatible object storage for file uploads</CardDescription>
+            </CardHeader>
+            <CardContent class="space-y-4">
+              <div class="flex items-center space-x-2">
+                <Switch
+                  id="storage_enabled"
+                  :checked="storageEnabled"
+                  @update:checked="storageEnabled = $event"
+                />
+                <Label for="storage_enabled" class="cursor-pointer"> Enable S3 storage </Label>
+              </div>
+
+              <div v-if="storageEnabled" class="space-y-4 pl-6 border-l-2 border-muted">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="space-y-2">
+                    <Label for="storage_endpoint">Endpoint</Label>
+                    <Input
+                      id="storage_endpoint"
+                      v-model="storageEndpoint"
+                      placeholder="https://s3.amazonaws.com"
+                    />
+                  </div>
+
+                  <div class="space-y-2">
+                    <Label for="storage_bucket">Bucket</Label>
+                    <Input
+                      id="storage_bucket"
+                      v-model="storageBucket"
+                      placeholder="my-bucket"
+                    />
+                  </div>
+
+                  <div class="space-y-2">
+                    <Label for="storage_region">Region</Label>
+                    <Input
+                      id="storage_region"
+                      v-model="storageRegion"
+                      placeholder="us-east-1"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="space-y-2">
+                    <Label for="storage_access_key">Access Key (leave empty to keep current)</Label>
+                    <Input
+                      id="storage_access_key"
+                      v-model="storageAccessKey"
+                      type="password"
+                      autocomplete="off"
+                    />
+                  </div>
+
+                  <div class="space-y-2">
+                    <Label for="storage_secret_key">Secret Key (leave empty to keep current)</Label>
+                    <Input
+                      id="storage_secret_key"
+                      v-model="storageSecretKey"
+                      type="password"
+                      autocomplete="off"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <!-- Save Footer -->
       <div class="flex justify-end gap-2 sticky bottom-0 bg-background py-4 border-t">
