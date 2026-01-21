@@ -1134,10 +1134,17 @@ def upload_function(
 
     # Step 4: Write file to functions directory
     functions_dir = Path(config.functions_path)
-    # Ensure directory exists
-    functions_dir.mkdir(parents=True, exist_ok=True)
+
     try:
         file_path = write_function_file(functions_dir, request.filename, request.content)
+    except FileNotFoundError:
+        # Functions directory doesn't exist - workspace not initialized
+        session.delete(version)
+        session.commit()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Functions directory not found at '{functions_dir}'. Please ensure your TinyBase workspace is properly initialized with 'tinybase init'.",
+        )
     except Exception as e:
         # Rollback version creation
         session.delete(version)
