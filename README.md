@@ -1,22 +1,7 @@
-<p align="center">
-  <img src="logo.png" alt="TinyBase Logo" width="200" />
-</p>
-<p align="center">
-  <a href="https://github.com/maximiliancw/TinyBase/blob/main/LICENSE" target="_blank">
-    <img alt="License" src="https://img.shields.io/github/license/maximiliancw/TinyBase">
-  </a>
-  <a href="https://pypi.org/project/tinybase/" target="_blank">
-    <img src="https://img.shields.io/pypi/v/tinybase.svg?label=PyPI&color=blue" alt="PyPI">
-  </a>
-  <a href="https://github.com/maximiliancw/TinyBase/actions/workflows/ci.yml" target="_blank">
-    <img src="https://github.com/maximiliancw/TinyBase/actions/workflows/ci.yml/badge.svg" alt="CI">
-  </a>
-  <a href="https://maximiliancw.github.io/TinyBase/" target="_blank">
-    <img alt="Docs" src="https://img.shields.io/website?url=https%3A%2F%2Fmaximiliancw.github.io%2FTinyBase%2F">
-  </a>
-</p>
-
 # TinyBase
+
+![GitHub License](https://img.shields.io/github/license/maximiliancw/tinybase)
+![Codecov](https://img.shields.io/codecov/c/github/maximiliancw/tinybase)
 
 **TinyBase is a lightweight, self-hosted Backend-as-a-Service (BaaS) framework designed for Python developers who want simplicity and ease-of-use.**
 
