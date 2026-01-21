@@ -1134,6 +1134,8 @@ def upload_function(
 
     # Step 4: Write file to functions directory
     functions_dir = Path(config.functions_path)
+    # Ensure directory exists
+    functions_dir.mkdir(parents=True, exist_ok=True)
     try:
         file_path = write_function_file(functions_dir, request.filename, request.content)
     except Exception as e:
