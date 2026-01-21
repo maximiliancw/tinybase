@@ -194,7 +194,7 @@ function isVNode(value: any): value is VNode {
     <!-- Search Bar and Header Action -->
     <div
       v-if="searchable || headerAction"
-      class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      class="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between"
     >
       <div v-if="searchable" class="flex-1 space-y-1">
         <Input v-model="searchQuery" :placeholder="searchPlaceholder" class="max-w-sm" />
@@ -214,7 +214,7 @@ function isVNode(value: any): value is VNode {
     </div>
 
     <!-- Desktop Table View -->
-    <div class="hidden md:block rounded-md border">
+    <div class="hidden md:block overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -257,7 +257,7 @@ function isVNode(value: any): value is VNode {
     </div>
 
     <!-- Mobile List View -->
-    <div class="md:hidden space-y-4">
+    <div class="md:hidden space-y-4 px-6">
       <div
         v-if="paginatedData.length === 0"
         class="flex flex-col items-center justify-center py-16 text-center border rounded-lg"
@@ -303,7 +303,7 @@ function isVNode(value: any): value is VNode {
     </div>
 
     <!-- Pagination -->
-    <div v-if="paginated && totalPages > 1" class="flex items-center justify-between border-t pt-4">
+    <div v-if="paginated && totalPages > 1" class="flex items-center justify-between border-t pt-4 px-6 pb-2">
       <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="currentPage--">
         Previous
       </Button>
