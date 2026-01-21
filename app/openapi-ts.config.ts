@@ -10,7 +10,9 @@ import { defineConfig } from '@hey-api/openapi-ts';
  * SDK Plugin: https://heyapi.dev/openapi-ts/plugins/sdk
  */
 export default defineConfig({
-  input: 'http://localhost:8000/openapi.json',
+  input: {
+    path: 'http://localhost:8000/openapi.json'
+  },
   output: {
     path: './src/client',
     // Clean output directory before generating
@@ -25,17 +27,21 @@ export default defineConfig({
       // Export enums as const objects for better tree-shaking
       enums: 'javascript',
     },
+    // Axios client with runtime configuration
+    {
+      name: '@hey-api/client-axios',
+      // Path relative to output directory (./src/client)
+      runtimeConfigPath: '../client-config.ts',
+    },
     // SDK plugin generates service classes organized by tags
     {
       name: '@hey-api/sdk',
-      // Use Axios as the HTTP client
-      client: '@hey-api/client-axios',
       // Generate service classes organized by OpenAPI tags
       operations: {
         // Use 'single' strategy to generate service classes
         strategy: 'single',
         // Main SDK container class name
-        containerName: 'TinyBaseClient',
+        containerName: 'TinyBase',
         // Custom nesting to organize methods by tag into service classes
         nesting(operation) {
           // Get the first tag (e.g., 'auth', 'collections', 'functions')
