@@ -23,6 +23,7 @@ from tinybase.config import settings
 from tinybase.db.core import create_db_and_tables, get_engine
 from tinybase.extensions import load_enabled_extensions, run_shutdown_hooks, run_startup_hooks
 from tinybase.functions.loader import load_functions_from_settings
+from tinybase.logs import setup_logging
 from tinybase.schedule import start_scheduler, stop_scheduler
 from tinybase.utils import generate_operation_id
 from tinybase.version import __version__
@@ -30,10 +31,8 @@ from tinybase.version import __version__
 # Rate limiter instance
 limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+# Setup logging
+setup_logging()
 logger = logging.getLogger(__name__)
 
 
@@ -64,7 +63,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Load user functions
     logger.info("Loading functions...")
     loaded = load_functions_from_settings()
-    logger.info(f"Loaded {loaded} function file(s)")
+    logger.info(f"Loaded {loaded} function(s)")
 
     # Load extensions
     logger.info("Loading extensions...")
@@ -72,9 +71,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         ext_loaded = load_enabled_extensions(session)
         logger.info(f"Loaded {ext_loaded} extension(s)")
 
-    # Run extension startup hooks
-    logger.info("Running extension startup hooks...")
-    await run_startup_hooks()
+    # Run extension startup hooks (only if extensions are loaded)
+    if ext_loaded > 0:
+        logger.info("Running extension startup hooks...")
+        await run_startup_hooks()
 
     # Start scheduler
     logger.info("Starting scheduler...")
@@ -95,9 +95,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown
     logger.info("Shutting down TinyBase server...")
 
-    # Run extension shutdown hooks
-    logger.info("Running extension shutdown hooks...")
-    await run_shutdown_hooks()
+    # Run extension shutdown hooks (only if extensions were loaded)
+    if ext_loaded > 0:
+        logger.info("Running extension shutdown hooks...")
+        await run_shutdown_hooks()
 
     await stop_scheduler()
 

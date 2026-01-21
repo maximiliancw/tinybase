@@ -152,13 +152,41 @@ def serve(
 
     config = settings()
 
+    # Validate workspace is initialized
+    toml_path = Path.cwd() / "tinybase.toml"
+    functions_path = Path(config.functions_path)
+
+    if not toml_path.exists():
+        typer.secho("Error: Workspace not initialized!", fg=typer.colors.RED, bold=True)
+        typer.echo("")
+        typer.echo("TinyBase requires a configuration file to run.")
+        typer.echo("Please initialize your workspace first:")
+        typer.echo("")
+        typer.secho("  tinybase init", fg=typer.colors.GREEN, bold=True)
+        typer.echo("")
+        raise typer.Exit(1)
+
+    if not functions_path.exists():
+        typer.secho("Error: Functions directory not found!", fg=typer.colors.RED, bold=True)
+        typer.echo("")
+        typer.echo(f"Expected functions directory at: {functions_path.absolute()}")
+        typer.echo("Please initialize your workspace first:")
+        typer.echo("")
+        typer.secho("  tinybase init", fg=typer.colors.GREEN, bold=True)
+        typer.echo("")
+        raise typer.Exit(1)
+
     # Use CLI options or fall back to config
     bind_host = host or config.server_host
     bind_port = port or config.server_port
 
+    # Set log level based on environment (debug mode = development)
+    uvicorn_log_level = "debug" if config.debug else "warning"
+
     typer.echo(f"Starting TinyBase server on {bind_host}:{bind_port}")
     typer.echo(f"  API docs: http://{bind_host}:{bind_port}/docs")
     typer.echo(f"  Admin UI: http://{bind_host}:{bind_port}/admin")
+    typer.echo(f"  Environment: {'development' if config.debug else 'production'}")
     typer.echo("")
 
     uvicorn.run(
@@ -167,5 +195,6 @@ def serve(
         port=bind_port,
         reload=reload,
         factory=True,
-        log_level=config.log_level,
+        log_level=uvicorn_log_level,
+        log_config=None,  # Let our setup_logging() handle all configuration
     )
