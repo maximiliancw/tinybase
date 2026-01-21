@@ -90,16 +90,15 @@ function handleLogout() {
             {{ authStore.instanceName }}
           </h1>
         </div>
-        <div class="w-full mt-4">
-          <div class="text-xs text-muted-foreground flex flex-row items-center gap-2">
-            <div class="flex items-center gap-1 font-medium text-foreground">
-              <Icon name="User" :size="18" />
-              <RouterLink to="/admin/profile" class="hover:underline">
-                {{ authStore.user?.email }}
-              </RouterLink>
-            </div>
-            <Badge v-if="authStore.isAdmin" variant="secondary" class="ml-auto"> admin </Badge>
-          </div>
+        <div class="w-full mt-4 flex items-center gap-2 text-sm">
+          <Icon name="User" :size="18" />
+          <RouterLink
+            to="/admin/profile"
+            class="hover:underline text-muted-foreground"
+            active-class="bg-accent/50 text-primary underline"
+          >
+            {{ authStore.user?.email }}
+          </RouterLink>
         </div>
       </header>
 
