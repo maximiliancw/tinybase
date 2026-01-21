@@ -29,8 +29,12 @@ def client():
     db_fd, db_path = tempfile.mkstemp(suffix=".db")
     os.close(db_fd)
 
+    # Create a temporary functions directory
+    functions_dir = tempfile.mkdtemp(prefix="tinybase_test_functions_")
+
     # Set environment variables before importing tinybase modules
     os.environ["TINYBASE_DB_URL"] = f"sqlite:///{db_path}"
+    os.environ["TINYBASE_FUNCTIONS_PATH"] = functions_dir
     os.environ["TINYBASE_SCHEDULER_ENABLED"] = "false"
     os.environ["TINYBASE_RATE_LIMIT_ENABLED"] = "false"
 
@@ -80,8 +84,17 @@ def client():
     except Exception:
         pass
 
+    # Remove temp functions directory
+    import shutil
+
+    try:
+        shutil.rmtree(functions_dir)
+    except Exception:
+        pass
+
     # Reset env vars
     os.environ.pop("TINYBASE_DB_URL", None)
+    os.environ.pop("TINYBASE_FUNCTIONS_PATH", None)
     os.environ.pop("TINYBASE_SCHEDULER_ENABLED", None)
     os.environ.pop("TINYBASE_RATE_LIMIT_ENABLED", None)
 
