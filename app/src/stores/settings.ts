@@ -6,7 +6,8 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api, type InstanceSettingsResponse, type ApplicationTokenInfo, type ApplicationTokenCreateResponse } from '../api'
+import { api } from '@/api'
+import type { InstanceSettingsResponse, ApplicationTokenInfo, ApplicationTokenCreateResponse } from '@/client'
 
 export const useSettingsStore = defineStore('settings', () => {
   // State

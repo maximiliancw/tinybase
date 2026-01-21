@@ -8,16 +8,20 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { useLocalStorage } from "@vueuse/core";
-import { api, type TinybaseApiRoutesAuthUserInfo as User } from "../api";
-
-// Re-export the User type for convenience
-export type { User };
+import { api } from "@/api";
+import type { TinybaseApiRoutesAuthUserInfo } from "@/client";
 
 export const useAuthStore = defineStore("auth", () => {
-  // State - JWT tokens
-  const accessToken = useLocalStorage<string | null>("tb_access_token", null);
-  const refreshToken = useLocalStorage<string | null>("tb_refresh_token", null);
-  const user = ref<User | null>(null);
+  // State - JWT tokens with synchronous localStorage sync
+  // Using flush: 'sync' ensures immediate write to localStorage
+  // https://vueuse.org/core/useStorage/#usage
+  const accessToken = useLocalStorage<string | null>("tb_access_token", null, {
+    flush: 'sync', // Write to localStorage immediately, not on next tick
+  });
+  const refreshToken = useLocalStorage<string | null>("tb_refresh_token", null, {
+    flush: 'sync',
+  });
+  const user = ref<TinybaseApiRoutesAuthUserInfo | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
   const adminCreated = ref(false);
@@ -38,9 +42,14 @@ export const useAuthStore = defineStore("auth", () => {
       const response = await api.auth.login({
         body: { email, password },
       });
+      
       const data = response.data;
+      
+      if (!data) {
+        throw new Error('No data in login response');
+      }
 
-      // Store JWT tokens
+      // Store JWT tokens - VueUse with flush: 'sync' writes immediately to localStorage
       accessToken.value = data.access_token;
       refreshToken.value = data.refresh_token;
 
@@ -68,7 +77,7 @@ export const useAuthStore = defineStore("auth", () => {
 
     try {
       const response = await api.auth.getMe();
-      user.value = response.data as User;
+      user.value = response.data as TinybaseApiRoutesAuthUserInfo;
     } catch (err) {
       // Token might be invalid
       clearTokens();

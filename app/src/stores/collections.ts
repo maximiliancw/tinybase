@@ -6,20 +6,17 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { 
-  api, 
-  type CollectionResponse as Collection,
-  type RecordResponse as Record 
-} from '../api'
-
-// Re-export types for convenience
-export type { Collection, Record }
+import { api } from '@/api'
+import type { 
+  CollectionResponse,
+  RecordResponse 
+} from '@/client'
 
 export const useCollectionsStore = defineStore('collections', () => {
   // State
-  const collections = ref<Collection[]>([])
-  const currentCollection = ref<Collection | null>(null)
-  const records = ref<Record[]>([])
+  const collections = ref<CollectionResponse[]>([])
+  const currentCollection = ref<CollectionResponse | null>(null)
+  const records = ref<RecordResponse[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -30,7 +27,7 @@ export const useCollectionsStore = defineStore('collections', () => {
 
     try {
       const response = await api.collections.listCollections()
-      collections.value = response.data as Collection[]
+      collections.value = response.data as CollectionResponse[]
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to fetch collections'
     } finally {
@@ -38,7 +35,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     }
   }
 
-  async function fetchCollection(name: string): Promise<Collection | null> {
+  async function fetchCollection(name: string): Promise<CollectionResponse | null> {
     loading.value = true
     error.value = null
 
@@ -46,8 +43,8 @@ export const useCollectionsStore = defineStore('collections', () => {
       const response = await api.collections.getCollection({
         path: { collection_name: name },
       })
-      currentCollection.value = response.data as Collection
-      return response.data as Collection
+      currentCollection.value = response.data as CollectionResponse
+      return response.data as CollectionResponse
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to fetch collection'
       return null
@@ -61,7 +58,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     label: string
     schema: any
     options?: any
-  }): Promise<Collection | null> {
+  }): Promise<CollectionResponse | null> {
     loading.value = true
     error.value = null
 
@@ -70,7 +67,7 @@ export const useCollectionsStore = defineStore('collections', () => {
         body: data,
       })
       await fetchCollections()
-      return response.data as Collection
+      return response.data as CollectionResponse
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to create collection'
       return null
@@ -101,7 +98,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     collectionName: string,
     limit = 100,
     offset = 0
-  ): Promise<{ records: Record[]; total: number }> {
+  ): Promise<{ records: RecordResponse[]; total: number }> {
     loading.value = true
     error.value = null
 
@@ -110,8 +107,8 @@ export const useCollectionsStore = defineStore('collections', () => {
         path: { collection_name: collectionName },
         query: { limit, offset },
       })
-      records.value = response.data.records as Record[]
-      return response.data as { records: Record[]; total: number }
+      records.value = response.data.records as RecordResponse[]
+      return response.data as { records: RecordResponse[]; total: number }
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to fetch records'
       return { records: [], total: 0 }
@@ -123,7 +120,7 @@ export const useCollectionsStore = defineStore('collections', () => {
   async function createRecord(
     collectionName: string,
     data: Record<string, any>
-  ): Promise<Record | null> {
+  ): Promise<RecordResponse | null> {
     loading.value = true
     error.value = null
 
@@ -132,7 +129,7 @@ export const useCollectionsStore = defineStore('collections', () => {
         path: { collection_name: collectionName },
         body: { data },
       })
-      return response.data as Record
+      return response.data as RecordResponse
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to create record'
       return null

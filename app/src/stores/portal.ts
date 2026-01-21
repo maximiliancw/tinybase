@@ -7,14 +7,12 @@
 
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { api, type PortalConfigResponse as PortalConfig } from "../api";
+import { api } from "@/api";
+import type { PortalConfigResponse } from "@/client";
 import { client as baseClient } from "../client/client.gen";
 
-// Re-export type for convenience
-export type { PortalConfig };
-
 export const usePortalStore = defineStore("portal", () => {
-  const config = ref<PortalConfig>({
+  const config = ref<PortalConfigResponse>({
     instance_name: "TinyBase",
     logo_url: null,
     primary_color: null,
@@ -82,16 +80,16 @@ export const usePortalStore = defineStore("portal", () => {
               }),
             },
           });
-          config.value = response.data as PortalConfig;
+          config.value = response.data as PortalConfigResponse;
         } else {
           const response = await api.auth.getPortalConfig({
             query: queryParams,
           });
-          config.value = response.data as PortalConfig;
+          config.value = response.data as PortalConfigResponse;
         }
       } else {
         const response = await api.auth.getPortalConfig();
-        config.value = response.data as PortalConfig;
+        config.value = response.data as PortalConfigResponse;
       }
     } catch (err: any) {
       error.value =

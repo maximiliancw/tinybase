@@ -6,14 +6,12 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api, type TinybaseApiRoutesAdminUserInfo as AdminUser } from '../api'
-
-// Re-export type for convenience
-export type { AdminUser }
+import { api } from '@/api'
+import type { TinybaseApiRoutesAdminUserInfo } from '@/client'
 
 export const useUsersStore = defineStore('users', () => {
   // State
-  const users = ref<AdminUser[]>([])
+  const users = ref<TinybaseApiRoutesAdminUserInfo[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -21,7 +19,7 @@ export const useUsersStore = defineStore('users', () => {
   async function fetchUsers(
     limit = 100,
     offset = 0
-  ): Promise<{ users: AdminUser[]; total: number }> {
+  ): Promise<{ users: TinybaseApiRoutesAdminUserInfo[]; total: number }> {
     loading.value = true
     error.value = null
 
@@ -29,8 +27,8 @@ export const useUsersStore = defineStore('users', () => {
       const response = await api.admin.listUsers({
         query: { limit, offset },
       })
-      users.value = response.data.users as AdminUser[]
-      return response.data as { users: AdminUser[]; total: number }
+      users.value = response.data.users as TinybaseApiRoutesAdminUserInfo[]
+      return response.data as { users: TinybaseApiRoutesAdminUserInfo[]; total: number }
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to fetch users'
       return { users: [], total: 0 }
@@ -43,7 +41,7 @@ export const useUsersStore = defineStore('users', () => {
     email: string
     password: string
     is_admin?: boolean
-  }): Promise<AdminUser | null> {
+  }): Promise<TinybaseApiRoutesAdminUserInfo | null> {
     loading.value = true
     error.value = null
 
@@ -52,7 +50,7 @@ export const useUsersStore = defineStore('users', () => {
         body: data,
       })
       await fetchUsers()
-      return response.data as AdminUser
+      return response.data as TinybaseApiRoutesAdminUserInfo
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to create user'
       return null
@@ -64,7 +62,7 @@ export const useUsersStore = defineStore('users', () => {
   async function updateUser(
     id: string,
     data: { email?: string; password?: string; is_admin?: boolean }
-  ): Promise<AdminUser | null> {
+  ): Promise<TinybaseApiRoutesAdminUserInfo | null> {
     loading.value = true
     error.value = null
 
@@ -74,7 +72,7 @@ export const useUsersStore = defineStore('users', () => {
         body: data,
       })
       await fetchUsers()
-      return response.data as AdminUser
+      return response.data as TinybaseApiRoutesAdminUserInfo
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to update user'
       return null

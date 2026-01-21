@@ -6,16 +6,13 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { 
-  api,
-  type FunctionInfo,
-  type FunctionCallInfo as FunctionCall,
-  type ScheduleResponse as Schedule,
-  type FunctionSchemaResponse as FunctionSchema
-} from '../api'
-
-// Re-export types for convenience
-export type { FunctionInfo, FunctionCall, Schedule, FunctionSchema }
+import { api } from '@/api'
+import type { 
+  FunctionInfo,
+  FunctionCallInfo,
+  ScheduleResponse,
+  FunctionSchemaResponse
+} from '@/client'
 
 /**
  * Generate a template object from a JSON schema.
@@ -77,8 +74,8 @@ export const useFunctionsStore = defineStore('functions', () => {
   // State
   const functions = ref<FunctionInfo[]>([])
   const adminFunctions = ref<FunctionInfo[]>([])
-  const functionCalls = ref<FunctionCall[]>([])
-  const schedules = ref<Schedule[]>([])
+  const functionCalls = ref<FunctionCallInfo[]>([])
+  const schedules = ref<ScheduleResponse[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -140,7 +137,7 @@ export const useFunctionsStore = defineStore('functions', () => {
       limit?: number
       offset?: number
     } = {}
-  ): Promise<{ calls: FunctionCall[]; total: number }> {
+  ): Promise<{ calls: FunctionCallInfo[]; total: number }> {
     loading.value = true
     error.value = null
 
@@ -148,8 +145,8 @@ export const useFunctionsStore = defineStore('functions', () => {
       const response = await api.admin.listFunctionCalls({
         query: filters,
       })
-      functionCalls.value = response.data.calls as FunctionCall[]
-      return response.data as { calls: FunctionCall[]; total: number }
+      functionCalls.value = response.data.calls as FunctionCallInfo[]
+      return response.data as { calls: FunctionCallInfo[]; total: number }
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to fetch function calls'
       return { calls: [], total: 0 }
@@ -164,7 +161,7 @@ export const useFunctionsStore = defineStore('functions', () => {
 
     try {
       const response = await api.schedules.listSchedules()
-      schedules.value = response.data.schedules as Schedule[]
+      schedules.value = response.data.schedules as ScheduleResponse[]
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to fetch schedules'
     } finally {
@@ -178,7 +175,7 @@ export const useFunctionsStore = defineStore('functions', () => {
     schedule: any
     input_data?: Record<string, any>
     is_active?: boolean
-  }): Promise<Schedule | null> {
+  }): Promise<ScheduleResponse | null> {
     loading.value = true
     error.value = null
 
@@ -187,7 +184,7 @@ export const useFunctionsStore = defineStore('functions', () => {
         body: data,
       })
       await fetchSchedules()
-      return response.data as Schedule
+      return response.data as ScheduleResponse
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to create schedule'
       return null
@@ -199,7 +196,7 @@ export const useFunctionsStore = defineStore('functions', () => {
   async function updateSchedule(
     id: string,
     data: { name?: string; schedule?: any; is_active?: boolean }
-  ): Promise<Schedule | null> {
+  ): Promise<ScheduleResponse | null> {
     loading.value = true
     error.value = null
 
@@ -209,7 +206,7 @@ export const useFunctionsStore = defineStore('functions', () => {
         body: data,
       })
       await fetchSchedules()
-      return response.data as Schedule
+      return response.data as ScheduleResponse
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to update schedule'
       return null
@@ -236,14 +233,14 @@ export const useFunctionsStore = defineStore('functions', () => {
     }
   }
 
-  async function fetchFunctionSchema(name: string): Promise<FunctionSchema | null> {
+  async function fetchFunctionSchema(name: string): Promise<FunctionSchemaResponse | null> {
     error.value = null
 
     try {
       const response = await api.functions.getFunctionSchema({
         path: { function_name: name },
       })
-      return response.data as FunctionSchema
+      return response.data as FunctionSchemaResponse
     } catch (err: any) {
       error.value = err.error?.detail || 'Failed to fetch function schema'
       return null
