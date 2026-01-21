@@ -136,8 +136,13 @@ onMounted(async () => {
         </form>
       </CardContent>
 
-      <CardFooter class="justify-center border-t">
-        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
+      <CardFooter class="justify-center border-t pt-4">
+        <p class="text-xs text-muted-foreground">
+          Powered by 
+          <a href="https://github.com/maximiliancw/tinybase" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
+            TinyBase
+          </a>
+        </p>
       </CardFooter>
     </Card>
   </div>
