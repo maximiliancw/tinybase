@@ -13,6 +13,7 @@ import { useCollectionsStore } from '../stores/collections';
 import { useAuthStore } from '../stores/auth';
 import { validationSchemas } from '../composables/useFormValidation';
 import DataTable from '../components/DataTable.vue';
+import SchemaEditor from '../components/SchemaEditor.vue';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
@@ -25,7 +26,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 import {
   Empty,
   EmptyContent,
@@ -55,16 +57,29 @@ const { handleSubmit, resetForm } = useForm({
     name: '',
     label: '',
     schemaText: defaultSchemaText,
+    readOnly: false,
   },
 });
 
 const nameField = useField('name');
 const labelField = useField('label');
 const schemaTextField = useField('schemaText');
+const readOnlyField = useField('readOnly');
 
 const onSubmit = handleSubmit(async (values) => {
   try {
     const schema = JSON.parse(values.schemaText);
+
+    // Add access control metadata to schema if read-only is enabled
+    if (values.readOnly) {
+      schema.access = {
+        read: ['admin', 'user'],
+        create: ['admin'],
+        update: ['admin'],
+        delete: ['admin'],
+      };
+    }
+
     const result = await collectionsStore.createCollection({
       name: values.name,
       label: values.label,
@@ -78,6 +93,7 @@ const onSubmit = handleSubmit(async (values) => {
           name: '',
           label: '',
           schemaText: defaultSchemaText,
+          readOnly: false,
         },
       });
     } else {
@@ -216,7 +232,7 @@ const collectionColumns = computed(() => {
 
     <!-- Create Collection Modal -->
     <Dialog v-model:open="showCreateModal">
-      <DialogContent>
+      <DialogContent class="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Collection</DialogTitle>
           <DialogDescription>
@@ -252,17 +268,32 @@ const collectionColumns = computed(() => {
           </div>
 
           <div class="space-y-2">
-            <Label for="schema">Schema (JSON)</Label>
-            <Textarea
-              id="schema"
-              v-model="schemaTextField.value.value"
-              :rows="10"
-              class="font-mono text-sm"
-              :aria-invalid="schemaTextField.errorMessage.value ? 'true' : undefined"
-            />
+            <Label for="schema">Schema</Label>
+            <SchemaEditor v-model="schemaTextField.value.value" />
             <p v-if="schemaTextField.errorMessage.value" class="text-sm text-destructive">
               {{ schemaTextField.errorMessage.value }}
             </p>
+          </div>
+
+          <Separator />
+
+          <div class="space-y-3">
+            <Label class="text-base">Access Control</Label>
+            <div class="flex items-start space-x-3">
+              <Checkbox
+                id="read-only"
+                :model-value="readOnlyField.value.value"
+                @update:model-value="readOnlyField.value.value = $event"
+              />
+              <div class="space-y-1 leading-none">
+                <Label for="read-only" class="text-sm font-normal cursor-pointer">
+                  Read-only for non-admins
+                </Label>
+                <p class="text-xs text-muted-foreground">
+                  Non-admin users can view records but cannot create, update, or delete them.
+                </p>
+              </div>
+            </div>
           </div>
         </form>
 
