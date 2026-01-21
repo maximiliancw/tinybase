@@ -17,6 +17,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -211,6 +212,9 @@ const collectionColumns = computed(() => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create Collection</DialogTitle>
+          <DialogDescription>
+            Create a new data collection with custom fields and schema.
+          </DialogDescription>
         </DialogHeader>
 
         <form id="collection-form" class="space-y-4" @submit.prevent="onSubmit">

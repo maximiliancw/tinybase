@@ -16,6 +16,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -176,6 +177,9 @@ const userColumns = computed(() => [
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create User</DialogTitle>
+          <DialogDescription>
+            Add a new user account to the system.
+          </DialogDescription>
         </DialogHeader>
 
         <form id="user-form" class="space-y-4" @submit.prevent="onSubmit">
