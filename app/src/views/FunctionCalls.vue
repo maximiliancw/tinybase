@@ -27,9 +27,9 @@ const pageSize = 50;
 const total = ref(0);
 const loadingMore = ref(false);
 const filters = ref({
-  function_name: '',
-  status: '',
-  trigger_type: '',
+  function_name: 'all',
+  status: 'all',
+  trigger_type: 'all',
 });
 
 // Local ref for infinite scroll (appends instead of replacing)
@@ -45,11 +45,23 @@ onMounted(async () => {
 async function loadCalls(reset = false) {
   loadingMore.value = true;
   try {
-    const result = await functionsStore.fetchFunctionCalls({
-      ...filters.value,
+    // Filter out 'all' values before sending to API
+    const apiFilters: any = {
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
-    });
+    };
+    
+    if (filters.value.function_name !== 'all') {
+      apiFilters.function_name = filters.value.function_name;
+    }
+    if (filters.value.status !== 'all') {
+      apiFilters.status = filters.value.status;
+    }
+    if (filters.value.trigger_type !== 'all') {
+      apiFilters.trigger_type = filters.value.trigger_type;
+    }
+    
+    const result = await functionsStore.fetchFunctionCalls(apiFilters);
     if (reset) {
       displayedCalls.value = result.calls;
     } else {
@@ -212,7 +224,7 @@ const functionCallColumns = computed(() => [
                 <SelectValue placeholder="All Functions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=""> All Functions </SelectItem>
+                <SelectItem value="all"> All Functions </SelectItem>
                 <SelectItem v-for="fn in functionsStore.functions" :key="fn.name" :value="fn.name">
                   {{ fn.name }}
                 </SelectItem>
@@ -227,7 +239,7 @@ const functionCallColumns = computed(() => [
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=""> All Statuses </SelectItem>
+                <SelectItem value="all"> All Statuses </SelectItem>
                 <SelectItem value="succeeded"> Succeeded </SelectItem>
                 <SelectItem value="failed"> Failed </SelectItem>
                 <SelectItem value="running"> Running </SelectItem>
@@ -242,7 +254,7 @@ const functionCallColumns = computed(() => [
                 <SelectValue placeholder="All Triggers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=""> All Triggers </SelectItem>
+                <SelectItem value="all"> All Triggers </SelectItem>
                 <SelectItem value="manual"> Manual </SelectItem>
                 <SelectItem value="schedule"> Schedule </SelectItem>
               </SelectContent>
