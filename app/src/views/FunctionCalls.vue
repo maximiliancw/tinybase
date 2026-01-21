@@ -50,7 +50,7 @@ async function loadCalls(reset = false) {
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
     };
-    
+
     if (filters.value.function_name !== 'all') {
       apiFilters.function_name = filters.value.function_name;
     }
@@ -60,7 +60,7 @@ async function loadCalls(reset = false) {
     if (filters.value.trigger_type !== 'all') {
       apiFilters.trigger_type = filters.value.trigger_type;
     }
-    
+
     const result = await functionsStore.fetchFunctionCalls(apiFilters);
     if (reset) {
       displayedCalls.value = result.calls;

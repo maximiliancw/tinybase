@@ -177,9 +177,7 @@ const userColumns = computed(() => [
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create User</DialogTitle>
-          <DialogDescription>
-            Add a new user account to the system.
-          </DialogDescription>
+          <DialogDescription> Add a new user account to the system. </DialogDescription>
         </DialogHeader>
 
         <form id="user-form" class="space-y-4" @submit.prevent="onSubmit">

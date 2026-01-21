@@ -303,7 +303,10 @@ function isVNode(value: any): value is VNode {
     </div>
 
     <!-- Pagination -->
-    <div v-if="paginated && totalPages > 1" class="flex items-center justify-between border-t pt-4 px-6 pb-2">
+    <div
+      v-if="paginated && totalPages > 1"
+      class="flex items-center justify-between border-t pt-4 px-6 pb-2"
+    >
       <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="currentPage--">
         Previous
       </Button>
