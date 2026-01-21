@@ -34,6 +34,3 @@ dist-ssr
 
 # Environment variables
 .env
-
-# Generated API client and OpenAPI specs
-src/client/

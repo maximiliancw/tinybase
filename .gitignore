@@ -58,18 +58,24 @@ app/node_modules/
 app/dist/
 app/.yarn/
 app/.pnp.*
-app/*/client
 !app/.yarnrc.yml
 !app/.env.development
 !app/.env.production
 app/.env.local
 app/.env.*.local
 
+# Auto-generated client code (OpenAPI/TypeScript/Python clients)
+app/src/client/
+tinybase-sdk/src/tinybase_sdk/client/client/
+tinybase-sdk/src/tinybase_sdk/client/README.md
+tinybase-sdk/src/tinybase_sdk/client/pyproject.toml
+tinybase-sdk/src/tinybase_sdk/client/.ruff_cache/
+
 # TinyBase runtime (auto-generated during local testing)
 tinybase.db
 tinybase.toml
 alembic.ini
-./functions/
+/functions/
 *cache.db*
 
 
