@@ -32,6 +32,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { Clock } from 'lucide-vue-next';
 
 const toast = useToast();
 const route = useRoute();
@@ -310,18 +319,20 @@ const scheduleColumns = computed(() => [
     </Card>
 
     <!-- Empty State -->
-    <Card v-else-if="functionsStore.schedules.length === 0">
-      <CardContent class="flex flex-col items-center justify-center py-16 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
-          ⏰
-        </div>
-        <h3 class="mb-1 text-lg font-semibold">No schedules yet</h3>
-        <p class="mb-4 text-sm text-muted-foreground">
+    <Empty v-else-if="functionsStore.schedules.length === 0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Clock />
+        </EmptyMedia>
+        <EmptyTitle>No schedules yet</EmptyTitle>
+        <EmptyDescription>
           Create schedules to run functions automatically.
-        </p>
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
         <Button size="sm" @click="showCreateModal = true"> Create Schedule </Button>
-      </CardContent>
-    </Card>
+      </EmptyContent>
+    </Empty>
 
     <!-- Schedules Table -->
     <Card v-else>

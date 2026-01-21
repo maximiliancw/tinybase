@@ -23,6 +23,15 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { FileText } from 'lucide-vue-next';
 
 const toast = useToast();
 const route = useRoute();
@@ -210,18 +219,20 @@ const recordColumns = computed(() => {
         </div>
 
         <!-- Empty State -->
-        <div
-          v-else-if="records.length === 0"
-          class="flex flex-col items-center justify-center py-16 text-center"
-        >
-          <div
-            class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl"
-          >
-            📄
-          </div>
-          <p class="mb-4 text-sm text-muted-foreground">No records yet</p>
-          <Button size="sm" @click="showCreateModal = true"> Create Record </Button>
-        </div>
+        <Empty v-else-if="records.length === 0">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FileText />
+            </EmptyMedia>
+            <EmptyTitle>No records yet</EmptyTitle>
+            <EmptyDescription>
+              Create your first record to get started with this collection.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button size="sm" @click="showCreateModal = true"> Create Record </Button>
+          </EmptyContent>
+        </Empty>
 
         <!-- Records Table -->
         <div v-else ref="scrollContainer">

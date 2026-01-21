@@ -26,6 +26,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { FolderOpen } from 'lucide-vue-next';
 
 const toast = useToast();
 const route = useRoute();
@@ -170,20 +179,20 @@ const collectionColumns = computed(() => {
     </Card>
 
     <!-- Empty State -->
-    <Card v-else-if="collectionsStore.collections.length === 0">
-      <CardContent class="flex flex-col items-center justify-center py-16 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
-          📁
-        </div>
-        <h3 class="mb-1 text-lg font-semibold">No collections yet</h3>
-        <p class="mb-4 text-sm text-muted-foreground">
+    <Empty v-else-if="collectionsStore.collections.length === 0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <FolderOpen />
+        </EmptyMedia>
+        <EmptyTitle>No collections yet</EmptyTitle>
+        <EmptyDescription>
           Create your first collection to start storing data.
-        </p>
-        <Button v-if="authStore.isAdmin" @click="showCreateModal = true">
-          Create Collection
-        </Button>
-      </CardContent>
-    </Card>
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent v-if="authStore.isAdmin">
+        <Button @click="showCreateModal = true"> Create Collection </Button>
+      </EmptyContent>
+    </Empty>
 
     <!-- Collections Table -->
     <Card v-else>

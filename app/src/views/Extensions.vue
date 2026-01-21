@@ -25,6 +25,15 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { Puzzle } from 'lucide-vue-next';
 
 interface Extension {
   id: string;
@@ -198,18 +207,20 @@ function formatDate(dateStr: string): string {
     </Card>
 
     <!-- Empty State -->
-    <Card v-else-if="extensions.length === 0">
-      <CardContent class="flex flex-col items-center justify-center py-16 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
-          🧩
-        </div>
-        <h3 class="mb-1 text-lg font-semibold">No extensions installed</h3>
-        <p class="mb-4 text-sm text-muted-foreground">
+    <Empty v-else-if="extensions.length === 0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Puzzle />
+        </EmptyMedia>
+        <EmptyTitle>No extensions installed</EmptyTitle>
+        <EmptyDescription>
           Install extensions from GitHub to add new features to TinyBase.
-        </p>
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
         <Button @click="openInstallModal"> Install Your First Extension </Button>
-      </CardContent>
-    </Card>
+      </EmptyContent>
+    </Empty>
 
     <!-- Extensions Grid -->
     <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

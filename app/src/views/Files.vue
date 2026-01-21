@@ -24,6 +24,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { Package, FileText } from 'lucide-vue-next';
 
 interface FileInfo {
   key: string;
@@ -325,20 +334,22 @@ async function handleKeyAction(action: 'download' | 'delete') {
     </Card>
 
     <!-- Storage Not Enabled -->
-    <Card v-else-if="!storageEnabled">
-      <CardContent class="flex flex-col items-center justify-center py-16 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
-          📦
-        </div>
-        <h3 class="mb-1 text-lg font-semibold">File storage is not enabled</h3>
-        <p class="mb-4 text-sm text-muted-foreground">
+    <Empty v-else-if="!storageEnabled">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Package />
+        </EmptyMedia>
+        <EmptyTitle>File storage is not enabled</EmptyTitle>
+        <EmptyDescription>
           Configure file storage in Settings to enable file uploads and management.
-        </p>
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
         <Button as-child>
           <router-link to="/settings"> Go to Settings </router-link>
         </Button>
-      </CardContent>
-    </Card>
+      </EmptyContent>
+    </Empty>
 
     <!-- Storage Enabled - File Management -->
     <template v-else>
@@ -369,20 +380,20 @@ async function handleKeyAction(action: 'download' | 'delete') {
       </Card>
 
       <!-- Empty State -->
-      <Card v-else>
-        <CardContent class="flex flex-col items-center justify-center py-16 text-center">
-          <div
-            class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl"
-          >
-            📁
-          </div>
-          <h3 class="mb-1 text-lg font-semibold">No files uploaded yet</h3>
-          <p class="mb-4 text-sm text-muted-foreground">
+      <Empty v-else>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <FileText />
+          </EmptyMedia>
+          <EmptyTitle>No files uploaded yet</EmptyTitle>
+          <EmptyDescription>
             Upload files to get started, or use "Access by Key" to manage existing files.
-          </p>
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
           <Button @click="openUploadModal"> Upload Your First File </Button>
-        </CardContent>
-      </Card>
+        </EmptyContent>
+      </Empty>
     </template>
 
     <!-- Upload Modal -->

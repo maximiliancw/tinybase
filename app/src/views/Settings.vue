@@ -44,6 +44,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { Key } from 'lucide-vue-next';
 
 const toast = useToast();
 const authStore = useAuthStore();
@@ -637,9 +645,17 @@ const saveSettings = handleSubmit(async (formValues) => {
             <p class="text-sm text-muted-foreground">Loading tokens...</p>
           </div>
 
-          <div v-else-if="applicationTokens.length === 0" class="text-center py-10">
-            <p class="text-sm text-muted-foreground">No application tokens yet</p>
-          </div>
+          <Empty v-else-if="applicationTokens.length === 0">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Key />
+              </EmptyMedia>
+              <EmptyTitle>No application tokens yet</EmptyTitle>
+              <EmptyDescription>
+                Create an application token to authenticate programmatic access.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
 
           <div v-else class="rounded-lg border">
             <Table>

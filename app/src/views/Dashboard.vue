@@ -16,6 +16,14 @@ import CollectionSizesChart from '../components/CollectionSizesChart.vue';
 import FunctionStatsChart from '../components/FunctionStatsChart.vue';
 import Icon from '../components/Icon.vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { Database, Zap } from 'lucide-vue-next';
 
 const toast = useToast();
 const collectionsStore = useCollectionsStore();
@@ -233,18 +241,17 @@ async function fetchMetrics() {
             <p class="text-sm text-muted-foreground">Loading metrics...</p>
           </div>
 
-          <div
-            v-else-if="metrics.collection_sizes.length === 0"
-            class="flex h-[300px] flex-col items-center justify-center text-center"
-          >
-            <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <Icon name="Collections" :size="32" class="text-muted-foreground" />
-            </div>
-            <p class="font-medium">No metrics available yet</p>
-            <p class="text-sm text-muted-foreground">
-              Metrics will be collected automatically by the scheduler.
-            </p>
-          </div>
+          <Empty v-else-if="metrics.collection_sizes.length === 0" class="h-[300px]">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Database />
+              </EmptyMedia>
+              <EmptyTitle>No metrics available yet</EmptyTitle>
+              <EmptyDescription>
+                Metrics will be collected automatically by the scheduler.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
 
           <CollectionSizesChart v-else :data="metrics.collection_sizes" />
         </CardContent>
@@ -265,18 +272,17 @@ async function fetchMetrics() {
             <p class="text-sm text-muted-foreground">Loading metrics...</p>
           </div>
 
-          <div
-            v-else-if="metrics.function_stats.length === 0"
-            class="flex h-[300px] flex-col items-center justify-center text-center"
-          >
-            <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <Icon name="Functions" :size="32" class="text-muted-foreground" />
-            </div>
-            <p class="font-medium">No function statistics available yet</p>
-            <p class="text-sm text-muted-foreground">
-              Metrics will be collected automatically by the scheduler.
-            </p>
-          </div>
+          <Empty v-else-if="metrics.function_stats.length === 0" class="h-[300px]">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Zap />
+              </EmptyMedia>
+              <EmptyTitle>No function statistics available yet</EmptyTitle>
+              <EmptyDescription>
+                Metrics will be collected automatically by the scheduler.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
 
           <FunctionStatsChart v-else :data="metrics.function_stats" />
         </CardContent>

@@ -19,6 +19,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { ScrollText } from 'lucide-vue-next';
 
 const functionsStore = useFunctionsStore();
 
@@ -273,17 +281,17 @@ const functionCallColumns = computed(() => [
     </Card>
 
     <!-- Empty State -->
-    <Card v-else-if="displayedCalls.length === 0">
-      <CardContent class="flex flex-col items-center justify-center py-16 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
-          📜
-        </div>
-        <p class="font-medium">No function calls yet</p>
-        <p class="text-sm text-muted-foreground">
+    <Empty v-else-if="displayedCalls.length === 0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <ScrollText />
+        </EmptyMedia>
+        <EmptyTitle>No function calls yet</EmptyTitle>
+        <EmptyDescription>
           Function calls will appear here when functions are invoked.
-        </p>
-      </CardContent>
-    </Card>
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
 
     <!-- Function Calls Table -->
     <Card v-else ref="scrollContainer">
