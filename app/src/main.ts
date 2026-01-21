@@ -5,14 +5,14 @@
  * and Vue Router for navigation.
  */
 
-import { createApp } from "vue";
-import { createPinia } from "pinia";
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
 
-import App from "./App.vue";
-import router from "./router";
+import App from './App.vue';
+import router from './router';
 
 // Import Tailwind CSS and base styles
-import "./index.css";
+import './index.css';
 
 // Create Vue app
 const app = createApp(App);
@@ -22,4 +22,4 @@ app.use(createPinia());
 app.use(router);
 
 // Mount app
-app.mount("#app");
+app.mount('#app');

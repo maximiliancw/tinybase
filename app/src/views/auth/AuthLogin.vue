@@ -4,16 +4,16 @@
  *
  * Public-facing login page for users.
  */
-import { ref, onMounted } from "vue";
-import { useToast } from "../../composables/useToast";
-import { useRouter, useRoute } from "vue-router";
-import { api } from "@/api";
-import { usePortalStore } from "../../stores/portal";
-import { usePreviewParams } from "../../composables/usePreviewParams";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ref, onMounted } from 'vue';
+import { useToast } from '../../composables/useToast';
+import { useRouter, useRoute } from 'vue-router';
+import { api } from '@/api';
+import { usePortalStore } from '../../stores/portal';
+import { usePreviewParams } from '../../composables/usePreviewParams';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const toast = useToast();
 const router = useRouter();
@@ -21,14 +21,14 @@ const route = useRoute();
 const portalStore = usePortalStore();
 const { withPreviewParams } = usePreviewParams();
 
-const email = ref("");
-const password = ref("");
+const email = ref('');
+const password = ref('');
 const loading = ref(false);
 
 function isValidAbsoluteUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
   } catch {
     return false;
   }
@@ -50,9 +50,7 @@ function getRedirectUrl(): string {
     return configuredUrl;
   }
   // No valid redirect URL - show error
-  throw new Error(
-    "No valid redirect URL configured. Please contact your administrator."
-  );
+  throw new Error('No valid redirect URL configured. Please contact your administrator.');
 }
 
 async function handleLogin() {
@@ -67,8 +65,8 @@ async function handleLogin() {
     });
 
     // Store JWT tokens
-    localStorage.setItem("tb_access_token", response.data.access_token);
-    localStorage.setItem("tb_refresh_token", response.data.refresh_token);
+    localStorage.setItem('tb_access_token', response.data.access_token);
+    localStorage.setItem('tb_refresh_token', response.data.refresh_token);
 
     // Redirect to configured URL or query parameter
     try {
@@ -77,18 +75,17 @@ async function handleLogin() {
       if (isValidAbsoluteUrl(redirectUrl)) {
         window.location.href = redirectUrl;
       } else {
-        throw new Error("Invalid redirect URL");
+        throw new Error('Invalid redirect URL');
       }
     } catch (err: any) {
       toast.error(
-        err.message ||
-          "Redirect configuration error. Please contact your administrator."
+        err.message || 'Redirect configuration error. Please contact your administrator.'
       );
       loading.value = false;
       return;
     }
   } catch (err: any) {
-    toast.error(err.error?.detail || "Login failed");
+    toast.error(err.error?.detail || 'Login failed');
   } finally {
     loading.value = false;
   }
@@ -104,20 +101,15 @@ async function handleLogin() {
           :src="portalStore.config.logo_url"
           alt="Logo"
           class="mx-auto h-12 w-auto"
-        >
+        />
         <h1 class="text-2xl font-bold">
           {{ portalStore.config.instance_name }}
         </h1>
-        <p class="text-sm text-muted-foreground">
-          Sign in to your account
-        </p>
+        <p class="text-sm text-muted-foreground">Sign in to your account</p>
       </CardHeader>
 
       <CardContent>
-        <form
-          class="space-y-4"
-          @submit.prevent="handleLogin"
-        >
+        <form class="space-y-4" @submit.prevent="handleLogin">
           <div class="space-y-2">
             <Label for="email">Email</Label>
             <Input
@@ -142,12 +134,8 @@ async function handleLogin() {
             />
           </div>
 
-          <Button
-            type="submit"
-            class="w-full"
-            :disabled="loading"
-          >
-            {{ loading ? "Signing in..." : "Sign In" }}
+          <Button type="submit" class="w-full" :disabled="loading">
+            {{ loading ? 'Signing in...' : 'Sign In' }}
           </Button>
         </form>
 
@@ -171,9 +159,7 @@ async function handleLogin() {
       </CardContent>
 
       <CardFooter class="justify-center">
-        <p class="text-xs text-muted-foreground">
-          Powered by TinyBase
-        </p>
+        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
       </CardFooter>
     </Card>
   </div>

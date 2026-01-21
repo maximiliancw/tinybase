@@ -13,8 +13,8 @@
  * bundle size in production, import icons directly:
  *   import { X, Settings } from 'lucide-vue-next';
  */
-import { computed, shallowRef } from "vue";
-import * as LucideIcons from "lucide-vue-next";
+import { computed, shallowRef } from 'vue';
+import * as LucideIcons from 'lucide-vue-next';
 
 interface Props {
   /** Name of the icon (e.g., 'X', 'Settings', 'User') */
@@ -31,50 +31,50 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   size: 24,
-  color: "currentColor",
+  color: 'currentColor',
   strokeWidth: 2,
-  iconClass: "",
+  iconClass: '',
 });
 
 // Icon name mapping for common aliases
 const iconNameMap: Record<string, string> = {
-  X: "X",
-  Close: "X",
-  Settings: "Settings",
-  User: "User",
-  Users: "Users",
-  Dashboard: "LayoutDashboard",
-  Collection: "Folder",
-  Collections: "Folder",
-  File: "File",
-  Files: "File",
-  Function: "Zap",
-  Functions: "Zap",
-  Schedule: "Clock",
-  Schedules: "Clock",
-  Extension: "Puzzle",
-  Extensions: "Puzzle",
-  Logout: "LogOut",
-  Login: "LogIn",
-  Arrow: "ArrowRight",
-  Plus: "Plus",
-  Minus: "Minus",
-  Edit: "Edit",
-  Delete: "Trash2",
-  Save: "Save",
-  Cancel: "X",
+  X: 'X',
+  Close: 'X',
+  Settings: 'Settings',
+  User: 'User',
+  Users: 'Users',
+  Dashboard: 'LayoutDashboard',
+  Collection: 'Folder',
+  Collections: 'Folder',
+  File: 'File',
+  Files: 'File',
+  Function: 'Zap',
+  Functions: 'Zap',
+  Schedule: 'Clock',
+  Schedules: 'Clock',
+  Extension: 'Puzzle',
+  Extensions: 'Puzzle',
+  Logout: 'LogOut',
+  Login: 'LogIn',
+  Arrow: 'ArrowRight',
+  Plus: 'Plus',
+  Minus: 'Minus',
+  Edit: 'Edit',
+  Delete: 'Trash2',
+  Save: 'Save',
+  Cancel: 'X',
   // Additional icons used throughout the app
-  Box: "Box",
-  FolderPlus: "FolderPlus",
-  UserPlus: "UserPlus",
-  ExternalLink: "ExternalLink",
-  Power: "Power",
-  PowerOff: "PowerOff",
-  Trash2: "Trash2",
-  ThumbsUp: "ThumbsUp",
-  AlertCircle: "AlertCircle",
-  CheckCircle: "CheckCircle",
-  List: "List",
+  Box: 'Box',
+  FolderPlus: 'FolderPlus',
+  UserPlus: 'UserPlus',
+  ExternalLink: 'ExternalLink',
+  Power: 'Power',
+  PowerOff: 'PowerOff',
+  Trash2: 'Trash2',
+  ThumbsUp: 'ThumbsUp',
+  AlertCircle: 'AlertCircle',
+  CheckCircle: 'CheckCircle',
+  List: 'List',
 };
 
 const IconComponent = computed(() => {
@@ -84,9 +84,7 @@ const IconComponent = computed(() => {
   const component = (LucideIcons as any)[resolvedName];
 
   if (!component) {
-    console.warn(
-      `Icon "${props.name}" (resolved as "${resolvedName}") not found in Lucide`
-    );
+    console.warn(`Icon "${props.name}" (resolved as "${resolvedName}") not found in Lucide`);
     return null;
   }
 
@@ -103,13 +101,7 @@ const IconComponent = computed(() => {
     :stroke-width="strokeWidth"
     :class="iconClass"
   />
-  <span
-    v-else
-    class="icon-placeholder"
-    :style="{ fontSize: `${size * 0.75}px` }"
-  >
-    ?
-  </span>
+  <span v-else class="icon-placeholder" :style="{ fontSize: `${size * 0.75}px` }"> ? </span>
 </template>
 
 <style scoped>

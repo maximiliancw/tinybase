@@ -5,12 +5,12 @@
  * Enhanced table component with search, pagination, and responsive rendering.
  * Built on shadcn-vue Table components.
  */
-import { computed, ref, watch } from "vue";
-import type { VNode } from "vue";
-import { refDebounced, useBreakpoints } from "@vueuse/core";
-import Icon from "./Icon.vue";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { computed, ref, watch } from 'vue';
+import type { VNode } from 'vue';
+import { refDebounced, useBreakpoints } from '@vueuse/core';
+import Icon from './Icon.vue';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -18,12 +18,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 
 interface ActionButton {
   label: string | ((row: any) => string);
   action: (row: any) => void | Promise<void>;
-  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost";
+  variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost';
   disabled?: boolean | ((row: any) => boolean);
   icon?: string;
 }
@@ -39,7 +39,7 @@ interface Column {
 interface HeaderAction {
   label: string;
   action: () => void | Promise<void>;
-  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost";
+  variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost';
   icon?: string;
 }
 
@@ -58,11 +58,11 @@ const props = withDefaults(defineProps<Props>(), {
   searchable: true,
   paginated: true,
   pageSize: 10,
-  searchPlaceholder: "Search...",
-  emptyMessage: "No data available",
+  searchPlaceholder: 'Search...',
+  emptyMessage: 'No data available',
 });
 
-const searchQuery = ref("");
+const searchQuery = ref('');
 const debouncedSearchQuery = refDebounced(searchQuery, 300);
 const currentPage = ref(1);
 
@@ -72,7 +72,7 @@ const breakpoints = useBreakpoints({
   tablet: 768,
   desktop: 1024,
 });
-const isMobile = breakpoints.smaller("tablet");
+const isMobile = breakpoints.smaller('tablet');
 
 // Reset to page 1 when search query changes
 watch(debouncedSearchQuery, () => {
@@ -84,9 +84,7 @@ function isActionsColumn(column: Column): boolean {
 }
 
 const searchableColumns = computed(() => {
-  return props.columns.filter(
-    (col) => !isActionsColumn(col) && col.searchable !== false
-  );
+  return props.columns.filter((col) => !isActionsColumn(col) && col.searchable !== false);
 });
 
 const filteredData = computed(() => {
@@ -101,8 +99,7 @@ const filteredData = computed(() => {
       if (column.render) {
         const value = getCellValue(column, row);
         const rendered = column.render(value, row);
-        const searchableText =
-          typeof rendered === "string" ? rendered : String(rendered);
+        const searchableText = typeof rendered === 'string' ? rendered : String(rendered);
         return searchableText.toLowerCase().includes(query);
       }
 
@@ -134,10 +131,7 @@ const paginationInfo = computed(() => {
   }
 
   const start = (currentPage.value - 1) * props.pageSize + 1;
-  const end = Math.min(
-    currentPage.value * props.pageSize,
-    filteredData.value.length
-  );
+  const end = Math.min(currentPage.value * props.pageSize, filteredData.value.length);
 
   return {
     start,
@@ -147,14 +141,14 @@ const paginationInfo = computed(() => {
 });
 
 function isButtonDisabled(button: ActionButton, row: any): boolean {
-  if (typeof button.disabled === "function") {
+  if (typeof button.disabled === 'function') {
     return button.disabled(row);
   }
   return button.disabled ?? false;
 }
 
 function getButtonLabel(button: ActionButton, row: any): string {
-  if (typeof button.label === "function") {
+  if (typeof button.label === 'function') {
     return button.label(row);
   }
   return button.label;
@@ -166,8 +160,8 @@ async function handleAction(button: ActionButton, row: any) {
 }
 
 function getCellValue(column: Column, row: any): any {
-  if (column.key.includes(".")) {
-    const keys = column.key.split(".");
+  if (column.key.includes('.')) {
+    const keys = column.key.split('.');
     let value = row;
     for (const key of keys) {
       value = value?.[key];
@@ -180,18 +174,18 @@ function getCellValue(column: Column, row: any): any {
 
 function renderCell(column: Column, row: any): string | VNode {
   if (isActionsColumn(column)) {
-    return "";
+    return '';
   }
 
   const value = getCellValue(column, row);
   if (column.render) {
     return column.render(value, row);
   }
-  return value != null ? String(value) : "";
+  return value != null ? String(value) : '';
 }
 
 function isVNode(value: any): value is VNode {
-  return value && typeof value === "object" && "type" in value;
+  return value && typeof value === 'object' && 'type' in value;
 }
 </script>
 
@@ -202,15 +196,8 @@ function isVNode(value: any): value is VNode {
       v-if="searchable || headerAction"
       class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
     >
-      <div
-        v-if="searchable"
-        class="flex-1 space-y-1"
-      >
-        <Input
-          v-model="searchQuery"
-          :placeholder="searchPlaceholder"
-          class="max-w-sm"
-        />
+      <div v-if="searchable" class="flex-1 space-y-1">
+        <Input v-model="searchQuery" :placeholder="searchPlaceholder" class="max-w-sm" />
         <p
           v-if="debouncedSearchQuery.trim() && filteredData.length !== data.length"
           class="text-xs text-muted-foreground"
@@ -219,15 +206,8 @@ function isVNode(value: any): value is VNode {
         </p>
       </div>
       <div v-if="headerAction">
-        <Button
-          :variant="headerAction.variant || 'default'"
-          @click="headerAction.action"
-        >
-          <Icon
-            v-if="headerAction.icon"
-            :name="headerAction.icon"
-            :size="16"
-          />
+        <Button :variant="headerAction.variant || 'default'" @click="headerAction.action">
+          <Icon v-if="headerAction.icon" :name="headerAction.icon" :size="16" />
           {{ headerAction.label }}
         </Button>
       </div>
@@ -238,36 +218,21 @@ function isVNode(value: any): value is VNode {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead
-              v-for="column in columns"
-              :key="column.key"
-            >
+            <TableHead v-for="column in columns" :key="column.key">
               {{ column.label }}
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-if="paginatedData.length === 0">
-            <TableCell
-              :colspan="columns.length"
-              class="h-24 text-center"
-            >
+            <TableCell :colspan="columns.length" class="h-24 text-center">
               {{ emptyMessage }}
             </TableCell>
           </TableRow>
-          <TableRow
-            v-for="(row, index) in paginatedData"
-            :key="index"
-          >
-            <TableCell
-              v-for="column in columns"
-              :key="column.key"
-            >
+          <TableRow v-for="(row, index) in paginatedData" :key="index">
+            <TableCell v-for="column in columns" :key="column.key">
               <!-- Actions Column -->
-              <div
-                v-if="isActionsColumn(column)"
-                class="flex gap-2"
-              >
+              <div v-if="isActionsColumn(column)" class="flex gap-2">
                 <Button
                   v-for="(button, btnIndex) in column.actions"
                   :key="btnIndex"
@@ -276,20 +241,13 @@ function isVNode(value: any): value is VNode {
                   :disabled="isButtonDisabled(button, row)"
                   @click="handleAction(button, row)"
                 >
-                  <Icon
-                    v-if="button.icon"
-                    :name="button.icon"
-                    :size="14"
-                  />
+                  <Icon v-if="button.icon" :name="button.icon" :size="14" />
                   {{ getButtonLabel(button, row) }}
                 </Button>
               </div>
               <!-- Regular Column -->
               <template v-else>
-                <component
-                  :is="renderCell(column, row)"
-                  v-if="isVNode(renderCell(column, row))"
-                />
+                <component :is="renderCell(column, row)" v-if="isVNode(renderCell(column, row))" />
                 <span v-else>{{ renderCell(column, row) }}</span>
               </template>
             </TableCell>
@@ -313,11 +271,7 @@ function isVNode(value: any): value is VNode {
         :key="index"
         class="rounded-lg border p-4 space-y-2"
       >
-        <div
-          v-for="column in columns"
-          :key="column.key"
-          class="flex justify-between gap-4"
-        >
+        <div v-for="column in columns" :key="column.key" class="flex justify-between gap-4">
           <!-- Actions Column -->
           <template v-if="isActionsColumn(column)">
             <span class="text-sm font-medium">{{ column.label }}</span>
@@ -331,11 +285,7 @@ function isVNode(value: any): value is VNode {
                 class="w-full"
                 @click="handleAction(button, row)"
               >
-                <Icon
-                  v-if="button.icon"
-                  :name="button.icon"
-                  :size="14"
-                />
+                <Icon v-if="button.icon" :name="button.icon" :size="14" />
                 {{ getButtonLabel(button, row) }}
               </Button>
             </div>
@@ -344,10 +294,7 @@ function isVNode(value: any): value is VNode {
           <template v-else>
             <span class="text-sm font-medium text-muted-foreground">{{ column.label }}</span>
             <div class="text-sm">
-              <component
-                :is="renderCell(column, row)"
-                v-if="isVNode(renderCell(column, row))"
-              />
+              <component :is="renderCell(column, row)" v-if="isVNode(renderCell(column, row))" />
               <span v-else>{{ renderCell(column, row) }}</span>
             </div>
           </template>
@@ -356,22 +303,11 @@ function isVNode(value: any): value is VNode {
     </div>
 
     <!-- Pagination -->
-    <div
-      v-if="paginated && totalPages > 1"
-      class="flex items-center justify-between border-t pt-4"
-    >
-      <Button
-        size="sm"
-        variant="outline"
-        :disabled="currentPage === 1"
-        @click="currentPage--"
-      >
+    <div v-if="paginated && totalPages > 1" class="flex items-center justify-between border-t pt-4">
+      <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="currentPage--">
         Previous
       </Button>
-      <p
-        v-if="paginationInfo"
-        class="text-sm text-muted-foreground"
-      >
+      <p v-if="paginationInfo" class="text-sm text-muted-foreground">
         {{ paginationInfo.start }}-{{ paginationInfo.end }} of
         {{ paginationInfo.total }}
       </p>

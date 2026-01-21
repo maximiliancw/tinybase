@@ -5,15 +5,15 @@
  * and applies them to the UI.
  */
 
-import { defineStore } from "pinia";
-import { ref, computed } from "vue";
-import { api } from "@/api";
-import type { PortalConfigResponse } from "@/client";
-import { client as baseClient } from "../client/client.gen";
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import { api } from '@/api';
+import type { PortalConfigResponse } from '@/client';
+import { client as baseClient } from '../client/client.gen';
 
-export const usePortalStore = defineStore("portal", () => {
+export const usePortalStore = defineStore('portal', () => {
   const config = ref<PortalConfigResponse>({
-    instance_name: "TinyBase",
+    instance_name: 'TinyBase',
     logo_url: null,
     primary_color: null,
     background_image_url: null,
@@ -29,13 +29,11 @@ export const usePortalStore = defineStore("portal", () => {
   const styles = computed(() => {
     const style: Record<string, string> = {};
     if (config.value.background_image_url) {
-      style[
-        "--auth-background-image"
-      ] = `url(${config.value.background_image_url})`;
+      style['--auth-background-image'] = `url(${config.value.background_image_url})`;
     }
     if (config.value.primary_color) {
       // Apply primary color to CSS variables
-      style["--auth-primary-color"] = config.value.primary_color;
+      style['--auth-primary-color'] = config.value.primary_color;
     }
     return style;
   });
@@ -47,25 +45,24 @@ export const usePortalStore = defineStore("portal", () => {
     try {
       // Check for preview parameters in URL
       const urlParams = new URLSearchParams(window.location.search);
-      const isPreview = urlParams.get("preview") === "true";
+      const isPreview = urlParams.get('preview') === 'true';
 
       if (isPreview) {
         const queryParams: Record<string, string> = {
-          preview: "true",
+          preview: 'true',
         };
 
         // Get preview values from URL
-        const logoUrl = urlParams.get("logo_url");
-        const primaryColor = urlParams.get("primary_color");
-        const backgroundImageUrl = urlParams.get("background_image_url");
+        const logoUrl = urlParams.get('logo_url');
+        const primaryColor = urlParams.get('primary_color');
+        const backgroundImageUrl = urlParams.get('background_image_url');
 
         if (logoUrl !== null) queryParams.logo_url = logoUrl;
         if (primaryColor !== null) queryParams.primary_color = primaryColor;
-        if (backgroundImageUrl !== null)
-          queryParams.background_image_url = backgroundImageUrl;
+        if (backgroundImageUrl !== null) queryParams.background_image_url = backgroundImageUrl;
 
         // If token is provided in URL (for iframe preview), add it to client
-        const previewToken = urlParams.get("token");
+        const previewToken = urlParams.get('token');
         if (previewToken) {
           const response = await api.auth.getPortalConfig({
             query: queryParams,
@@ -92,9 +89,8 @@ export const usePortalStore = defineStore("portal", () => {
         config.value = response.data as PortalConfigResponse;
       }
     } catch (err: any) {
-      error.value =
-        err.error?.detail || "Failed to load portal configuration";
-      console.error("Failed to fetch portal config:", err);
+      error.value = err.error?.detail || 'Failed to load portal configuration';
+      console.error('Failed to fetch portal config:', err);
     } finally {
       loading.value = false;
     }

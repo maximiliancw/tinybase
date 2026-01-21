@@ -4,16 +4,16 @@
  *
  * Provides the main layout with sidebar navigation and router outlet.
  */
-import { computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { useBreakpoints } from "@vueuse/core";
-import { useAuthStore } from "./stores/auth";
-import { usePortalStore } from "./stores/portal";
-import { useNetworkStatus } from "./composables/useNetworkStatus";
-import Icon from "./components/Icon.vue";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Toaster } from "vue-sonner";
+import { computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useBreakpoints } from '@vueuse/core';
+import { useAuthStore } from './stores/auth';
+import { usePortalStore } from './stores/portal';
+import { useNetworkStatus } from './composables/useNetworkStatus';
+import Icon from './components/Icon.vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Toaster } from 'vue-sonner';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -26,7 +26,7 @@ const breakpoints = useBreakpoints({
   tablet: 768,
   desktop: 1024,
 });
-const isMobile = breakpoints.smaller("tablet");
+const isMobile = breakpoints.smaller('tablet');
 
 const isAuthPortal = computed(() => {
   return router.currentRoute.value.meta?.isAuthPortal === true;
@@ -35,7 +35,7 @@ const isAuthPortal = computed(() => {
 const showSidebar = computed(() => {
   return (
     authStore.isAuthenticated &&
-    router.currentRoute.value.name !== "admin-login" &&
+    router.currentRoute.value.name !== 'admin-login' &&
     !isAuthPortal.value
   );
 });
@@ -54,7 +54,7 @@ onMounted(async () => {
 
 function handleLogout() {
   authStore.logout();
-  router.push("/admin/login");
+  router.push('/admin/login');
 }
 </script>
 
@@ -65,10 +65,7 @@ function handleLogout() {
     :class="{ 'auth-portal': isAuthPortal }"
     :style="isAuthPortal ? portalStore.styles : {}"
   >
-    <Toaster
-      position="top-right"
-      :duration="3000"
-    />
+    <Toaster position="top-right" :duration="3000" />
     <!-- Sidebar Navigation -->
     <aside
       v-if="showSidebar"
@@ -78,14 +75,14 @@ function handleLogout() {
       <!-- Header -->
       <header class="flex flex-col items-center justify-center p-6 border-b">
         <div class="flex w-full items-center gap-3">
-          <div class="flex h-9 w-9 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/80 shadow-md">
-            <Icon
-              name="Box"
-              :size="20"
-              class="text-primary-foreground"
-            />
+          <div
+            class="flex h-9 w-9 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/80 shadow-md"
+          >
+            <Icon name="Box" :size="20" class="text-primary-foreground" />
           </div>
-          <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          <h1
+            class="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent"
+          >
             {{ authStore.instanceName }}
           </h1>
         </div>
@@ -93,22 +90,13 @@ function handleLogout() {
           <p class="text-xs text-muted-foreground">
             Logged in as
             <span class="font-medium text-foreground">{{ authStore.user?.email }}</span>
-            <Badge
-              v-if="authStore.isAdmin"
-              variant="secondary"
-              class="ml-1.5"
-            >
-              Admin
-            </Badge>
+            <Badge v-if="authStore.isAdmin" variant="secondary" class="ml-1.5"> Admin </Badge>
           </p>
         </div>
       </header>
 
       <!-- Navigation -->
-      <nav
-        aria-label="Main navigation"
-        class="flex flex-col gap-1 p-3 flex-1"
-      >
+      <nav aria-label="Main navigation" class="flex flex-col gap-1 p-3 flex-1">
         <!-- Overview Section -->
         <div class="px-3 py-2">
           <h2 class="mb-2 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
@@ -120,10 +108,7 @@ function handleLogout() {
               class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               active-class="bg-accent/50 text-primary"
             >
-              <Icon
-                name="Dashboard"
-                :size="18"
-              />
+              <Icon name="Dashboard" :size="18" />
               <span>Dashboard</span>
             </router-link>
             <router-link
@@ -131,10 +116,7 @@ function handleLogout() {
               class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               active-class="bg-accent/50 text-primary"
             >
-              <Icon
-                name="Settings"
-                :size="18"
-              />
+              <Icon name="Settings" :size="18" />
               <span>Settings</span>
             </router-link>
             <router-link
@@ -142,10 +124,7 @@ function handleLogout() {
               class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               active-class="bg-accent/50 text-primary"
             >
-              <Icon
-                name="Extensions"
-                :size="18"
-              />
+              <Icon name="Extensions" :size="18" />
               <span>Extensions</span>
             </router-link>
           </div>
@@ -162,10 +141,7 @@ function handleLogout() {
               class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               active-class="bg-accent/50 text-primary"
             >
-              <Icon
-                name="Users"
-                :size="18"
-              />
+              <Icon name="Users" :size="18" />
               <span>Users</span>
             </router-link>
             <router-link
@@ -173,10 +149,7 @@ function handleLogout() {
               class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               active-class="bg-accent/50 text-primary"
             >
-              <Icon
-                name="Collections"
-                :size="18"
-              />
+              <Icon name="Collections" :size="18" />
               <span>Collections</span>
             </router-link>
             <router-link
@@ -184,20 +157,14 @@ function handleLogout() {
               class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               active-class="bg-accent/50 text-primary"
             >
-              <Icon
-                name="Files"
-                :size="18"
-              />
+              <Icon name="Files" :size="18" />
               <span>Files</span>
             </router-link>
           </div>
         </div>
 
         <!-- Functions Section -->
-        <div
-          v-if="authStore.isAdmin"
-          class="px-3 py-2"
-        >
+        <div v-if="authStore.isAdmin" class="px-3 py-2">
           <h2 class="mb-2 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
             Functions
           </h2>
@@ -207,10 +174,7 @@ function handleLogout() {
               class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               active-class="bg-accent/50 text-primary"
             >
-              <Icon
-                name="Functions"
-                :size="18"
-              />
+              <Icon name="Functions" :size="18" />
               <span>Overview</span>
             </router-link>
             <router-link
@@ -218,10 +182,7 @@ function handleLogout() {
               class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               active-class="bg-accent/50 text-primary"
             >
-              <Icon
-                name="Schedules"
-                :size="18"
-              />
+              <Icon name="Schedules" :size="18" />
               <span>Schedules</span>
             </router-link>
             <router-link
@@ -229,10 +190,7 @@ function handleLogout() {
               class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               active-class="bg-accent/50 text-primary"
             >
-              <Icon
-                name="List"
-                :size="18"
-              />
+              <Icon name="List" :size="18" />
               <span>Function Calls</span>
             </router-link>
           </div>
@@ -240,20 +198,9 @@ function handleLogout() {
       </nav>
 
       <!-- Footer -->
-      <footer
-        v-if="authStore.user"
-        class="mt-auto p-4 border-t"
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          class="w-full justify-start"
-          @click="handleLogout"
-        >
-          <Icon
-            name="Logout"
-            :size="18"
-          />
+      <footer v-if="authStore.user" class="mt-auto p-4 border-t">
+        <Button variant="ghost" size="sm" class="w-full justify-start" @click="handleLogout">
+          <Icon name="Logout" :size="18" />
           <span>Logout</span>
         </Button>
       </footer>
@@ -282,10 +229,7 @@ function handleLogout() {
       }"
     >
       <router-view v-slot="{ Component }">
-        <transition
-          name="fade"
-          mode="out-in"
-        >
+        <transition name="fade" mode="out-in">
           <component :is="Component" />
         </transition>
       </router-view>
@@ -296,7 +240,9 @@ function handleLogout() {
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .fade-enter-from,

@@ -1,82 +1,86 @@
 /**
  * Settings Pinia Store
- * 
+ *
  * Manages instance settings and application tokens (admin only).
  */
 
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import { api } from '@/api'
-import type { InstanceSettingsResponse, ApplicationTokenInfo, ApplicationTokenCreateResponse } from '@/client'
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+import { api } from '@/api';
+import type {
+  InstanceSettingsResponse,
+  ApplicationTokenInfo,
+  ApplicationTokenCreateResponse,
+} from '@/client';
 
 export const useSettingsStore = defineStore('settings', () => {
   // State
-  const settings = ref<InstanceSettingsResponse | null>(null)
-  const applicationTokens = ref<ApplicationTokenInfo[]>([])
-  const loading = ref(false)
-  const loadingTokens = ref(false)
-  const error = ref<string | null>(null)
+  const settings = ref<InstanceSettingsResponse | null>(null);
+  const applicationTokens = ref<ApplicationTokenInfo[]>([]);
+  const loading = ref(false);
+  const loadingTokens = ref(false);
+  const error = ref<string | null>(null);
 
   // Actions
   async function fetchSettings(): Promise<void> {
-    loading.value = true
-    error.value = null
+    loading.value = true;
+    error.value = null;
 
     try {
-      const response = await api.admin.getSettings()
-      settings.value = response.data
+      const response = await api.admin.getSettings();
+      settings.value = response.data;
     } catch (err: any) {
-      error.value = err.error?.detail || 'Failed to fetch settings'
-      throw err
+      error.value = err.error?.detail || 'Failed to fetch settings';
+      throw err;
     } finally {
-      loading.value = false
+      loading.value = false;
     }
   }
 
   async function updateSettings(data: Partial<InstanceSettingsResponse>): Promise<void> {
-    loading.value = true
-    error.value = null
+    loading.value = true;
+    error.value = null;
 
     try {
       const response = await api.admin.updateSettings({
         body: data,
-      })
-      settings.value = response.data
+      });
+      settings.value = response.data;
     } catch (err: any) {
-      error.value = err.error?.detail || 'Failed to update settings'
-      throw err
+      error.value = err.error?.detail || 'Failed to update settings';
+      throw err;
     } finally {
-      loading.value = false
+      loading.value = false;
     }
   }
 
   async function fetchApplicationTokens(): Promise<void> {
-    loadingTokens.value = true
+    loadingTokens.value = true;
 
     try {
-      const response = await api.admin.listApplicationTokens()
-      applicationTokens.value = response.data.tokens
+      const response = await api.admin.listApplicationTokens();
+      applicationTokens.value = response.data.tokens;
     } catch (err: any) {
-      console.error('Failed to load application tokens:', err)
-      throw err
+      console.error('Failed to load application tokens:', err);
+      throw err;
     } finally {
-      loadingTokens.value = false
+      loadingTokens.value = false;
     }
   }
 
   async function createApplicationToken(data: {
-    name: string
-    description?: string
-    expires_days?: number
+    name: string;
+    description?: string;
+    expires_days?: number;
   }): Promise<ApplicationTokenCreateResponse> {
     try {
       const response = await api.admin.createApplicationToken({
         body: data,
-      })
-      await fetchApplicationTokens()
-      return response.data
+      });
+      await fetchApplicationTokens();
+      return response.data;
     } catch (err: any) {
-      throw err
+      throw err;
     }
   }
 
@@ -88,10 +92,10 @@ export const useSettingsStore = defineStore('settings', () => {
       await api.admin.updateApplicationToken({
         path: { token_id: tokenId },
         body: data,
-      })
-      await fetchApplicationTokens()
+      });
+      await fetchApplicationTokens();
     } catch (err: any) {
-      throw err
+      throw err;
     }
   }
 
@@ -99,10 +103,10 @@ export const useSettingsStore = defineStore('settings', () => {
     try {
       await api.admin.revokeApplicationToken({
         path: { token_id: tokenId },
-      })
-      await fetchApplicationTokens()
+      });
+      await fetchApplicationTokens();
     } catch (err: any) {
-      throw err
+      throw err;
     }
   }
 
@@ -120,5 +124,5 @@ export const useSettingsStore = defineStore('settings', () => {
     createApplicationToken,
     updateApplicationToken,
     revokeApplicationToken,
-  }
-})
+  };
+});

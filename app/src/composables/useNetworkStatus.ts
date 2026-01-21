@@ -4,8 +4,8 @@
  * Provides network connectivity status monitoring.
  * Uses VueUse's useOnline and useNetwork composables.
  */
-import { useOnline, useNetwork } from "@vueuse/core";
-import { computed } from "vue";
+import { useOnline, useNetwork } from '@vueuse/core';
+import { computed } from 'vue';
 
 export function useNetworkStatus() {
   const isOnline = useOnline();
@@ -15,18 +15,18 @@ export function useNetworkStatus() {
     if (!isOnline.value) {
       return {
         online: false,
-        message: "You are currently offline",
-        type: "error" as const,
+        message: 'You are currently offline',
+        type: 'error' as const,
       };
     }
 
     if (network.effectiveType) {
       const type = network.effectiveType.value;
-      if (type === "slow-2g" || type === "2g") {
+      if (type === 'slow-2g' || type === '2g') {
         return {
           online: true,
-          message: "Slow connection detected",
-          type: "warning" as const,
+          message: 'Slow connection detected',
+          type: 'warning' as const,
         };
       }
     }

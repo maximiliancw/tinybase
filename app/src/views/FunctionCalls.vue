@@ -4,21 +4,21 @@
  *
  * View function call history (admin only).
  */
-import { onMounted, ref, computed, h } from "vue";
-import { useInfiniteScroll } from "@vueuse/core";
-import { useFunctionsStore } from "../stores/functions";
-import DataTable from "../components/DataTable.vue";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { onMounted, ref, computed, h } from 'vue';
+import { useInfiniteScroll } from '@vueuse/core';
+import { useFunctionsStore } from '../stores/functions';
+import DataTable from '../components/DataTable.vue';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 const functionsStore = useFunctionsStore();
 
@@ -27,9 +27,9 @@ const pageSize = 50;
 const total = ref(0);
 const loadingMore = ref(false);
 const filters = ref({
-  function_name: "",
-  status: "",
-  trigger_type: "",
+  function_name: '',
+  status: '',
+  trigger_type: '',
 });
 
 // Local ref for infinite scroll (appends instead of replacing)
@@ -83,29 +83,27 @@ async function applyFilters() {
   await loadCalls(true); // Reset when filters change
 }
 
-function getStatusVariant(
-  status: string
-): "default" | "secondary" | "destructive" | "outline" {
+function getStatusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
   switch (status) {
-    case "succeeded":
-      return "default";
-    case "failed":
-      return "destructive";
-    case "running":
-      return "secondary";
+    case 'succeeded':
+      return 'default';
+    case 'failed':
+      return 'destructive';
+    case 'running':
+      return 'secondary';
     default:
-      return "outline";
+      return 'outline';
   }
 }
 
 function formatDuration(ms: number | null): string {
-  if (ms === null) return "-";
+  if (ms === null) return '-';
   if (ms < 1000) return `${ms}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
 }
 
 function formatTimestamp(value: string | null): string {
-  if (!value) return "-";
+  if (!value) return '-';
   const date = new Date(value);
   const now = Date.now();
   const diff = now - date.getTime();
@@ -114,20 +112,19 @@ function formatTimestamp(value: string | null): string {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  let timeAgo = "";
-  if (days > 0) timeAgo = `${days} day${days > 1 ? "s" : ""} ago`;
-  else if (hours > 0) timeAgo = `${hours} hour${hours > 1 ? "s" : ""} ago`;
-  else if (minutes > 0)
-    timeAgo = `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
-  else timeAgo = "just now";
+  let timeAgo = '';
+  if (days > 0) timeAgo = `${days} day${days > 1 ? 's' : ''} ago`;
+  else if (hours > 0) timeAgo = `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  else if (minutes > 0) timeAgo = `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  else timeAgo = 'just now';
 
-  const formattedDate = date.toLocaleString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
+  const formattedDate = date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
   });
 
   return `${timeAgo} (${formattedDate})`;
@@ -135,60 +132,59 @@ function formatTimestamp(value: string | null): string {
 
 const functionCallColumns = computed(() => [
   {
-    key: "function_name",
-    label: "Function",
-    render: (value: any) => h("code", { class: "text-sm" }, value),
+    key: 'function_name',
+    label: 'Function',
+    render: (value: any) => h('code', { class: 'text-sm' }, value),
   },
   {
-    key: "status",
-    label: "Status",
+    key: 'status',
+    label: 'Status',
+    render: (value: any) => h(Badge, { variant: getStatusVariant(value) }, () => value),
+  },
+  {
+    key: 'trigger_type',
+    label: 'Trigger',
+    render: (value: any) => h(Badge, { variant: 'outline' }, () => value),
+  },
+  {
+    key: 'duration_ms',
+    label: 'Duration',
     render: (value: any) =>
-      h(Badge, { variant: getStatusVariant(value) }, () => value),
+      h('span', { class: 'text-sm text-muted-foreground' }, formatDuration(value)),
   },
   {
-    key: "trigger_type",
-    label: "Trigger",
-    render: (value: any) => h(Badge, { variant: "outline" }, () => value),
-  },
-  {
-    key: "duration_ms",
-    label: "Duration",
+    key: 'started_at',
+    label: 'Started',
     render: (value: any) =>
-      h("span", { class: "text-sm text-muted-foreground" }, formatDuration(value)),
+      h('span', { class: 'text-sm text-muted-foreground' }, formatTimestamp(value)),
   },
   {
-    key: "started_at",
-    label: "Started",
-    render: (value: any) =>
-      h("span", { class: "text-sm text-muted-foreground" }, formatTimestamp(value)),
-  },
-  {
-    key: "version_hash",
-    label: "Version",
+    key: 'version_hash',
+    label: 'Version',
     render: (value: string | null, row: any) => {
-      if (!value) return h("span", { class: "text-sm text-muted-foreground" }, "-");
+      if (!value) return h('span', { class: 'text-sm text-muted-foreground' }, '-');
       return h(
-        "code",
+        'code',
         {
-          class: "text-xs",
-          title: `Version ID: ${row.version_id || "N/A"}`,
+          class: 'text-xs',
+          title: `Version ID: ${row.version_id || 'N/A'}`,
         },
         value.substring(0, 8)
       );
     },
   },
   {
-    key: "error",
-    label: "Error",
+    key: 'error',
+    label: 'Error',
     render: (_value: any, row: any) => {
       if (row.error_message) {
         return h(
-          "span",
-          { class: "text-sm text-destructive" },
+          'span',
+          { class: 'text-sm text-destructive' },
           `${row.error_type}: ${row.error_message.slice(0, 50)}...`
         );
       }
-      return h("span", { class: "text-sm text-muted-foreground" }, "-");
+      return h('span', { class: 'text-sm text-muted-foreground' }, '-');
     },
   },
 ]);
@@ -198,12 +194,8 @@ const functionCallColumns = computed(() => [
   <section class="space-y-6 animate-in fade-in duration-500">
     <!-- Page Header -->
     <header class="space-y-1">
-      <h1 class="text-3xl font-bold tracking-tight">
-        Function Calls
-      </h1>
-      <p class="text-muted-foreground">
-        Execution history for all functions
-      </p>
+      <h1 class="text-3xl font-bold tracking-tight">Function Calls</h1>
+      <p class="text-muted-foreground">Execution history for all functions</p>
     </header>
 
     <!-- Filters -->
@@ -220,14 +212,8 @@ const functionCallColumns = computed(() => [
                 <SelectValue placeholder="All Functions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">
-                  All Functions
-                </SelectItem>
-                <SelectItem
-                  v-for="fn in functionsStore.functions"
-                  :key="fn.name"
-                  :value="fn.name"
-                >
+                <SelectItem value=""> All Functions </SelectItem>
+                <SelectItem v-for="fn in functionsStore.functions" :key="fn.name" :value="fn.name">
                   {{ fn.name }}
                 </SelectItem>
               </SelectContent>
@@ -241,18 +227,10 @@ const functionCallColumns = computed(() => [
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">
-                  All Statuses
-                </SelectItem>
-                <SelectItem value="succeeded">
-                  Succeeded
-                </SelectItem>
-                <SelectItem value="failed">
-                  Failed
-                </SelectItem>
-                <SelectItem value="running">
-                  Running
-                </SelectItem>
+                <SelectItem value=""> All Statuses </SelectItem>
+                <SelectItem value="succeeded"> Succeeded </SelectItem>
+                <SelectItem value="failed"> Failed </SelectItem>
+                <SelectItem value="running"> Running </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -264,35 +242,21 @@ const functionCallColumns = computed(() => [
                 <SelectValue placeholder="All Triggers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">
-                  All Triggers
-                </SelectItem>
-                <SelectItem value="manual">
-                  Manual
-                </SelectItem>
-                <SelectItem value="schedule">
-                  Schedule
-                </SelectItem>
+                <SelectItem value=""> All Triggers </SelectItem>
+                <SelectItem value="manual"> Manual </SelectItem>
+                <SelectItem value="schedule"> Schedule </SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
-        <Button
-          class="mt-4"
-          variant="secondary"
-          @click="applyFilters"
-        >
-          Apply Filters
-        </Button>
+        <Button class="mt-4" variant="secondary" @click="applyFilters"> Apply Filters </Button>
       </CardContent>
     </Card>
 
     <!-- Loading State -->
     <Card v-if="functionsStore.loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">
-          Loading function calls...
-        </p>
+        <p class="text-sm text-muted-foreground">Loading function calls...</p>
       </CardContent>
     </Card>
 
@@ -302,9 +266,7 @@ const functionCallColumns = computed(() => [
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
           📜
         </div>
-        <p class="font-medium">
-          No function calls yet
-        </p>
+        <p class="font-medium">No function calls yet</p>
         <p class="text-sm text-muted-foreground">
           Function calls will appear here when functions are invoked.
         </p>
@@ -312,10 +274,7 @@ const functionCallColumns = computed(() => [
     </Card>
 
     <!-- Function Calls Table -->
-    <Card
-      v-else
-      ref="scrollContainer"
-    >
+    <Card v-else ref="scrollContainer">
       <DataTable
         :data="displayedCalls"
         :columns="functionCallColumns"
@@ -324,10 +283,7 @@ const functionCallColumns = computed(() => [
       />
 
       <!-- Server-side Pagination -->
-      <div
-        v-if="total > pageSize"
-        class="flex items-center justify-between border-t p-4"
-      >
+      <div v-if="total > pageSize" class="flex items-center justify-between border-t p-4">
         <Button
           size="sm"
           variant="ghost"

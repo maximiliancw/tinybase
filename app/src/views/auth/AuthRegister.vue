@@ -4,16 +4,16 @@
  *
  * Public-facing registration page.
  */
-import { ref, onMounted } from "vue";
-import { useToast } from "../../composables/useToast";
-import { useRouter, useRoute } from "vue-router";
-import { api } from "@/api";
-import { usePortalStore } from "../../stores/portal";
-import { usePreviewParams } from "../../composables/usePreviewParams";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ref, onMounted } from 'vue';
+import { useToast } from '../../composables/useToast';
+import { useRouter, useRoute } from 'vue-router';
+import { api } from '@/api';
+import { usePortalStore } from '../../stores/portal';
+import { usePreviewParams } from '../../composables/usePreviewParams';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const toast = useToast();
 const router = useRouter();
@@ -21,15 +21,15 @@ const route = useRoute();
 const portalStore = usePortalStore();
 const { withPreviewParams } = usePreviewParams();
 
-const email = ref("");
-const password = ref("");
-const confirmPassword = ref("");
+const email = ref('');
+const password = ref('');
+const confirmPassword = ref('');
 const loading = ref(false);
 
 function isValidAbsoluteUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
   } catch {
     return false;
   }
@@ -40,7 +40,7 @@ onMounted(async () => {
 
   // Redirect if registration is disabled
   if (!portalStore.config.registration_enabled) {
-    router.push(withPreviewParams("/auth/login"));
+    router.push(withPreviewParams('/auth/login'));
   }
 });
 
@@ -49,7 +49,7 @@ async function handleRegister() {
 
   // Validate passwords match
   if (password.value !== confirmPassword.value) {
-    toast.error("Passwords do not match");
+    toast.error('Passwords do not match');
     loading.value = false;
     return;
   }
@@ -62,12 +62,12 @@ async function handleRegister() {
       },
     });
 
-    toast.success("Registration successful! Redirecting...");
+    toast.success('Registration successful! Redirecting...');
 
     // Clear form
-    email.value = "";
-    password.value = "";
-    confirmPassword.value = "";
+    email.value = '';
+    password.value = '';
+    confirmPassword.value = '';
 
     // Get redirect URL
     const redirectParam = route.query.redirect as string | undefined;
@@ -86,12 +86,12 @@ async function handleRegister() {
         window.location.href = redirectUrl;
       } else {
         toast.error(
-          "Registration successful, but redirect URL is not configured. Please contact your administrator."
+          'Registration successful, but redirect URL is not configured. Please contact your administrator.'
         );
       }
     }, 1000);
   } catch (err: any) {
-    toast.error(err.error?.detail || "Registration failed");
+    toast.error(err.error?.detail || 'Registration failed');
   } finally {
     loading.value = false;
   }
@@ -107,20 +107,15 @@ async function handleRegister() {
           :src="portalStore.config.logo_url"
           alt="Logo"
           class="mx-auto h-12 w-auto"
-        >
+        />
         <h1 class="text-2xl font-bold">
           {{ portalStore.config.instance_name }}
         </h1>
-        <p class="text-sm text-muted-foreground">
-          Create a new account
-        </p>
+        <p class="text-sm text-muted-foreground">Create a new account</p>
       </CardHeader>
 
       <CardContent>
-        <form
-          class="space-y-4"
-          @submit.prevent="handleRegister"
-        >
+        <form class="space-y-4" @submit.prevent="handleRegister">
           <div class="space-y-2">
             <Label for="email">Email</Label>
             <Input
@@ -144,9 +139,7 @@ async function handleRegister() {
               autocomplete="new-password"
               minlength="8"
             />
-            <p class="text-xs text-muted-foreground">
-              Must be at least 8 characters
-            </p>
+            <p class="text-xs text-muted-foreground">Must be at least 8 characters</p>
           </div>
 
           <div class="space-y-2">
@@ -162,29 +155,20 @@ async function handleRegister() {
             />
           </div>
 
-          <Button
-            type="submit"
-            class="w-full"
-            :disabled="loading"
-          >
-            {{ loading ? "Creating account..." : "Create Account" }}
+          <Button type="submit" class="w-full" :disabled="loading">
+            {{ loading ? 'Creating account...' : 'Create Account' }}
           </Button>
         </form>
 
         <div class="mt-4 text-center text-sm">
-          <router-link
-            :to="withPreviewParams('/auth/login')"
-            class="text-primary hover:underline"
-          >
+          <router-link :to="withPreviewParams('/auth/login')" class="text-primary hover:underline">
             Already have an account? Sign in
           </router-link>
         </div>
       </CardContent>
 
       <CardFooter class="justify-center">
-        <p class="text-xs text-muted-foreground">
-          Powered by TinyBase
-        </p>
+        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
       </CardFooter>
     </Card>
   </div>

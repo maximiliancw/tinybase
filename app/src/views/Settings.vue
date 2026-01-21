@@ -4,38 +4,38 @@
  *
  * Admin page for configuring instance settings.
  */
-import { onMounted, onBeforeUnmount, ref, watch, computed, h } from "vue";
-import { useToast } from "../composables/useToast";
-import { useForm, useField } from "vee-validate";
-import { useClipboard } from "@vueuse/core";
-import { onBeforeRouteLeave } from "vue-router";
-import { useAuthStore } from "../stores/auth";
-import { useSettingsStore } from "../stores/settings";
-import { validationSchemas } from "../composables/useFormValidation";
-import { formatErrorMessage } from "../composables/useErrorHandling";
-import Icon from "../components/Icon.vue";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { onMounted, onBeforeUnmount, ref, watch, computed, h } from 'vue';
+import { useToast } from '../composables/useToast';
+import { useForm, useField } from 'vee-validate';
+import { useClipboard } from '@vueuse/core';
+import { onBeforeRouteLeave } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
+import { useSettingsStore } from '../stores/settings';
+import { validationSchemas } from '../composables/useFormValidation';
+import { formatErrorMessage } from '../composables/useErrorHandling';
+import Icon from '../components/Icon.vue';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Table,
   TableBody,
@@ -43,7 +43,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 
 const toast = useToast();
 const authStore = useAuthStore();
@@ -53,14 +53,14 @@ const { copy: copyToClipboard, copied } = useClipboard();
 // Watch for clipboard copy success
 watch(copied, (isCopied) => {
   if (isCopied) {
-    toast.success("Token copied to clipboard");
+    toast.success('Token copied to clipboard');
   }
 });
 
 // Local UI state
 const saving = ref(false);
-const storageAccessKey = ref("");
-const storageSecretKey = ref("");
+const storageAccessKey = ref('');
+const storageSecretKey = ref('');
 const showCreateTokenForm = ref(false);
 const newlyCreatedToken = ref<{
   token: any;
@@ -77,9 +77,9 @@ const loadingTokens = computed(() => settingsStore.loadingTokens);
 const { handleSubmit, values, setValues, resetForm, meta } = useForm({
   validationSchema: validationSchemas.settings,
   initialValues: {
-    instance_name: "TinyBase",
+    instance_name: 'TinyBase',
     allow_public_registration: true,
-    server_timezone: "UTC",
+    server_timezone: 'UTC',
     token_cleanup_interval: 60,
     metrics_collection_interval: 360,
     scheduler_function_timeout_seconds: null,
@@ -100,18 +100,20 @@ const { handleSubmit, values, setValues, resetForm, meta } = useForm({
 });
 
 // Load settings from store when available
-watch(() => settingsStore.settings, (settings) => {
-  if (settings) {
-    setValues(settings);
-  }
-}, { immediate: true });
+watch(
+  () => settingsStore.settings,
+  (settings) => {
+    if (settings) {
+      setValues(settings);
+    }
+  },
+  { immediate: true }
+);
 
 // Warn about unsaved changes when navigating away
 onBeforeRouteLeave((to, from, next) => {
   if (meta.value.dirty && !saving.value) {
-    const answer = window.confirm(
-      "You have unsaved changes. Are you sure you want to leave?"
-    );
+    const answer = window.confirm('You have unsaved changes. Are you sure you want to leave?');
     if (answer) {
       next();
     } else {
@@ -126,80 +128,76 @@ onBeforeRouteLeave((to, from, next) => {
 const handleBeforeUnload = (e: BeforeUnloadEvent) => {
   if (meta.value.dirty && !saving.value) {
     e.preventDefault();
-    e.returnValue = "";
+    e.returnValue = '';
   }
 };
 
 const { handleSubmit: handleTokenSubmit, resetForm: resetTokenForm } = useForm({
   validationSchema: validationSchemas.createToken,
   initialValues: {
-    name: "",
-    description: "",
+    name: '',
+    description: '',
     expires_days: null as number | null,
   },
 });
 
-const tokenNameField = useField("name");
-const tokenDescriptionField = useField("description");
-const tokenExpiresDaysField = useField("expires_days");
+const tokenNameField = useField('name');
+const tokenDescriptionField = useField('description');
+const tokenExpiresDaysField = useField('expires_days');
 
 // Common timezones for selection
 const commonTimezones = [
-  "UTC",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "Europe/London",
-  "Europe/Paris",
-  "Europe/Berlin",
-  "Asia/Tokyo",
-  "Asia/Shanghai",
-  "Asia/Singapore",
-  "Australia/Sydney",
+  'UTC',
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'Europe/London',
+  'Europe/Paris',
+  'Europe/Berlin',
+  'Asia/Tokyo',
+  'Asia/Shanghai',
+  'Asia/Singapore',
+  'Australia/Sydney',
 ];
 
 onMounted(async () => {
   await settingsStore.fetchSettings();
   await settingsStore.fetchApplicationTokens();
-  window.addEventListener("beforeunload", handleBeforeUnload);
+  window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("beforeunload", handleBeforeUnload);
+  window.removeEventListener('beforeunload', handleBeforeUnload);
 });
 
 // Use useField for fields that need validation
-const loginRedirectUrlField = useField("auth_portal_login_redirect_url");
-const registerRedirectUrlField = useField("auth_portal_register_redirect_url");
+const loginRedirectUrlField = useField('auth_portal_login_redirect_url');
+const registerRedirectUrlField = useField('auth_portal_register_redirect_url');
 
 // Generate preview URL with current form values
 const previewUrl = computed(() => {
   const params = new URLSearchParams();
-  params.append("preview", "true");
+  params.append('preview', 'true');
   if (values.auth_portal_logo_url) {
-    params.append("logo_url", values.auth_portal_logo_url);
+    params.append('logo_url', values.auth_portal_logo_url);
   }
   if (values.auth_portal_primary_color) {
-    params.append("primary_color", values.auth_portal_primary_color);
+    params.append('primary_color', values.auth_portal_primary_color);
   }
   if (values.auth_portal_background_image_url) {
-    params.append(
-      "background_image_url",
-      values.auth_portal_background_image_url
-    );
+    params.append('background_image_url', values.auth_portal_background_image_url);
   }
-  const token = localStorage.getItem("tb_access_token");
+  const token = localStorage.getItem('tb_access_token');
   if (token) {
-    params.append("token", token);
+    params.append('token', token);
   }
   return `/auth/login?${params.toString()}`;
 });
 
 function openPreviewInNewTab() {
-  window.open(previewUrl.value, "_blank", "noopener,noreferrer");
+  window.open(previewUrl.value, '_blank', 'noopener,noreferrer');
 }
-
 
 const onCreateToken = handleTokenSubmit(async (values) => {
   creatingToken.value = true;
@@ -225,20 +223,16 @@ const onCreateToken = handleTokenSubmit(async (values) => {
     // Reset form and close modal
     resetTokenForm();
     showCreateTokenForm.value = false;
-    toast.success("Application token created successfully");
+    toast.success('Application token created successfully');
   } catch (err: any) {
-    toast.error(formatErrorMessage(err, "Failed to create token"));
+    toast.error(formatErrorMessage(err, 'Failed to create token'));
   } finally {
     creatingToken.value = false;
   }
 });
 
 async function revokeApplicationToken(tokenId: string) {
-  if (
-    !confirm(
-      "Are you sure you want to revoke this token? It will no longer be usable."
-    )
-  ) {
+  if (!confirm('Are you sure you want to revoke this token? It will no longer be usable.')) {
     return;
   }
 
@@ -247,9 +241,9 @@ async function revokeApplicationToken(tokenId: string) {
     if (newlyCreatedToken.value?.token.id === tokenId) {
       newlyCreatedToken.value = null;
     }
-    toast.success("Token revoked successfully");
+    toast.success('Token revoked successfully');
   } catch (err: any) {
-    toast.error(formatErrorMessage(err, "Failed to revoke token"));
+    toast.error(formatErrorMessage(err, 'Failed to revoke token'));
   }
 }
 
@@ -258,11 +252,9 @@ async function toggleTokenActive(tokenId: string, currentStatus: boolean) {
     await settingsStore.updateApplicationToken(tokenId, {
       is_active: !currentStatus,
     });
-    toast.success(
-      `Token ${!currentStatus ? "activated" : "deactivated"} successfully`
-    );
+    toast.success(`Token ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
   } catch (err: any) {
-    toast.error(formatErrorMessage(err, "Failed to update token"));
+    toast.error(formatErrorMessage(err, 'Failed to update token'));
   }
 }
 
@@ -291,18 +283,18 @@ const saveSettings = handleSubmit(async (formValues) => {
     await settingsStore.updateSettings(payload);
 
     // Clear credentials after save
-    storageAccessKey.value = "";
-    storageSecretKey.value = "";
+    storageAccessKey.value = '';
+    storageSecretKey.value = '';
 
     // Reset form dirty state since changes are saved
     if (settingsStore.settings) {
       resetForm({ values: settingsStore.settings });
     }
 
-    toast.success("Settings saved successfully");
+    toast.success('Settings saved successfully');
     authStore.fetchInstanceInfo(); // Update instance name in header
   } catch (err: any) {
-    toast.error(formatErrorMessage(err, "Failed to save settings"));
+    toast.error(formatErrorMessage(err, 'Failed to save settings'));
   } finally {
     saving.value = false;
   }
@@ -313,28 +305,18 @@ const saveSettings = handleSubmit(async (formValues) => {
   <section class="space-y-6 animate-in fade-in duration-500">
     <!-- Page Header -->
     <header class="space-y-1">
-      <h1 class="text-3xl font-bold tracking-tight">
-        Settings
-      </h1>
-      <p class="text-muted-foreground">
-        Configure your TinyBase instance
-      </p>
+      <h1 class="text-3xl font-bold tracking-tight">Settings</h1>
+      <p class="text-muted-foreground">Configure your TinyBase instance</p>
     </header>
 
     <!-- Loading State -->
     <Card v-if="loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">
-          Loading settings...
-        </p>
+        <p class="text-sm text-muted-foreground">Loading settings...</p>
       </CardContent>
     </Card>
 
-    <form
-      v-else
-      class="space-y-6"
-      @submit.prevent="saveSettings"
-    >
+    <form v-else class="space-y-6" @submit.prevent="saveSettings">
       <!-- General Settings -->
       <Card>
         <CardHeader>
@@ -344,10 +326,7 @@ const saveSettings = handleSubmit(async (formValues) => {
           <div class="grid gap-4 md:grid-cols-2">
             <div class="space-y-2">
               <Label for="instance_name">Instance Name</Label>
-              <Input
-                id="instance_name"
-                v-model="values.instance_name"
-              />
+              <Input id="instance_name" v-model="values.instance_name" />
             </div>
 
             <div class="space-y-2">
@@ -357,11 +336,7 @@ const saveSettings = handleSubmit(async (formValues) => {
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem
-                    v-for="tz in commonTimezones"
-                    :key="tz"
-                    :value="tz"
-                  >
+                  <SelectItem v-for="tz in commonTimezones" :key="tz" :value="tz">
                     {{ tz }}
                   </SelectItem>
                 </SelectContent>
@@ -405,10 +380,7 @@ const saveSettings = handleSubmit(async (formValues) => {
               :checked="values.allow_public_registration"
               @update:checked="values.allow_public_registration = $event"
             />
-            <Label
-              for="allow_public_registration"
-              class="cursor-pointer"
-            >
+            <Label for="allow_public_registration" class="cursor-pointer">
               Allow public registration
             </Label>
           </div>
@@ -423,18 +395,12 @@ const saveSettings = handleSubmit(async (formValues) => {
                 :checked="values.auth_portal_enabled"
                 @update:checked="values.auth_portal_enabled = $event"
               />
-              <Label
-                for="auth_portal_enabled"
-                class="cursor-pointer"
-              >
+              <Label for="auth_portal_enabled" class="cursor-pointer">
                 Enable custom auth portal
               </Label>
             </div>
 
-            <div
-              v-if="values.auth_portal_enabled"
-              class="space-y-4 pl-6 border-l-2 border-muted"
-            >
+            <div v-if="values.auth_portal_enabled" class="space-y-4 pl-6 border-l-2 border-muted">
               <div class="space-y-2">
                 <Label for="auth_portal_logo_url">Logo URL</Label>
                 <Input
@@ -470,10 +436,7 @@ const saveSettings = handleSubmit(async (formValues) => {
                   placeholder="https://example.com/dashboard"
                   :aria-invalid="loginRedirectUrlField.errorMessage.value ? 'true' : undefined"
                 />
-                <p
-                  v-if="loginRedirectUrlField.errorMessage.value"
-                  class="text-sm text-destructive"
-                >
+                <p v-if="loginRedirectUrlField.errorMessage.value" class="text-sm text-destructive">
                   {{ loginRedirectUrlField.errorMessage.value }}
                 </p>
               </div>
@@ -494,15 +457,8 @@ const saveSettings = handleSubmit(async (formValues) => {
                 </p>
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                @click="openPreviewInNewTab"
-              >
-                <Icon
-                  name="ExternalLink"
-                  :size="16"
-                />
+              <Button type="button" variant="outline" @click="openPreviewInNewTab">
+                <Icon name="ExternalLink" :size="16" />
                 Preview Auth Portal
               </Button>
             </div>
@@ -518,9 +474,7 @@ const saveSettings = handleSubmit(async (formValues) => {
         <CardContent class="space-y-4">
           <div class="grid gap-4 md:grid-cols-2">
             <div class="space-y-2">
-              <Label for="scheduler_function_timeout_seconds">
-                Function Timeout (seconds)
-              </Label>
+              <Label for="scheduler_function_timeout_seconds"> Function Timeout (seconds) </Label>
               <Input
                 id="scheduler_function_timeout_seconds"
                 v-model.number="values.scheduler_function_timeout_seconds"
@@ -531,9 +485,7 @@ const saveSettings = handleSubmit(async (formValues) => {
             </div>
 
             <div class="space-y-2">
-              <Label for="scheduler_max_schedules_per_tick">
-                Max Schedules Per Tick
-              </Label>
+              <Label for="scheduler_max_schedules_per_tick"> Max Schedules Per Tick </Label>
               <Input
                 id="scheduler_max_schedules_per_tick"
                 v-model.number="values.scheduler_max_schedules_per_tick"
@@ -544,9 +496,7 @@ const saveSettings = handleSubmit(async (formValues) => {
             </div>
 
             <div class="space-y-2">
-              <Label for="scheduler_max_concurrent_executions">
-                Max Concurrent Executions
-              </Label>
+              <Label for="scheduler_max_concurrent_executions"> Max Concurrent Executions </Label>
               <Input
                 id="scheduler_max_concurrent_executions"
                 v-model.number="values.scheduler_max_concurrent_executions"
@@ -584,18 +534,10 @@ const saveSettings = handleSubmit(async (formValues) => {
               :checked="values.storage_enabled"
               @update:checked="values.storage_enabled = $event"
             />
-            <Label
-              for="storage_enabled"
-              class="cursor-pointer"
-            >
-              Enable S3 storage
-            </Label>
+            <Label for="storage_enabled" class="cursor-pointer"> Enable S3 storage </Label>
           </div>
 
-          <div
-            v-if="values.storage_enabled"
-            class="space-y-4 pl-6 border-l-2 border-muted"
-          >
+          <div v-if="values.storage_enabled" class="space-y-4 pl-6 border-l-2 border-muted">
             <div class="grid gap-4 md:grid-cols-2">
               <div class="space-y-2">
                 <Label for="storage_endpoint">Endpoint</Label>
@@ -660,82 +602,46 @@ const saveSettings = handleSubmit(async (formValues) => {
                 Create API tokens for programmatic access
               </CardDescription>
             </div>
-            <Button
-              type="button"
-              @click="showCreateTokenForm = true"
-            >
-              <Icon
-                name="Plus"
-                :size="16"
-              />
+            <Button type="button" @click="showCreateTokenForm = true">
+              <Icon name="Plus" :size="16" />
               Create Token
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <!-- New Token Alert -->
-          <Alert
-            v-if="newlyCreatedToken"
-            class="mb-4"
-          >
+          <Alert v-if="newlyCreatedToken" class="mb-4">
             <AlertDescription class="space-y-2">
-              <p class="font-semibold">
-                Token created successfully!
-              </p>
+              <p class="font-semibold">Token created successfully!</p>
               <p class="text-sm">
                 Make sure to copy your token now. You won't be able to see it again.
               </p>
               <div class="flex items-center gap-2">
-                <Input
-                  :value="newlyCreatedToken.token_value"
-                  readonly
-                  class="font-mono text-sm"
-                />
+                <Input :value="newlyCreatedToken.token_value" readonly class="font-mono text-sm" />
                 <Button
                   type="button"
                   size="sm"
                   @click="copyTokenToClipboard(newlyCreatedToken.token_value)"
                 >
-                  <Icon
-                    name="Copy"
-                    :size="14"
-                  />
+                  <Icon name="Copy" :size="14" />
                   Copy
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  @click="dismissNewToken"
-                >
+                <Button type="button" variant="ghost" size="sm" @click="dismissNewToken">
                   Dismiss
                 </Button>
               </div>
             </AlertDescription>
           </Alert>
 
-          <div
-            v-if="loadingTokens"
-            class="flex items-center justify-center py-10"
-          >
-            <p class="text-sm text-muted-foreground">
-              Loading tokens...
-            </p>
+          <div v-if="loadingTokens" class="flex items-center justify-center py-10">
+            <p class="text-sm text-muted-foreground">Loading tokens...</p>
           </div>
 
-          <div
-            v-else-if="applicationTokens.length === 0"
-            class="text-center py-10"
-          >
-            <p class="text-sm text-muted-foreground">
-              No application tokens yet
-            </p>
+          <div v-else-if="applicationTokens.length === 0" class="text-center py-10">
+            <p class="text-sm text-muted-foreground">No application tokens yet</p>
           </div>
 
-          <div
-            v-else
-            class="rounded-lg border"
-          >
+          <div v-else class="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -749,33 +655,20 @@ const saveSettings = handleSubmit(async (formValues) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow
-                  v-for="token in applicationTokens"
-                  :key="token.id"
-                >
+                <TableRow v-for="token in applicationTokens" :key="token.id">
                   <TableCell>{{ token.name }}</TableCell>
                   <TableCell>
                     <span class="text-sm text-muted-foreground">
-                      {{ token.description || "-" }}
+                      {{ token.description || '-' }}
                     </span>
                   </TableCell>
                   <TableCell>
                     <Badge
                       :variant="
-                        !token.is_valid
-                          ? 'destructive'
-                          : token.is_active
-                            ? 'default'
-                            : 'secondary'
+                        !token.is_valid ? 'destructive' : token.is_active ? 'default' : 'secondary'
                       "
                     >
-                      {{
-                        !token.is_valid
-                          ? "Invalid"
-                          : token.is_active
-                            ? "Active"
-                            : "Inactive"
-                      }}
+                      {{ !token.is_valid ? 'Invalid' : token.is_active ? 'Active' : 'Inactive' }}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -785,12 +678,18 @@ const saveSettings = handleSubmit(async (formValues) => {
                   </TableCell>
                   <TableCell>
                     <span class="text-sm">
-                      {{ token.expires_at ? new Date(token.expires_at).toLocaleDateString() : "Never" }}
+                      {{
+                        token.expires_at ? new Date(token.expires_at).toLocaleDateString() : 'Never'
+                      }}
                     </span>
                   </TableCell>
                   <TableCell>
                     <span class="text-sm">
-                      {{ token.last_used_at ? new Date(token.last_used_at).toLocaleDateString() : "Never" }}
+                      {{
+                        token.last_used_at
+                          ? new Date(token.last_used_at).toLocaleDateString()
+                          : 'Never'
+                      }}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -801,7 +700,7 @@ const saveSettings = handleSubmit(async (formValues) => {
                         size="sm"
                         @click="toggleTokenActive(token.id, token.is_active)"
                       >
-                        {{ token.is_active ? "Deactivate" : "Activate" }}
+                        {{ token.is_active ? 'Deactivate' : 'Activate' }}
                       </Button>
                       <Button
                         type="button"
@@ -822,11 +721,8 @@ const saveSettings = handleSubmit(async (formValues) => {
 
       <!-- Save Footer -->
       <div class="flex justify-end gap-2 sticky bottom-0 bg-background py-4 border-t">
-        <Button
-          type="submit"
-          :disabled="saving"
-        >
-          {{ saving ? "Saving..." : "Save Settings" }}
+        <Button type="submit" :disabled="saving">
+          {{ saving ? 'Saving...' : 'Save Settings' }}
         </Button>
       </div>
     </form>
@@ -838,10 +734,7 @@ const saveSettings = handleSubmit(async (formValues) => {
           <DialogTitle>Create Application Token</DialogTitle>
         </DialogHeader>
 
-        <form
-          class="space-y-4"
-          @submit.prevent="onCreateToken"
-        >
+        <form class="space-y-4" @submit.prevent="onCreateToken">
           <div class="space-y-2">
             <Label for="token_name">Name</Label>
             <Input
@@ -850,10 +743,7 @@ const saveSettings = handleSubmit(async (formValues) => {
               placeholder="My Application"
               :aria-invalid="tokenNameField.errorMessage.value ? 'true' : undefined"
             />
-            <p
-              v-if="tokenNameField.errorMessage.value"
-              class="text-sm text-destructive"
-            >
+            <p v-if="tokenNameField.errorMessage.value" class="text-sm text-destructive">
               {{ tokenNameField.errorMessage.value }}
             </p>
           </div>
@@ -881,19 +771,11 @@ const saveSettings = handleSubmit(async (formValues) => {
         </form>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="ghost"
-            @click="showCreateTokenForm = false"
-          >
+          <Button type="button" variant="ghost" @click="showCreateTokenForm = false">
             Cancel
           </Button>
-          <Button
-            type="submit"
-            :disabled="creatingToken"
-            @click="onCreateToken"
-          >
-            {{ creatingToken ? "Creating..." : "Create Token" }}
+          <Button type="submit" :disabled="creatingToken" @click="onCreateToken">
+            {{ creatingToken ? 'Creating...' : 'Create Token' }}
           </Button>
         </DialogFooter>
       </DialogContent>

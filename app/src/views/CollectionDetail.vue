@@ -4,25 +4,25 @@
  *
  * View and manage records in a collection.
  */
-import { onMounted, ref, computed, h } from "vue";
-import { useToast } from "../composables/useToast";
-import { useRoute } from "vue-router";
-import { useInfiniteScroll } from "@vueuse/core";
-import { useCollectionsStore, type Record } from "../stores/collections";
-import { useAuthStore } from "../stores/auth";
-import DataTable from "../components/DataTable.vue";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { onMounted, ref, computed, h } from 'vue';
+import { useToast } from '../composables/useToast';
+import { useRoute } from 'vue-router';
+import { useInfiniteScroll } from '@vueuse/core';
+import { useCollectionsStore, type Record } from '../stores/collections';
+import { useAuthStore } from '../stores/auth';
+import DataTable from '../components/DataTable.vue';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 
 const toast = useToast();
 const route = useRoute();
@@ -37,7 +37,7 @@ const pageSize = 20;
 const loadingMore = ref(false);
 
 const showCreateModal = ref(false);
-const newRecordData = ref("{}");
+const newRecordData = ref('{}');
 
 const scrollContainer = ref<HTMLElement>();
 
@@ -85,52 +85,44 @@ useInfiniteScroll(
 async function handleCreateRecord() {
   try {
     const data = JSON.parse(newRecordData.value);
-    const result = await collectionsStore.createRecord(
-      collectionName.value,
-      data
-    );
+    const result = await collectionsStore.createRecord(collectionName.value, data);
     if (result) {
-      toast.success("Record created successfully");
+      toast.success('Record created successfully');
       showCreateModal.value = false;
-      newRecordData.value = "{}";
+      newRecordData.value = '{}';
       await loadRecords(true);
     } else {
-      toast.error(collectionsStore.error || "Failed to create record");
+      toast.error(collectionsStore.error || 'Failed to create record');
     }
   } catch (err) {
-    toast.error("Invalid JSON data");
+    toast.error('Invalid JSON data');
   }
 }
 
 async function handleDeleteRecord(recordId: string) {
-  if (confirm("Are you sure you want to delete this record?")) {
-    const result = await collectionsStore.deleteRecord(
-      collectionName.value,
-      recordId
-    );
+  if (confirm('Are you sure you want to delete this record?')) {
+    const result = await collectionsStore.deleteRecord(collectionName.value, recordId);
     if (result) {
-      toast.success("Record deleted successfully");
+      toast.success('Record deleted successfully');
       await loadRecords(true);
     } else {
-      toast.error(collectionsStore.error || "Failed to delete record");
+      toast.error(collectionsStore.error || 'Failed to delete record');
     }
   }
 }
 
 function getFieldNames() {
-  return (
-    collectionsStore.currentCollection?.schema?.fields?.map((f) => f.name) || []
-  );
+  return collectionsStore.currentCollection?.schema?.fields?.map((f) => f.name) || [];
 }
 
 const recordColumns = computed(() => {
   const fieldNames = getFieldNames().slice(0, 5);
   const columns: any[] = [
     {
-      key: "id",
-      label: "ID",
+      key: 'id',
+      label: 'ID',
       render: (value: any) =>
-        h("code", { class: "text-xs text-muted-foreground" }, `${value.slice(0, 8)}...`),
+        h('code', { class: 'text-xs text-muted-foreground' }, `${value.slice(0, 8)}...`),
     },
   ];
 
@@ -141,33 +133,30 @@ const recordColumns = computed(() => {
       label: field,
       render: (_value: any, row: any) => {
         const fieldValue = row.data[field];
-        if (typeof fieldValue === "object") {
+        if (typeof fieldValue === 'object') {
           return JSON.stringify(fieldValue);
         }
-        return fieldValue ?? "-";
+        return fieldValue ?? '-';
       },
     });
   });
 
   columns.push({
-    key: "created_at",
-    label: "Created",
+    key: 'created_at',
+    label: 'Created',
     render: (value: any) =>
-      h("span", { class: "text-sm text-muted-foreground" }, [
-        new Date(value).toLocaleDateString(),
-      ]),
+      h('span', { class: 'text-sm text-muted-foreground' }, [new Date(value).toLocaleDateString()]),
   });
 
   columns.push({
-    key: "actions",
-    label: "Actions",
+    key: 'actions',
+    label: 'Actions',
     actions: [
       {
-        label: "Delete",
+        label: 'Delete',
         action: (row: any) => handleDeleteRecord(row.id),
-        variant: "destructive" as const,
-        disabled: (row: any) =>
-          !authStore.isAdmin && row.owner_id !== authStore.user?.id,
+        variant: 'destructive' as const,
+        disabled: (row: any) => !authStore.isAdmin && row.owner_id !== authStore.user?.id,
       },
     ],
   });
@@ -194,10 +183,7 @@ const recordColumns = computed(() => {
         <CardTitle>Schema</CardTitle>
       </CardHeader>
       <CardContent>
-        <div
-          v-if="collectionsStore.currentCollection"
-          class="flex flex-wrap gap-2"
-        >
+        <div v-if="collectionsStore.currentCollection" class="flex flex-wrap gap-2">
           <Badge
             v-for="field in collectionsStore.currentCollection.schema?.fields || []"
             :key="field.name"
@@ -206,10 +192,7 @@ const recordColumns = computed(() => {
           >
             {{ field.name }}
             <span class="text-xs text-muted-foreground">({{ field.type }})</span>
-            <span
-              v-if="field.required"
-              class="text-yellow-500"
-            >*</span>
+            <span v-if="field.required" class="text-yellow-500">*</span>
           </Badge>
         </div>
       </CardContent>
@@ -222,13 +205,8 @@ const recordColumns = computed(() => {
       </CardHeader>
       <CardContent>
         <!-- Loading State -->
-        <div
-          v-if="collectionsStore.loading"
-          class="flex items-center justify-center py-10"
-        >
-          <p class="text-sm text-muted-foreground">
-            Loading records...
-          </p>
+        <div v-if="collectionsStore.loading" class="flex items-center justify-center py-10">
+          <p class="text-sm text-muted-foreground">Loading records...</p>
         </div>
 
         <!-- Empty State -->
@@ -236,25 +214,17 @@ const recordColumns = computed(() => {
           v-else-if="records.length === 0"
           class="flex flex-col items-center justify-center py-16 text-center"
         >
-          <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
+          <div
+            class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl"
+          >
             📄
           </div>
-          <p class="mb-4 text-sm text-muted-foreground">
-            No records yet
-          </p>
-          <Button
-            size="sm"
-            @click="showCreateModal = true"
-          >
-            Create Record
-          </Button>
+          <p class="mb-4 text-sm text-muted-foreground">No records yet</p>
+          <Button size="sm" @click="showCreateModal = true"> Create Record </Button>
         </div>
 
         <!-- Records Table -->
-        <div
-          v-else
-          ref="scrollContainer"
-        >
+        <div v-else ref="scrollContainer">
           <DataTable
             :data="records"
             :columns="recordColumns"
@@ -271,10 +241,7 @@ const recordColumns = computed(() => {
           />
 
           <!-- Server-side Pagination -->
-          <div
-            v-if="total > pageSize"
-            class="flex items-center justify-between border-t pt-4 mt-4"
-          >
+          <div v-if="total > pageSize" class="flex items-center justify-between border-t pt-4 mt-4">
             <Button
               size="sm"
               variant="ghost"
@@ -313,11 +280,7 @@ const recordColumns = computed(() => {
           <DialogTitle>Create Record</DialogTitle>
         </DialogHeader>
 
-        <form
-          id="record-form"
-          class="space-y-4"
-          @submit.prevent="handleCreateRecord"
-        >
+        <form id="record-form" class="space-y-4" @submit.prevent="handleCreateRecord">
           <div class="space-y-2">
             <Label for="data">Record Data (JSON)</Label>
             <Textarea
@@ -327,26 +290,14 @@ const recordColumns = computed(() => {
               class="font-mono text-sm"
               required
             />
-            <p class="text-xs text-muted-foreground">
-              Fields: {{ getFieldNames().join(", ") }}
-            </p>
+            <p class="text-xs text-muted-foreground">Fields: {{ getFieldNames().join(', ') }}</p>
           </div>
         </form>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="ghost"
-            @click="showCreateModal = false"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            form="record-form"
-            :disabled="collectionsStore.loading"
-          >
-            {{ collectionsStore.loading ? "Creating..." : "Create Record" }}
+          <Button type="button" variant="ghost" @click="showCreateModal = false"> Cancel </Button>
+          <Button type="submit" form="record-form" :disabled="collectionsStore.loading">
+            {{ collectionsStore.loading ? 'Creating...' : 'Create Record' }}
           </Button>
         </DialogFooter>
       </DialogContent>

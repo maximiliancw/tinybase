@@ -4,27 +4,27 @@
  *
  * List and manage data collections.
  */
-import { onMounted, ref, computed, h, watch } from "vue";
-import { useToast } from "../composables/useToast";
-import { useRoute } from "vue-router";
-import { useUrlSearchParams } from "@vueuse/core";
-import { useField, useForm } from "vee-validate";
-import { useCollectionsStore } from "../stores/collections";
-import { useAuthStore } from "../stores/auth";
-import { validationSchemas } from "../composables/useFormValidation";
-import DataTable from "../components/DataTable.vue";
-import { Card, CardContent } from "@/components/ui/card";
+import { onMounted, ref, computed, h, watch } from 'vue';
+import { useToast } from '../composables/useToast';
+import { useRoute } from 'vue-router';
+import { useUrlSearchParams } from '@vueuse/core';
+import { useField, useForm } from 'vee-validate';
+import { useCollectionsStore } from '../stores/collections';
+import { useAuthStore } from '../stores/auth';
+import { validationSchemas } from '../composables/useFormValidation';
+import DataTable from '../components/DataTable.vue';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 const toast = useToast();
 const route = useRoute();
@@ -32,7 +32,7 @@ const collectionsStore = useCollectionsStore();
 const authStore = useAuthStore();
 
 // URL search params for action=create
-const params = useUrlSearchParams("history");
+const params = useUrlSearchParams('history');
 const action = computed(() => params.action as string | null);
 
 const showCreateModal = ref(false);
@@ -42,15 +42,15 @@ const defaultSchemaText =
 const { handleSubmit, resetForm } = useForm({
   validationSchema: validationSchemas.createCollection,
   initialValues: {
-    name: "",
-    label: "",
+    name: '',
+    label: '',
     schemaText: defaultSchemaText,
   },
 });
 
-const nameField = useField("name");
-const labelField = useField("label");
-const schemaTextField = useField("schemaText");
+const nameField = useField('name');
+const labelField = useField('label');
+const schemaTextField = useField('schemaText');
 
 const onSubmit = handleSubmit(async (values) => {
   try {
@@ -65,16 +65,16 @@ const onSubmit = handleSubmit(async (values) => {
       showCreateModal.value = false;
       resetForm({
         values: {
-          name: "",
-          label: "",
+          name: '',
+          label: '',
           schemaText: defaultSchemaText,
         },
       });
     } else {
-      toast.error(collectionsStore.error || "Failed to create collection");
+      toast.error(collectionsStore.error || 'Failed to create collection');
     }
   } catch (err) {
-    toast.error("Invalid schema JSON");
+    toast.error('Invalid schema JSON');
   }
 });
 
@@ -82,7 +82,7 @@ const onSubmit = handleSubmit(async (values) => {
 watch(
   action,
   (newAction) => {
-    if (newAction === "create" && authStore.isAdmin) {
+    if (newAction === 'create' && authStore.isAdmin) {
       showCreateModal.value = true;
       params.action = undefined;
     }
@@ -96,15 +96,13 @@ onMounted(async () => {
 
 async function handleDelete(name: string) {
   if (
-    confirm(
-      `Are you sure you want to delete collection "${name}"? This will delete all records.`
-    )
+    confirm(`Are you sure you want to delete collection "${name}"? This will delete all records.`)
   ) {
     const result = await collectionsStore.deleteCollection(name);
     if (result) {
       toast.success(`Collection "${name}" deleted successfully`);
     } else {
-      toast.error(collectionsStore.error || "Failed to delete collection");
+      toast.error(collectionsStore.error || 'Failed to delete collection');
     }
   }
 }
@@ -112,23 +110,26 @@ async function handleDelete(name: string) {
 const collectionColumns = computed(() => {
   const columns: any[] = [
     {
-      key: "name",
-      label: "Name",
+      key: 'name',
+      label: 'Name',
       render: (value: any) =>
-        h("router-link", { to: `/collections/${value}`, class: "text-primary hover:underline" }, value),
+        h(
+          'router-link',
+          { to: `/collections/${value}`, class: 'text-primary hover:underline' },
+          value
+        ),
     },
-    { key: "label", label: "Label" },
+    { key: 'label', label: 'Label' },
     {
-      key: "fields",
-      label: "Fields",
-      render: (_value: any, row: any) =>
-        `${row.schema?.fields?.length || 0} fields`,
+      key: 'fields',
+      label: 'Fields',
+      render: (_value: any, row: any) => `${row.schema?.fields?.length || 0} fields`,
     },
     {
-      key: "created_at",
-      label: "Created",
+      key: 'created_at',
+      label: 'Created',
       render: (value: any) =>
-        h("span", { class: "text-sm text-muted-foreground" }, [
+        h('span', { class: 'text-sm text-muted-foreground' }, [
           new Date(value).toLocaleDateString(),
         ]),
     },
@@ -136,13 +137,13 @@ const collectionColumns = computed(() => {
 
   if (authStore.isAdmin) {
     columns.push({
-      key: "actions",
-      label: "Actions",
+      key: 'actions',
+      label: 'Actions',
       actions: [
         {
-          label: "Delete",
+          label: 'Delete',
           action: (row: any) => handleDelete(row.name),
-          variant: "destructive" as const,
+          variant: 'destructive' as const,
         },
       ],
     });
@@ -156,20 +157,14 @@ const collectionColumns = computed(() => {
   <section class="space-y-6 animate-in fade-in duration-500">
     <!-- Page Header -->
     <header class="space-y-1">
-      <h1 class="text-3xl font-bold tracking-tight">
-        Collections
-      </h1>
-      <p class="text-muted-foreground">
-        Manage your data collections
-      </p>
+      <h1 class="text-3xl font-bold tracking-tight">Collections</h1>
+      <p class="text-muted-foreground">Manage your data collections</p>
     </header>
 
     <!-- Loading State -->
     <Card v-if="collectionsStore.loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">
-          Loading collections...
-        </p>
+        <p class="text-sm text-muted-foreground">Loading collections...</p>
       </CardContent>
     </Card>
 
@@ -179,16 +174,11 @@ const collectionColumns = computed(() => {
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
           📁
         </div>
-        <h3 class="mb-1 text-lg font-semibold">
-          No collections yet
-        </h3>
+        <h3 class="mb-1 text-lg font-semibold">No collections yet</h3>
         <p class="mb-4 text-sm text-muted-foreground">
           Create your first collection to start storing data.
         </p>
-        <Button
-          v-if="authStore.isAdmin"
-          @click="showCreateModal = true"
-        >
+        <Button v-if="authStore.isAdmin" @click="showCreateModal = true">
           Create Collection
         </Button>
       </CardContent>
@@ -204,13 +194,13 @@ const collectionColumns = computed(() => {
         :header-action="
           authStore.isAdmin
             ? {
-              label: '+ New Collection',
-              action: () => {
-                showCreateModal = true;
-              },
-              variant: 'default',
-              icon: 'Plus',
-            }
+                label: '+ New Collection',
+                action: () => {
+                  showCreateModal = true;
+                },
+                variant: 'default',
+                icon: 'Plus',
+              }
             : undefined
         "
       />
@@ -223,11 +213,7 @@ const collectionColumns = computed(() => {
           <DialogTitle>Create Collection</DialogTitle>
         </DialogHeader>
 
-        <form
-          id="collection-form"
-          class="space-y-4"
-          @submit.prevent="onSubmit"
-        >
+        <form id="collection-form" class="space-y-4" @submit.prevent="onSubmit">
           <div class="space-y-2">
             <Label for="name">Name (snake_case)</Label>
             <Input
@@ -236,10 +222,7 @@ const collectionColumns = computed(() => {
               placeholder="my_collection"
               :aria-invalid="nameField.errorMessage.value ? 'true' : undefined"
             />
-            <p
-              v-if="nameField.errorMessage.value"
-              class="text-sm text-destructive"
-            >
+            <p v-if="nameField.errorMessage.value" class="text-sm text-destructive">
               {{ nameField.errorMessage.value }}
             </p>
           </div>
@@ -252,10 +235,7 @@ const collectionColumns = computed(() => {
               placeholder="My Collection"
               :aria-invalid="labelField.errorMessage.value ? 'true' : undefined"
             />
-            <p
-              v-if="labelField.errorMessage.value"
-              class="text-sm text-destructive"
-            >
+            <p v-if="labelField.errorMessage.value" class="text-sm text-destructive">
               {{ labelField.errorMessage.value }}
             </p>
           </div>
@@ -269,29 +249,16 @@ const collectionColumns = computed(() => {
               class="font-mono text-sm"
               :aria-invalid="schemaTextField.errorMessage.value ? 'true' : undefined"
             />
-            <p
-              v-if="schemaTextField.errorMessage.value"
-              class="text-sm text-destructive"
-            >
+            <p v-if="schemaTextField.errorMessage.value" class="text-sm text-destructive">
               {{ schemaTextField.errorMessage.value }}
             </p>
           </div>
         </form>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="ghost"
-            @click="showCreateModal = false"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            form="collection-form"
-            :disabled="collectionsStore.loading"
-          >
-            {{ collectionsStore.loading ? "Creating..." : "Create Collection" }}
+          <Button type="button" variant="ghost" @click="showCreateModal = false"> Cancel </Button>
+          <Button type="submit" form="collection-form" :disabled="collectionsStore.loading">
+            {{ collectionsStore.loading ? 'Creating...' : 'Create Collection' }}
           </Button>
         </DialogFooter>
       </DialogContent>

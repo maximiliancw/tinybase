@@ -5,25 +5,25 @@
  * Admin page for managing file storage.
  * Allows uploading, downloading, and deleting files.
  */
-import { onMounted, ref, computed, h, watch } from "vue";
-import { useToast } from "../composables/useToast";
-import { useForm, Field, useField } from "vee-validate";
-import { useLocalStorage, useFileDialog, useDropZone } from "@vueuse/core";
-import { api } from "@/api";
-import { client } from "../client/client.gen";
-import { validationSchemas } from "../composables/useFormValidation";
-import DataTable from "../components/DataTable.vue";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { onMounted, ref, computed, h, watch } from 'vue';
+import { useToast } from '../composables/useToast';
+import { useForm, Field, useField } from 'vee-validate';
+import { useLocalStorage, useFileDialog, useDropZone } from '@vueuse/core';
+import { api } from '@/api';
+import { client } from '../client/client.gen';
+import { validationSchemas } from '../composables/useFormValidation';
+import DataTable from '../components/DataTable.vue';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface FileInfo {
   key: string;
@@ -39,7 +39,7 @@ const uploading = ref(false);
 const storageEnabled = ref(false);
 
 // Track uploaded files in component state with localStorage persistence
-const files = useLocalStorage<FileInfo[]>("tinybase_files", []);
+const files = useLocalStorage<FileInfo[]>('tinybase_files', []);
 
 // Keep only last 100 files in storage
 watch(
@@ -60,22 +60,22 @@ const { handleSubmit, resetForm, setFieldValue } = useForm({
   validationSchema: validationSchemas.uploadFile,
   initialValues: {
     file: null as File | null,
-    path_prefix: "",
+    path_prefix: '',
   },
 });
 
-const fileField = useField("file");
-const pathPrefixField = useField("path_prefix");
+const fileField = useField('file');
+const pathPrefixField = useField('path_prefix');
 
 // File dialog
 const { open: openFileDialog, onChange: onFileDialogChange } = useFileDialog({
-  accept: "*",
+  accept: '*',
   multiple: false,
 });
 
 onFileDialogChange((selectedFiles) => {
   if (selectedFiles && selectedFiles.length > 0) {
-    setFieldValue("file", selectedFiles[0]);
+    setFieldValue('file', selectedFiles[0]);
   }
 });
 
@@ -83,13 +83,13 @@ onFileDialogChange((selectedFiles) => {
 const { isOverDropZone } = useDropZone(dropZoneRef, {
   onDrop: (files) => {
     if (files && files.length > 0) {
-      setFieldValue("file", files[0]);
+      setFieldValue('file', files[0]);
     }
   },
 });
 
 // Manual key input
-const manualKey = ref("");
+const manualKey = ref('');
 const showKeyModal = ref(false);
 
 onMounted(async () => {
@@ -103,7 +103,7 @@ async function checkStorageStatus() {
     const response = await api.files.getStorageStatus();
     storageEnabled.value = response.data.enabled;
   } catch (err: any) {
-    toast.error(err.error?.detail || "Failed to check storage status");
+    toast.error(err.error?.detail || 'Failed to check storage status');
     storageEnabled.value = false;
   } finally {
     loading.value = false;
@@ -118,7 +118,7 @@ function openUploadModal() {
 function handleFileSelect(event: Event) {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
-    setFieldValue("file", target.files[0]);
+    setFieldValue('file', target.files[0]);
   }
 }
 
@@ -132,10 +132,10 @@ const onSubmit = handleSubmit(async (values) => {
   try {
     const formData = new FormData();
     if (values.file) {
-      formData.append("file", values.file);
+      formData.append('file', values.file);
     }
     if (values.path_prefix?.trim()) {
-      formData.append("path_prefix", values.path_prefix.trim());
+      formData.append('path_prefix', values.path_prefix.trim());
     }
 
     const response = await api.files.uploadFile({
@@ -156,7 +156,7 @@ const onSubmit = handleSubmit(async (values) => {
     showUploadModal.value = false;
     toast.success(`File "${fileInfo.filename}" uploaded successfully`);
   } catch (err: any) {
-    toast.error(err.error?.detail || "Upload failed");
+    toast.error(err.error?.detail || 'Upload failed');
   } finally {
     uploading.value = false;
   }
@@ -165,26 +165,23 @@ const onSubmit = handleSubmit(async (values) => {
 async function downloadFile(key: string) {
   try {
     // Use axios instance directly for blob downloads
-    const response = await client.instance.get(
-      `/api/files/download/${encodeURIComponent(key)}`,
-      {
-        responseType: "blob",
-      }
-    );
+    const response = await client.instance.get(`/api/files/download/${encodeURIComponent(key)}`, {
+      responseType: 'blob',
+    });
 
     // Extract filename from key
-    const filename = key.split("/").pop() || "download";
+    const filename = key.split('/').pop() || 'download';
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
-    link.setAttribute("download", filename);
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
     toast.success(`File "${filename}" downloaded successfully`);
   } catch (err: any) {
-    toast.error(err.error?.detail || "Download failed");
+    toast.error(err.error?.detail || 'Download failed');
   }
 }
 
@@ -201,69 +198,67 @@ async function deleteFile(key: string) {
     // Remove from tracked files (useLocalStorage will auto-save)
     files.value = files.value.filter((f) => f.key !== key);
 
-    toast.success("File deleted successfully");
+    toast.success('File deleted successfully');
   } catch (err: any) {
-    toast.error(err.error?.detail || "Delete failed");
+    toast.error(err.error?.detail || 'Delete failed');
   }
 }
 
 const fileColumns = computed(() => [
   {
-    key: "filename",
-    label: "Filename",
-    render: (value: any) => h("code", { class: "text-sm" }, value),
+    key: 'filename',
+    label: 'Filename',
+    render: (value: any) => h('code', { class: 'text-sm' }, value),
   },
   {
-    key: "key",
-    label: "Key",
+    key: 'key',
+    label: 'Key',
+    render: (value: any) => h('code', { class: 'text-xs text-muted-foreground' }, value),
+  },
+  {
+    key: 'content_type',
+    label: 'Type',
+    render: (value: any) => h('span', { class: 'text-sm text-muted-foreground' }, value),
+  },
+  {
+    key: 'size',
+    label: 'Size',
     render: (value: any) =>
-      h("code", { class: "text-xs text-muted-foreground" }, value),
+      h('span', { class: 'text-sm text-muted-foreground' }, formatFileSize(value)),
   },
   {
-    key: "content_type",
-    label: "Type",
-    render: (value: any) => h("span", { class: "text-sm text-muted-foreground" }, value),
-  },
-  {
-    key: "size",
-    label: "Size",
+    key: 'uploaded_at',
+    label: 'Uploaded',
     render: (value: any) =>
-      h("span", { class: "text-sm text-muted-foreground" }, formatFileSize(value)),
+      h('span', { class: 'text-sm text-muted-foreground' }, formatDate(value)),
   },
   {
-    key: "uploaded_at",
-    label: "Uploaded",
-    render: (value: any) =>
-      h("span", { class: "text-sm text-muted-foreground" }, formatDate(value)),
-  },
-  {
-    key: "actions",
-    label: "Actions",
+    key: 'actions',
+    label: 'Actions',
     actions: [
       {
-        label: "Download",
+        label: 'Download',
         action: (row: any) => downloadFile(row.key),
-        variant: "default" as const,
+        variant: 'default' as const,
       },
       {
-        label: "Delete",
+        label: 'Delete',
         action: (row: any) => deleteFile(row.key),
-        variant: "destructive" as const,
+        variant: 'destructive' as const,
       },
     ],
   },
 ]);
 
 function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-  if (bytes < 1024 * 1024 * 1024)
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
 }
 
 function formatDate(dateStr: string): string {
-  if (!dateStr) return "-";
+  if (!dateStr) return '-';
   const date = new Date(dateStr);
   const now = Date.now();
   const diff = now - date.getTime();
@@ -272,31 +267,30 @@ function formatDate(dateStr: string): string {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  let timeAgo = "";
-  if (days > 0) timeAgo = `${days} day${days > 1 ? "s" : ""} ago`;
-  else if (hours > 0) timeAgo = `${hours} hour${hours > 1 ? "s" : ""} ago`;
-  else if (minutes > 0)
-    timeAgo = `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
-  else timeAgo = "just now";
+  let timeAgo = '';
+  if (days > 0) timeAgo = `${days} day${days > 1 ? 's' : ''} ago`;
+  else if (hours > 0) timeAgo = `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  else if (minutes > 0) timeAgo = `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  else timeAgo = 'just now';
 
-  const formattedDate = date.toLocaleString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
+  const formattedDate = date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
   });
 
   return `${timeAgo} (${formattedDate})`;
 }
 
 function openKeyModal() {
-  manualKey.value = "";
+  manualKey.value = '';
   showKeyModal.value = true;
 }
 
-async function handleKeyAction(action: "download" | "delete") {
+async function handleKeyAction(action: 'download' | 'delete') {
   if (!manualKey.value.trim()) {
     return;
   }
@@ -304,7 +298,7 @@ async function handleKeyAction(action: "download" | "delete") {
   const key = manualKey.value.trim();
   showKeyModal.value = false;
 
-  if (action === "download") {
+  if (action === 'download') {
     await downloadFile(key);
   } else {
     await deleteFile(key);
@@ -317,27 +311,16 @@ async function handleKeyAction(action: "download" | "delete") {
     <!-- Page Header -->
     <header class="flex items-start justify-between">
       <div class="space-y-1">
-        <h1 class="text-3xl font-bold tracking-tight">
-          Files
-        </h1>
-        <p class="text-muted-foreground">
-          Manage files in storage
-        </p>
+        <h1 class="text-3xl font-bold tracking-tight">Files</h1>
+        <p class="text-muted-foreground">Manage files in storage</p>
       </div>
-      <Button
-        variant="ghost"
-        @click="openKeyModal"
-      >
-        Access by Key
-      </Button>
+      <Button variant="ghost" @click="openKeyModal"> Access by Key </Button>
     </header>
 
     <!-- Loading State -->
     <Card v-if="loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">
-          Checking storage status...
-        </p>
+        <p class="text-sm text-muted-foreground">Checking storage status...</p>
       </CardContent>
     </Card>
 
@@ -347,16 +330,12 @@ async function handleKeyAction(action: "download" | "delete") {
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
           📦
         </div>
-        <h3 class="mb-1 text-lg font-semibold">
-          File storage is not enabled
-        </h3>
+        <h3 class="mb-1 text-lg font-semibold">File storage is not enabled</h3>
         <p class="mb-4 text-sm text-muted-foreground">
           Configure file storage in Settings to enable file uploads and management.
         </p>
         <Button as-child>
-          <router-link to="/settings">
-            Go to Settings
-          </router-link>
+          <router-link to="/settings"> Go to Settings </router-link>
         </Button>
       </CardContent>
     </Card>
@@ -368,8 +347,7 @@ async function handleKeyAction(action: "download" | "delete") {
         <CardHeader>
           <CardTitle>Recent Files</CardTitle>
           <p class="text-sm text-muted-foreground">
-            Files you've uploaded in this session. Use "Access by Key" to manage
-            other files.
+            Files you've uploaded in this session. Use "Access by Key" to manage other files.
           </p>
         </CardHeader>
         <CardContent>
@@ -393,18 +371,16 @@ async function handleKeyAction(action: "download" | "delete") {
       <!-- Empty State -->
       <Card v-else>
         <CardContent class="flex flex-col items-center justify-center py-16 text-center">
-          <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
+          <div
+            class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl"
+          >
             📁
           </div>
-          <h3 class="mb-1 text-lg font-semibold">
-            No files uploaded yet
-          </h3>
+          <h3 class="mb-1 text-lg font-semibold">No files uploaded yet</h3>
           <p class="mb-4 text-sm text-muted-foreground">
             Upload files to get started, or use "Access by Key" to manage existing files.
           </p>
-          <Button @click="openUploadModal">
-            Upload Your First File
-          </Button>
+          <Button @click="openUploadModal"> Upload Your First File </Button>
         </CardContent>
       </Card>
     </template>
@@ -416,11 +392,7 @@ async function handleKeyAction(action: "download" | "delete") {
           <DialogTitle>Upload File</DialogTitle>
         </DialogHeader>
 
-        <form
-          id="upload-form"
-          class="space-y-4"
-          @submit.prevent="onSubmit"
-        >
+        <form id="upload-form" class="space-y-4" @submit.prevent="onSubmit">
           <div
             ref="dropZoneRef"
             class="border-2 border-dashed rounded-lg p-8 text-center transition-colors"
@@ -429,18 +401,10 @@ async function handleKeyAction(action: "download" | "delete") {
               'border-border': !isOverDropZone,
             }"
           >
-            <p
-              v-if="!isOverDropZone"
-              class="mb-3 text-sm text-muted-foreground"
-            >
+            <p v-if="!isOverDropZone" class="mb-3 text-sm text-muted-foreground">
               Drag and drop a file here, or
             </p>
-            <p
-              v-else
-              class="mb-3 text-sm font-semibold text-primary"
-            >
-              Drop file here
-            </p>
+            <p v-else class="mb-3 text-sm font-semibold text-primary">Drop file here</p>
             <Button
               type="button"
               variant="secondary"
@@ -451,21 +415,15 @@ async function handleKeyAction(action: "download" | "delete") {
             </Button>
           </div>
 
-          <Field
-            v-slot="{ errors, meta }"
-            name="file"
-          >
+          <Field v-slot="{ errors, meta }" name="file">
             <input
               type="file"
               class="sr-only"
               :disabled="uploading"
               :aria-invalid="meta.touched && !meta.valid ? 'true' : 'false'"
               @change="handleFileSelect"
-            >
-            <p
-              v-if="meta.touched && errors[0]"
-              class="text-sm text-destructive"
-            >
+            />
+            <p v-if="meta.touched && errors[0]" class="text-sm text-destructive">
               {{ errors[0] }}
             </p>
           </Field>
@@ -479,7 +437,8 @@ async function handleKeyAction(action: "download" | "delete") {
               :disabled="uploading"
             />
             <p class="text-xs text-muted-foreground">
-              Optional prefix to organize files (e.g., 'uploads/images/'). Trailing slash is optional.
+              Optional prefix to organize files (e.g., 'uploads/images/'). Trailing slash is
+              optional.
             </p>
           </div>
         </form>
@@ -493,12 +452,8 @@ async function handleKeyAction(action: "download" | "delete") {
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            form="upload-form"
-            :disabled="uploading"
-          >
-            {{ uploading ? "Uploading..." : "Upload" }}
+          <Button type="submit" form="upload-form" :disabled="uploading">
+            {{ uploading ? 'Uploading...' : 'Upload' }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -528,13 +483,7 @@ async function handleKeyAction(action: "download" | "delete") {
         </div>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="ghost"
-            @click="showKeyModal = false"
-          >
-            Cancel
-          </Button>
+          <Button type="button" variant="ghost" @click="showKeyModal = false"> Cancel </Button>
           <Button
             type="button"
             variant="destructive"
@@ -543,11 +492,7 @@ async function handleKeyAction(action: "download" | "delete") {
           >
             Delete
           </Button>
-          <Button
-            type="button"
-            :disabled="!manualKey.trim()"
-            @click="handleKeyAction('download')"
-          >
+          <Button type="button" :disabled="!manualKey.trim()" @click="handleKeyAction('download')">
             Download
           </Button>
         </DialogFooter>

@@ -14,10 +14,9 @@
  */
 export function formatErrorMessage(
   error: any,
-  defaultMessage: string = "An error occurred"
+  defaultMessage: string = 'An error occurred'
 ): string {
-  const isDevelopment =
-    import.meta.env.DEV || import.meta.env.MODE === "development";
+  const isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development';
 
   // Try to get error details from response
   const statusCode = error.response?.status;
@@ -29,7 +28,7 @@ export function formatErrorMessage(
     if (errorDetail) {
       return errorDetail;
     }
-    if (errorMessage && errorMessage !== "Network Error") {
+    if (errorMessage && errorMessage !== 'Network Error') {
       return errorMessage;
     }
     if (statusCode) {
@@ -42,7 +41,7 @@ export function formatErrorMessage(
   if (statusCode) {
     // 5XX errors - server errors
     if (statusCode >= 500) {
-      return "Something went wrong on our end. Please try again soon or contact our support team if the problem persists.";
+      return 'Something went wrong on our end. Please try again soon or contact our support team if the problem persists.';
     }
     // 4XX errors - client errors, show detail if available
     if (statusCode >= 400 && statusCode < 500) {
@@ -51,8 +50,8 @@ export function formatErrorMessage(
   }
 
   // Network errors or other issues
-  if (errorMessage === "Network Error" || !error.response) {
-    return "Unable to connect to the server. Please check your internet connection and try again.";
+  if (errorMessage === 'Network Error' || !error.response) {
+    return 'Unable to connect to the server. Please check your internet connection and try again.';
   }
 
   return errorDetail || defaultMessage;
