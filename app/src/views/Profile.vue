@@ -151,7 +151,7 @@ function formatDate(dateStr: string): string {
               <Label for="current_password">Current Password</Label>
               <Input
                 id="current_password"
-                v-model="(currentPasswordField.value.value as string)"
+                v-model="currentPasswordField.value.value as string"
                 type="password"
                 :aria-invalid="currentPasswordField.errorMessage.value ? 'true' : undefined"
                 :disabled="savingPassword"
@@ -165,7 +165,7 @@ function formatDate(dateStr: string): string {
               <Label for="new_password">New Password</Label>
               <Input
                 id="new_password"
-                v-model="(newPasswordField.value.value as string)"
+                v-model="newPasswordField.value.value as string"
                 type="password"
                 :aria-invalid="newPasswordField.errorMessage.value ? 'true' : undefined"
                 :disabled="savingPassword"
@@ -182,7 +182,7 @@ function formatDate(dateStr: string): string {
               <Label for="confirm_password">Confirm New Password</Label>
               <Input
                 id="confirm_password"
-                v-model="(confirmPasswordField.value.value as string)"
+                v-model="confirmPasswordField.value.value as string"
                 type="password"
                 :aria-invalid="confirmPasswordField.errorMessage.value ? 'true' : undefined"
                 :disabled="savingPassword"

@@ -185,9 +185,7 @@ const collectionColumns = computed(() => {
           <FolderOpen />
         </EmptyMedia>
         <EmptyTitle>No collections yet</EmptyTitle>
-        <EmptyDescription>
-          Create your first collection to start storing data.
-        </EmptyDescription>
+        <EmptyDescription> Create your first collection to start storing data. </EmptyDescription>
       </EmptyHeader>
       <EmptyContent v-if="authStore.isAdmin">
         <Button @click="showCreateModal = true"> Create Collection </Button>

@@ -325,9 +325,7 @@ const scheduleColumns = computed(() => [
           <Clock />
         </EmptyMedia>
         <EmptyTitle>No schedules yet</EmptyTitle>
-        <EmptyDescription>
-          Create schedules to run functions automatically.
-        </EmptyDescription>
+        <EmptyDescription> Create schedules to run functions automatically. </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <Button size="sm" @click="showCreateModal = true"> Create Schedule </Button>
