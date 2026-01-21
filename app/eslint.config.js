@@ -3,6 +3,7 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 import pluginVue from 'eslint-plugin-vue';
 import vueParser from 'vue-eslint-parser';
+import prettierConfig from 'eslint-config-prettier';
 
 export default [
   // Ignore patterns
@@ -86,4 +87,7 @@ export default [
       'no-unused-vars': 'off', // Handled by @typescript-eslint
     },
   },
+
+  // Prettier config - must be last to disable conflicting rules
+  prettierConfig,
 ];
