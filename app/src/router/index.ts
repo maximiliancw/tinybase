@@ -20,6 +20,7 @@ const FunctionCalls = () => import('../views/FunctionCalls.vue');
 const Settings = () => import('../views/Settings.vue');
 const Extensions = () => import('../views/Extensions.vue');
 const Files = () => import('../views/Files.vue');
+const Profile = () => import('../views/Profile.vue');
 
 // Auth portal views
 const AuthLogin = () => import('../views/auth/AuthLogin.vue');
@@ -120,6 +121,12 @@ const router = createRouter({
       path: '/admin/files',
       name: 'files',
       component: Files,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/admin/profile',
+      name: 'profile',
+      component: Profile,
       meta: { requiresAuth: true },
     },
     // Root redirect to admin dashboard

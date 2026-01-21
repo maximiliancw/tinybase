@@ -91,12 +91,14 @@ function handleLogout() {
           </h1>
         </div>
         <div class="w-full mt-4">
-          <div class="text-xs text-muted-foreground">
+          <div class="text-xs text-muted-foreground flex flex-row items-center gap-2">
             <div class="flex items-center gap-1 font-medium text-foreground">
               <Icon name="User" :size="18" />
-              {{ authStore.user?.email }}
+              <RouterLink to="/admin/profile" class="hover:underline">
+                {{ authStore.user?.email }}
+              </RouterLink>
             </div>
-            <Badge v-if="authStore.isAdmin" variant="secondary" class="ml-1.5"> admin </Badge>
+            <Badge v-if="authStore.isAdmin" variant="secondary" class="ml-auto"> admin </Badge>
           </div>
         </div>
       </header>

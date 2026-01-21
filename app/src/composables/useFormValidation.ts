@@ -109,6 +109,20 @@ export const validationSchemas = {
   }),
 
   /**
+   * Change password schema
+   */
+  changePassword: yup.object({
+    currentPassword: yup.string().required('Current password is required'),
+    newPassword: validationRules.password(8),
+    confirmPassword: yup
+      .string()
+      .required('Please confirm your new password')
+      .test('passwords-match', 'Passwords must match', function (value) {
+        return value === this.parent.newPassword;
+      }),
+  }),
+
+  /**
    * Extension installation schema
    */
   installExtension: yup.object({
