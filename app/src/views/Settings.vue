@@ -570,15 +570,26 @@ function resetChanges() {
           <!-- Authentication Settings -->
           <Card>
             <CardHeader>
-              <CardTitle>Authentication</CardTitle>
+              <div class="flex items-center justify-between">
+                <CardTitle>Authentication</CardTitle>
+                <Button
+                  v-if="authPortalEnabled"
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  @click="openPreviewInNewTab"
+                >
+                  <Icon name="ExternalLink" :size="16" />
+                  Preview Auth Portal
+                </Button>
+              </div>
             </CardHeader>
             <CardContent class="space-y-4">
               <div class="space-y-2">
                 <div class="flex items-center space-x-2">
                   <Switch
                     id="allow_public_registration"
-                    :checked="allowPublicRegistration"
-                    @update:checked="allowPublicRegistration = $event"
+                    v-model="allowPublicRegistration"
                   />
                   <Label for="allow_public_registration" class="cursor-pointer">
                     Allow public registration
@@ -597,8 +608,7 @@ function resetChanges() {
                   <div class="flex items-center space-x-2">
                     <Switch
                       id="auth_portal_enabled"
-                      :checked="authPortalEnabled"
-                      @update:checked="authPortalEnabled = !authPortalEnabled"
+                      v-model="authPortalEnabled"
                     />
                     <Label for="auth_portal_enabled" class="cursor-pointer">
                       Enable custom auth portal
@@ -610,16 +620,30 @@ function resetChanges() {
                 </div>
 
                 <div v-if="authPortalEnabled" class="space-y-4">
-                  <div class="space-y-2">
-                    <Label for="auth_portal_logo_url">Logo URL</Label>
-                    <Input
-                      id="auth_portal_logo_url"
-                      v-model="authPortalLogoUrl"
-                      placeholder="https://example.com/logo.png"
-                    />
-                    <FieldDescription>
-                      URL to your logo image displayed on the login and registration pages. Must be publicly accessible.
-                    </FieldDescription>
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div class="space-y-2">
+                      <Label for="auth_portal_logo_url">Logo URL</Label>
+                      <Input
+                        id="auth_portal_logo_url"
+                        v-model="authPortalLogoUrl"
+                        placeholder="https://example.com/logo.png"
+                      />
+                      <FieldDescription>
+                        URL to your logo image displayed on the login and registration pages. Must be publicly accessible.
+                      </FieldDescription>
+                    </div>
+
+                    <div class="space-y-2">
+                      <Label for="auth_portal_background_image_url">Background Image URL</Label>
+                      <Input
+                        id="auth_portal_background_image_url"
+                        v-model="authPortalBackgroundImageUrl"
+                        placeholder="https://example.com/bg.jpg"
+                      />
+                      <FieldDescription>
+                        URL to a background image for the auth portal pages. Must be publicly accessible.
+                      </FieldDescription>
+                    </div>
                   </div>
 
                   <div class="space-y-2">
@@ -634,48 +658,33 @@ function resetChanges() {
                     </FieldDescription>
                   </div>
 
-                  <div class="space-y-2">
-                    <Label for="auth_portal_background_image_url">Background Image URL</Label>
-                    <Input
-                      id="auth_portal_background_image_url"
-                      v-model="authPortalBackgroundImageUrl"
-                      placeholder="https://example.com/bg.jpg"
-                    />
-                    <FieldDescription>
-                      URL to a background image for the auth portal pages. Must be publicly accessible.
-                    </FieldDescription>
-                  </div>
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div class="space-y-2">
+                      <Label for="auth_portal_login_redirect_url">Login Redirect URL</Label>
+                      <Input
+                        id="auth_portal_login_redirect_url"
+                        v-model="loginRedirectUrl"
+                        v-bind="loginRedirectUrlAttrs"
+                        placeholder="https://example.com/dashboard"
+                      />
+                      <FieldDescription>
+                        URL where users are redirected after successful login. Leave empty to use the default dashboard.
+                      </FieldDescription>
+                    </div>
 
-                  <div class="space-y-2">
-                    <Label for="auth_portal_login_redirect_url">Login Redirect URL</Label>
-                    <Input
-                      id="auth_portal_login_redirect_url"
-                      v-model="loginRedirectUrl"
-                      v-bind="loginRedirectUrlAttrs"
-                      placeholder="https://example.com/dashboard"
-                    />
-                    <FieldDescription>
-                      URL where users are redirected after successful login. Leave empty to use the default dashboard.
-                    </FieldDescription>
+                    <div class="space-y-2">
+                      <Label for="auth_portal_register_redirect_url">Register Redirect URL</Label>
+                      <Input
+                        id="auth_portal_register_redirect_url"
+                        v-model="registerRedirectUrl"
+                        v-bind="registerRedirectUrlAttrs"
+                        placeholder="https://example.com/onboarding"
+                      />
+                      <FieldDescription>
+                        URL where users are redirected after successful registration. Leave empty to use the default dashboard.
+                      </FieldDescription>
+                    </div>
                   </div>
-
-                  <div class="space-y-2">
-                    <Label for="auth_portal_register_redirect_url">Register Redirect URL</Label>
-                    <Input
-                      id="auth_portal_register_redirect_url"
-                      v-model="registerRedirectUrl"
-                      v-bind="registerRedirectUrlAttrs"
-                      placeholder="https://example.com/onboarding"
-                    />
-                    <FieldDescription>
-                      URL where users are redirected after successful registration. Leave empty to use the default dashboard.
-                    </FieldDescription>
-                  </div>
-
-                  <Button type="button" variant="outline" @click="openPreviewInNewTab">
-                    <Icon name="ExternalLink" :size="16" />
-                    Preview Auth Portal
-                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -830,8 +839,7 @@ function resetChanges() {
                 <div class="flex items-center space-x-2">
                   <Switch
                     id="storage_enabled"
-                    :checked="storageEnabled"
-                    @update:checked="storageEnabled = $event"
+                    v-model="storageEnabled"
                   />
                   <Label for="storage_enabled" class="cursor-pointer"> Enable S3 storage </Label>
                 </div>
