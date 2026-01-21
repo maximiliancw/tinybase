@@ -4,6 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Vue Sonner Toast Styles */
+@import 'vue-sonner/style.css';
+
 @layer base {
   :root {
     --background: 0 0% 100%;
