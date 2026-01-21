@@ -104,8 +104,8 @@ onMounted(async () => {
               autocomplete="email"
               :aria-invalid="emailField.errorMessage.value ? 'true' : undefined"
             />
-            <p v-if="emailField.errorMessage.value" class="text-sm text-destructive">
-              {{ emailField.errorMessage.value }}
+            <p class="min-h-[20px] text-sm text-destructive">
+              {{ emailField.errorMessage.value || '' }}
             </p>
           </div>
 
@@ -119,8 +119,8 @@ onMounted(async () => {
               autocomplete="current-password"
               :aria-invalid="passwordField.errorMessage.value ? 'true' : undefined"
             />
-            <p v-if="passwordField.errorMessage.value" class="text-sm text-destructive">
-              {{ passwordField.errorMessage.value }}
+            <p class="min-h-[20px] text-sm text-destructive">
+              {{ passwordField.errorMessage.value || '&nbsp;' }}
             </p>
           </div>
 
