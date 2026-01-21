@@ -103,10 +103,10 @@ async function applyFilters() {
   await loadCalls(true); // Reset when filters change
 }
 
-function getStatusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+function getStatusVariant(status: string): 'success' | 'secondary' | 'destructive' | 'outline' {
   switch (status) {
     case 'succeeded':
-      return 'default';
+      return 'success';
     case 'failed':
       return 'destructive';
     case 'running':

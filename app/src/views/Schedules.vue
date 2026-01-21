@@ -270,7 +270,7 @@ const scheduleColumns = computed(() => [
     key: 'status',
     label: 'Status',
     render: (_value: any, row: any) =>
-      h(Badge, { variant: row.is_active ? 'default' : 'secondary' }, () =>
+      h(Badge, { variant: row.is_active ? 'success' : 'secondary' }, () =>
         row.is_active ? 'Active' : 'Inactive'
       ),
   },

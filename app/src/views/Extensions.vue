@@ -230,7 +230,7 @@ function formatDate(dateStr: string): string {
             <CardTitle class="text-lg">
               {{ ext.name }}
             </CardTitle>
-            <Badge :variant="ext.is_enabled ? 'default' : 'secondary'">
+            <Badge :variant="ext.is_enabled ? 'success' : 'secondary'">
               {{ ext.is_enabled ? 'Enabled' : 'Disabled' }}
             </Badge>
           </div>

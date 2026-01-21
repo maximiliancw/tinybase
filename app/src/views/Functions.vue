@@ -337,7 +337,7 @@ const functionColumns = computed(() => {
           <div v-if="callResult" class="space-y-3 rounded-lg border p-4">
             <div class="flex items-center gap-2">
               <h4 class="font-semibold">Result</h4>
-              <Badge :variant="callResult.status === 'succeeded' ? 'default' : 'destructive'">
+              <Badge :variant="callResult.status === 'succeeded' ? 'success' : 'destructive'">
                 {{ callResult.status }}
               </Badge>
               <span v-if="callResult.duration_ms" class="text-xs text-muted-foreground">
