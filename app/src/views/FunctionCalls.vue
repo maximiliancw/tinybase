@@ -8,7 +8,7 @@ import { onMounted, ref, computed, h } from 'vue';
 import { useInfiniteScroll } from '@vueuse/core';
 import { useFunctionsStore } from '../stores/functions';
 import DataTable from '../components/DataTable.vue';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -20,13 +20,23 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { ScrollText } from 'lucide-vue-next';
+import { ScrollText, Filter } from 'lucide-vue-next';
 
 const functionsStore = useFunctionsStore();
 
@@ -34,6 +44,7 @@ const page = ref(1);
 const pageSize = 50;
 const total = ref(0);
 const loadingMore = ref(false);
+const showFilters = ref(false);
 const filters = ref({
   function_name: 'all',
   status: 'all',
@@ -101,6 +112,24 @@ useInfiniteScroll(
 async function applyFilters() {
   page.value = 1;
   await loadCalls(true); // Reset when filters change
+  showFilters.value = false;
+}
+
+function hasActiveFilters() {
+  return (
+    filters.value.function_name !== 'all' ||
+    filters.value.status !== 'all' ||
+    filters.value.trigger_type !== 'all'
+  );
+}
+
+function resetFilters() {
+  filters.value = {
+    function_name: 'all',
+    status: 'all',
+    trigger_type: 'all',
+  };
+  applyFilters();
 }
 
 function getStatusVariant(status: string): 'success' | 'secondary' | 'destructive' | 'outline' {
@@ -218,61 +247,6 @@ const functionCallColumns = computed(() => [
       <p class="text-muted-foreground">Execution history for all functions</p>
     </header>
 
-    <!-- Filters -->
-    <Card>
-      <CardHeader>
-        <CardTitle>Filters</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div class="grid gap-4 md:grid-cols-3">
-          <div class="space-y-2">
-            <Label for="filter_function">Function</Label>
-            <Select v-model="filters.function_name">
-              <SelectTrigger>
-                <SelectValue placeholder="All Functions" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all"> All Functions </SelectItem>
-                <SelectItem v-for="fn in functionsStore.functions" :key="fn.name" :value="fn.name">
-                  {{ fn.name }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div class="space-y-2">
-            <Label for="filter_status">Status</Label>
-            <Select v-model="filters.status">
-              <SelectTrigger>
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all"> All Statuses </SelectItem>
-                <SelectItem value="succeeded"> Succeeded </SelectItem>
-                <SelectItem value="failed"> Failed </SelectItem>
-                <SelectItem value="running"> Running </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div class="space-y-2">
-            <Label for="filter_trigger">Trigger</Label>
-            <Select v-model="filters.trigger_type">
-              <SelectTrigger>
-                <SelectValue placeholder="All Triggers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all"> All Triggers </SelectItem>
-                <SelectItem value="manual"> Manual </SelectItem>
-                <SelectItem value="schedule"> Schedule </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <Button class="mt-4" variant="secondary" @click="applyFilters"> Apply Filters </Button>
-      </CardContent>
-    </Card>
-
     <!-- Loading State -->
     <Card v-if="functionsStore.loading">
       <CardContent class="flex items-center justify-center py-10">
@@ -300,7 +274,95 @@ const functionCallColumns = computed(() => [
         :columns="functionCallColumns"
         :paginated="false"
         search-placeholder="Search function calls..."
-      />
+      >
+        <template #headerAction>
+          <Button v-if="hasActiveFilters()" variant="ghost" size="sm" @click="resetFilters">
+            Clear
+          </Button>
+          <Sheet v-model:open="showFilters">
+            <SheetTrigger as-child>
+              <Button :variant="hasActiveFilters() ? 'default' : 'outline'" size="sm">
+                <Filter :size="16" class="mr-2" />
+                Filters
+                <Badge v-if="hasActiveFilters()" variant="secondary" class="ml-2">
+                  {{
+                    [
+                      filters.function_name !== 'all',
+                      filters.status !== 'all',
+                      filters.trigger_type !== 'all',
+                    ].filter(Boolean).length
+                  }}
+                </Badge>
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>Filter Function Calls</SheetTitle>
+                <SheetDescription>
+                  Filter function calls by function name, status, or trigger type.
+                </SheetDescription>
+              </SheetHeader>
+
+              <div class="space-y-6 py-6">
+                <div class="space-y-2">
+                  <Label for="filter_function">Function</Label>
+                  <Select v-model="filters.function_name">
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Functions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all"> All Functions </SelectItem>
+                      <SelectItem
+                        v-for="fn in functionsStore.functions"
+                        :key="fn.name"
+                        :value="fn.name"
+                      >
+                        {{ fn.name }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div class="space-y-2">
+                  <Label for="filter_status">Status</Label>
+                  <Select v-model="filters.status">
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all"> All Statuses </SelectItem>
+                      <SelectItem value="succeeded"> Succeeded </SelectItem>
+                      <SelectItem value="failed"> Failed </SelectItem>
+                      <SelectItem value="running"> Running </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div class="space-y-2">
+                  <Label for="filter_trigger">Trigger</Label>
+                  <Select v-model="filters.trigger_type">
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Triggers" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all"> All Triggers </SelectItem>
+                      <SelectItem value="manual"> Manual </SelectItem>
+                      <SelectItem value="schedule"> Schedule </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <SheetFooter>
+                <SheetClose as-child>
+                  <Button variant="outline">Cancel</Button>
+                </SheetClose>
+                <Button @click="applyFilters">Apply Filters</Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
+        </template>
+      </DataTable>
 
       <!-- Server-side Pagination -->
       <div v-if="total > pageSize" class="flex items-center justify-between border-t p-4">

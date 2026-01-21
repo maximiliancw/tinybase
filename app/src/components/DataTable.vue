@@ -193,7 +193,7 @@ function isVNode(value: any): value is VNode {
   <div class="space-y-4">
     <!-- Search Bar and Header Action -->
     <div
-      v-if="searchable || headerAction"
+      v-if="searchable || headerAction || $slots.headerAction"
       class="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between"
     >
       <div v-if="searchable" class="flex-1 space-y-1">
@@ -205,8 +205,13 @@ function isVNode(value: any): value is VNode {
           Showing {{ filteredData.length }} of {{ data.length }} results
         </p>
       </div>
-      <div v-if="headerAction">
-        <Button :variant="headerAction.variant || 'default'" @click="headerAction.action">
+      <div v-if="headerAction || $slots.headerAction" class="flex items-center gap-2">
+        <slot name="headerAction" />
+        <Button
+          v-if="headerAction"
+          :variant="headerAction.variant || 'default'"
+          @click="headerAction.action"
+        >
           <Icon v-if="headerAction.icon" :name="headerAction.icon" :size="16" />
           {{ headerAction.label }}
         </Button>
