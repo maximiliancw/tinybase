@@ -8,7 +8,7 @@
 import { onMounted, ref } from "vue";
 import { useToast } from "../composables/useToast";
 import { useForm, useField } from "vee-validate";
-import { api } from "../api";
+import { api } from "@/api";
 import { validationSchemas } from "../composables/useFormValidation";
 import Icon from "../components/Icon.vue";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";

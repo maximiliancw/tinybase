@@ -10,6 +10,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useForm, useField } from "vee-validate";
 import { useAuthStore } from "../stores/auth";
 import { validationSchemas } from "../composables/useFormValidation";
+import { api } from "@/api";
 import Icon from "../components/Icon.vue";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,10 +53,10 @@ onMounted(async () => {
   // Fetch instance name and setup status in parallel
   await Promise.all([
     authStore.fetchInstanceInfo(),
-    api
-      .get("/api/auth/setup-status")
+    api.auth
+      .getSetupStatus()
       .then((response) => {
-        needsSetup.value = response.data.needs_setup;
+        needsSetup.value = response.data?.needs_setup || false;
       })
       .catch(() => {
         /* Ignore errors */

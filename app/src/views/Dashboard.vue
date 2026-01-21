@@ -11,7 +11,7 @@ import { useCollectionsStore } from "../stores/collections";
 import { useFunctionsStore } from "../stores/functions";
 import { useUsersStore } from "../stores/users";
 import { useAuthStore } from "../stores/auth";
-import { api } from "../api";
+import { api } from "@/api";
 import CollectionSizesChart from "../components/CollectionSizesChart.vue";
 import FunctionStatsChart from "../components/FunctionStatsChart.vue";
 import Icon from "../components/Icon.vue";

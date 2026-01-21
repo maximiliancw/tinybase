@@ -9,7 +9,7 @@ import { onMounted, ref, computed, h, watch } from "vue";
 import { useToast } from "../composables/useToast";
 import { useForm, Field, useField } from "vee-validate";
 import { useLocalStorage, useFileDialog, useDropZone } from "@vueuse/core";
-import { api } from "../api";
+import { api } from "@/api";
 import { client } from "../client/client.gen";
 import { validationSchemas } from "../composables/useFormValidation";
 import DataTable from "../components/DataTable.vue";

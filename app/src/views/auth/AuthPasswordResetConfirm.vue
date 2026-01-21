@@ -7,7 +7,7 @@
 import { ref, onMounted } from "vue";
 import { useToast } from "../../composables/useToast";
 import { useRoute, useRouter } from "vue-router";
-import { api } from "../../api";
+import { api } from "@/api";
 import { usePortalStore } from "../../stores/portal";
 import { usePreviewParams } from "../../composables/usePreviewParams";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
