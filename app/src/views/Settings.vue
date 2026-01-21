@@ -52,6 +52,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FieldDescription } from '@/components/ui/field';
 import { Key } from 'lucide-vue-next';
 
 const toast = useToast();
@@ -98,6 +99,7 @@ const { handleSubmit, defineField, resetForm, meta } = useForm({
     scheduler_max_schedules_per_tick: null,
     scheduler_max_concurrent_executions: null,
     max_concurrent_functions_per_user: null,
+    scheduler_workers: null,
     storage_enabled: false,
     storage_endpoint: null,
     storage_bucket: null,
@@ -205,6 +207,9 @@ const [authPortalBackgroundImageUrl] = defineField('auth_portal_background_image
 const [loginRedirectUrl, loginRedirectUrlAttrs] = defineField('auth_portal_login_redirect_url');
 const [registerRedirectUrl, registerRedirectUrlAttrs] = defineField('auth_portal_register_redirect_url');
 
+// New field for workers (to be implemented in backend later)
+const [schedulerWorkers] = defineField('scheduler_workers');
+
 // Generate preview URL with current form values
 const previewUrl = computed(() => {
   const params = new URLSearchParams();
@@ -310,6 +315,7 @@ const saveSettings = handleSubmit(async (formValues) => {
       'scheduler_max_schedules_per_tick',
       'scheduler_max_concurrent_executions',
       'max_concurrent_functions_per_user',
+      'scheduler_workers',
     ];
     
     numericFields.forEach(field => {
@@ -343,14 +349,43 @@ const saveSettings = handleSubmit(async (formValues) => {
     saving.value = false;
   }
 });
+
+function resetChanges() {
+  if (settingsStore.settings) {
+    resetForm({ values: settingsStore.settings });
+    // Clear credential fields
+    storageAccessKey.value = '';
+    storageSecretKey.value = '';
+  }
+}
 </script>
 
 <template>
   <section class="space-y-6 animate-in fade-in duration-500">
     <!-- Page Header -->
-    <header class="space-y-1">
-      <h1 class="text-3xl font-bold tracking-tight">Settings</h1>
-      <p class="text-muted-foreground">Configure your TinyBase instance</p>
+    <header class="flex items-center justify-between">
+      <div class="space-y-1">
+        <h1 class="text-3xl font-bold tracking-tight">Settings</h1>
+        <p class="text-muted-foreground">Configure your TinyBase instance</p>
+      </div>
+      <div v-if="!loading" class="flex gap-2">
+        <Button
+          v-if="meta.dirty"
+          type="button"
+          variant="outline"
+          :disabled="saving"
+          @click="resetChanges"
+        >
+          Reset Changes
+        </Button>
+        <Button
+          type="button"
+          :disabled="!meta.dirty || saving"
+          @click="saveSettings"
+        >
+          {{ saving ? 'Saving...' : 'Save Settings' }}
+        </Button>
+      </div>
     </header>
 
     <!-- Loading State -->
@@ -380,6 +415,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                 <div class="space-y-2">
                   <Label for="instance_name">Instance Name</Label>
                   <Input id="instance_name" v-model="instanceName" />
+                  <FieldDescription>
+                    Display name for this TinyBase instance, shown in the admin UI header and API responses.
+                  </FieldDescription>
                 </div>
 
                 <div class="space-y-2">
@@ -394,28 +432,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-              </div>
-
-              <div class="grid gap-4 md:grid-cols-2">
-                <div class="space-y-2">
-                  <Label for="token_cleanup_interval">Token Cleanup Interval (minutes)</Label>
-                  <Input
-                    id="token_cleanup_interval"
-                    v-model.number="tokenCleanupInterval"
-                    type="number"
-                    min="1"
-                  />
-                </div>
-
-                <div class="space-y-2">
-                  <Label for="metrics_collection_interval">Metrics Collection Interval (minutes)</Label>
-                  <Input
-                    id="metrics_collection_interval"
-                    v-model.number="metricsCollectionInterval"
-                    type="number"
-                    min="1"
-                  />
+                  <FieldDescription>
+                    Timezone used for scheduling tasks and displaying timestamps. Default: UTC.
+                  </FieldDescription>
                 </div>
               </div>
             </CardContent>
@@ -426,52 +445,120 @@ const saveSettings = handleSubmit(async (formValues) => {
             <CardHeader>
               <CardTitle>Scheduler & Rate Limiting</CardTitle>
             </CardHeader>
-            <CardContent class="space-y-4">
-              <div class="grid gap-4 md:grid-cols-2">
-                <div class="space-y-2">
-                  <Label for="scheduler_function_timeout_seconds"> Function Timeout (seconds) </Label>
-                  <Input
-                    id="scheduler_function_timeout_seconds"
-                    v-model.number="schedulerFunctionTimeout"
-                    type="number"
-                    min="1"
-                    placeholder="null = no limit"
-                  />
-                </div>
+            <CardContent class="space-y-6">
+              <!-- Maintenance Tasks -->
+              <div class="space-y-4">
+                <h3 class="text-sm font-semibold">Maintenance Tasks</h3>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="space-y-2">
+                    <Label for="token_cleanup_interval">Token Cleanup Interval (minutes)</Label>
+                    <Input
+                      id="token_cleanup_interval"
+                      v-model.number="tokenCleanupInterval"
+                      type="number"
+                      min="1"
+                    />
+                    <FieldDescription>
+                      How often expired and invalid tokens are removed from the database. Default: 60 minutes.
+                    </FieldDescription>
+                  </div>
 
-                <div class="space-y-2">
-                  <Label for="scheduler_max_schedules_per_tick"> Max Schedules Per Tick </Label>
-                  <Input
-                    id="scheduler_max_schedules_per_tick"
-                    v-model.number="schedulerMaxSchedulesPerTick"
-                    type="number"
-                    min="1"
-                    placeholder="null = no limit"
-                  />
+                  <div class="space-y-2">
+                    <Label for="metrics_collection_interval">Metrics Collection Interval (minutes)</Label>
+                    <Input
+                      id="metrics_collection_interval"
+                      v-model.number="metricsCollectionInterval"
+                      type="number"
+                      min="1"
+                    />
+                    <FieldDescription>
+                      How often system metrics are collected and stored. Default: 360 minutes (6 hours).
+                    </FieldDescription>
+                  </div>
                 </div>
+              </div>
 
-                <div class="space-y-2">
-                  <Label for="scheduler_max_concurrent_executions"> Max Concurrent Executions </Label>
-                  <Input
-                    id="scheduler_max_concurrent_executions"
-                    v-model.number="schedulerMaxConcurrentExecutions"
-                    type="number"
-                    min="1"
-                    placeholder="null = no limit"
-                  />
+              <!-- Engine -->
+              <div class="space-y-4">
+                <h3 class="text-sm font-semibold">Engine</h3>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="space-y-2">
+                    <Label for="scheduler_function_timeout_seconds">Function Timeout (seconds)</Label>
+                    <Input
+                      id="scheduler_function_timeout_seconds"
+                      v-model.number="schedulerFunctionTimeout"
+                      type="number"
+                      min="1"
+                      placeholder="null = no limit"
+                    />
+                    <FieldDescription>
+                      Maximum execution time for scheduled functions. Functions exceeding this limit are terminated. Leave empty for no timeout.
+                    </FieldDescription>
+                  </div>
+
+                  <div class="space-y-2">
+                    <Label for="scheduler_workers">Workers</Label>
+                    <Input
+                      id="scheduler_workers"
+                      v-model.number="schedulerWorkers"
+                      type="number"
+                      min="1"
+                      placeholder="null = auto"
+                    />
+                    <FieldDescription>
+                      Number of worker processes available for executing scheduled functions. Leave empty to auto-detect based on CPU cores.
+                    </FieldDescription>
+                  </div>
                 </div>
+              </div>
 
-                <div class="space-y-2">
-                  <Label for="max_concurrent_functions_per_user">
-                    Max Concurrent Functions Per User
-                  </Label>
-                  <Input
-                    id="max_concurrent_functions_per_user"
-                    v-model.number="maxConcurrentFunctionsPerUser"
-                    type="number"
-                    min="1"
-                    placeholder="null = no limit"
-                  />
+              <!-- Concurrency -->
+              <div class="space-y-4">
+                <h3 class="text-sm font-semibold">Concurrency</h3>
+                <div class="flex flex-wrap gap-4">
+                  <div class="space-y-2 flex-1 min-w-[200px]">
+                    <Label for="scheduler_max_schedules_per_tick">Max Schedules Per Tick</Label>
+                    <Input
+                      id="scheduler_max_schedules_per_tick"
+                      v-model.number="schedulerMaxSchedulesPerTick"
+                      type="number"
+                      min="1"
+                      placeholder="null = no limit"
+                    />
+                    <FieldDescription>
+                      Maximum number of scheduled tasks processed in a single scheduler tick. Leave empty for no limit.
+                    </FieldDescription>
+                  </div>
+
+                  <div class="space-y-2 flex-1 min-w-[200px]">
+                    <Label for="scheduler_max_concurrent_executions">Max Concurrent Executions</Label>
+                    <Input
+                      id="scheduler_max_concurrent_executions"
+                      v-model.number="schedulerMaxConcurrentExecutions"
+                      type="number"
+                      min="1"
+                      placeholder="null = no limit"
+                    />
+                    <FieldDescription>
+                      Maximum number of functions that can run simultaneously across all users. Leave empty for no limit.
+                    </FieldDescription>
+                  </div>
+
+                  <div class="space-y-2 flex-1 min-w-[200px]">
+                    <Label for="max_concurrent_functions_per_user">
+                      Max Concurrent Functions Per User
+                    </Label>
+                    <Input
+                      id="max_concurrent_functions_per_user"
+                      v-model.number="maxConcurrentFunctionsPerUser"
+                      type="number"
+                      min="1"
+                      placeholder="null = no limit"
+                    />
+                    <FieldDescription>
+                      Maximum number of functions a single user can execute concurrently. Leave empty for no limit.
+                    </FieldDescription>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -486,33 +573,43 @@ const saveSettings = handleSubmit(async (formValues) => {
               <CardTitle>Authentication</CardTitle>
             </CardHeader>
             <CardContent class="space-y-4">
-              <div class="flex items-center space-x-2">
-                <Switch
-                  id="allow_public_registration"
-                  :checked="allowPublicRegistration"
-                  @update:checked="allowPublicRegistration = $event"
-                />
-                <Label for="allow_public_registration" class="cursor-pointer">
-                  Allow public registration
-                </Label>
+              <div class="space-y-2">
+                <div class="flex items-center space-x-2">
+                  <Switch
+                    id="allow_public_registration"
+                    :checked="allowPublicRegistration"
+                    @update:checked="allowPublicRegistration = $event"
+                  />
+                  <Label for="allow_public_registration" class="cursor-pointer">
+                    Allow public registration
+                  </Label>
+                </div>
+                <FieldDescription class="pl-9">
+                  When enabled, anyone can create a new user account through the registration page. When disabled, only admins can create users.
+                </FieldDescription>
               </div>
 
               <div
                 v-if="allowPublicRegistration"
-                class="space-y-4 pl-6 border-l-2 border-muted"
+                class="space-y-4"
               >
-                <div class="flex items-center space-x-2">
-                  <Switch
-                    id="auth_portal_enabled"
-                    :checked="authPortalEnabled"
-                    @update:checked="authPortalEnabled = $event"
-                  />
-                  <Label for="auth_portal_enabled" class="cursor-pointer">
-                    Enable custom auth portal
-                  </Label>
+                <div class="space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <Switch
+                      id="auth_portal_enabled"
+                      :checked="authPortalEnabled"
+                      @update:checked="authPortalEnabled = !authPortalEnabled"
+                    />
+                    <Label for="auth_portal_enabled" class="cursor-pointer">
+                      Enable custom auth portal
+                    </Label>
+                  </div>
+                  <FieldDescription class="pl-9">
+                    Customize the appearance of the login and registration pages with your branding.
+                  </FieldDescription>
                 </div>
 
-                <div v-if="authPortalEnabled" class="space-y-4 pl-6 border-l-2 border-muted">
+                <div v-if="authPortalEnabled" class="space-y-4">
                   <div class="space-y-2">
                     <Label for="auth_portal_logo_url">Logo URL</Label>
                     <Input
@@ -520,6 +617,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                       v-model="authPortalLogoUrl"
                       placeholder="https://example.com/logo.png"
                     />
+                    <FieldDescription>
+                      URL to your logo image displayed on the login and registration pages. Must be publicly accessible.
+                    </FieldDescription>
                   </div>
 
                   <div class="space-y-2">
@@ -529,6 +629,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                       v-model="authPortalPrimaryColor"
                       type="color"
                     />
+                    <FieldDescription>
+                      Primary brand color used for buttons and accents on the auth portal pages.
+                    </FieldDescription>
                   </div>
 
                   <div class="space-y-2">
@@ -538,6 +641,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                       v-model="authPortalBackgroundImageUrl"
                       placeholder="https://example.com/bg.jpg"
                     />
+                    <FieldDescription>
+                      URL to a background image for the auth portal pages. Must be publicly accessible.
+                    </FieldDescription>
                   </div>
 
                   <div class="space-y-2">
@@ -548,6 +654,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                       v-bind="loginRedirectUrlAttrs"
                       placeholder="https://example.com/dashboard"
                     />
+                    <FieldDescription>
+                      URL where users are redirected after successful login. Leave empty to use the default dashboard.
+                    </FieldDescription>
                   </div>
 
                   <div class="space-y-2">
@@ -558,6 +667,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                       v-bind="registerRedirectUrlAttrs"
                       placeholder="https://example.com/onboarding"
                     />
+                    <FieldDescription>
+                      URL where users are redirected after successful registration. Leave empty to use the default dashboard.
+                    </FieldDescription>
                   </div>
 
                   <Button type="button" variant="outline" @click="openPreviewInNewTab">
@@ -714,13 +826,18 @@ const saveSettings = handleSubmit(async (formValues) => {
               <CardDescription>Configure S3-compatible object storage for file uploads</CardDescription>
             </CardHeader>
             <CardContent class="space-y-4">
-              <div class="flex items-center space-x-2">
-                <Switch
-                  id="storage_enabled"
-                  :checked="storageEnabled"
-                  @update:checked="storageEnabled = $event"
-                />
-                <Label for="storage_enabled" class="cursor-pointer"> Enable S3 storage </Label>
+              <div class="space-y-2">
+                <div class="flex items-center space-x-2">
+                  <Switch
+                    id="storage_enabled"
+                    :checked="storageEnabled"
+                    @update:checked="storageEnabled = $event"
+                  />
+                  <Label for="storage_enabled" class="cursor-pointer"> Enable S3 storage </Label>
+                </div>
+                <FieldDescription class="pl-9">
+                  When enabled, file uploads are stored in S3-compatible object storage instead of the local filesystem.
+                </FieldDescription>
               </div>
 
               <div v-if="storageEnabled" class="space-y-4 pl-6 border-l-2 border-muted">
@@ -732,6 +849,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                       v-model="storageEndpoint"
                       placeholder="https://s3.amazonaws.com"
                     />
+                    <FieldDescription>
+                      S3-compatible storage service endpoint URL (e.g., https://s3.amazonaws.com or https://s3.us-east-1.amazonaws.com).
+                    </FieldDescription>
                   </div>
 
                   <div class="space-y-2">
@@ -741,6 +861,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                       v-model="storageBucket"
                       placeholder="my-bucket"
                     />
+                    <FieldDescription>
+                      Name of the S3 bucket where files will be stored. The bucket must already exist.
+                    </FieldDescription>
                   </div>
 
                   <div class="space-y-2">
@@ -750,6 +873,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                       v-model="storageRegion"
                       placeholder="us-east-1"
                     />
+                    <FieldDescription>
+                      AWS region where the bucket is located (e.g., us-east-1, eu-west-1). Required for AWS S3.
+                    </FieldDescription>
                   </div>
                 </div>
 
@@ -762,6 +888,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                       type="password"
                       autocomplete="off"
                     />
+                    <FieldDescription>
+                      S3 access key ID for authentication. Leave empty to keep the existing credentials unchanged.
+                    </FieldDescription>
                   </div>
 
                   <div class="space-y-2">
@@ -772,6 +901,9 @@ const saveSettings = handleSubmit(async (formValues) => {
                       type="password"
                       autocomplete="off"
                     />
+                    <FieldDescription>
+                      S3 secret access key for authentication. Leave empty to keep the existing credentials unchanged.
+                    </FieldDescription>
                   </div>
                 </div>
               </div>
@@ -779,13 +911,6 @@ const saveSettings = handleSubmit(async (formValues) => {
           </Card>
         </TabsContent>
       </Tabs>
-
-      <!-- Save Footer -->
-      <div class="flex justify-end gap-2 sticky bottom-0 bg-background py-4 border-t">
-        <Button type="submit" :disabled="saving">
-          {{ saving ? 'Saving...' : 'Save Settings' }}
-        </Button>
-      </div>
     </form>
 
     <!-- Create Token Modal -->
