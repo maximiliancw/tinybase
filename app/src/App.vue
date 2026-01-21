@@ -69,7 +69,7 @@ function handleLogout() {
     :class="{ 'auth-portal': isAuthPortal }"
     :style="isAuthPortal ? portalStore.styles : {}"
   >
-    <Toaster position="top-right" :duration="3000" />
+    <Toaster position="top-right" :duration="3000" rich-colors theme="system" />
     <!-- Sidebar Navigation -->
     <aside
       v-if="showSidebar"
