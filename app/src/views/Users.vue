@@ -146,14 +146,20 @@ const userColumns = computed(() => [
   <section class="space-y-6 animate-in fade-in duration-500">
     <!-- Page Header -->
     <header class="space-y-1">
-      <h1 class="text-3xl font-bold tracking-tight">Users</h1>
-      <p class="text-muted-foreground">Manage user accounts</p>
+      <h1 class="text-3xl font-bold tracking-tight">
+        Users
+      </h1>
+      <p class="text-muted-foreground">
+        Manage user accounts
+      </p>
     </header>
 
     <!-- Loading State -->
     <Card v-if="usersStore.loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">Loading users...</p>
+        <p class="text-sm text-muted-foreground">
+          Loading users...
+        </p>
       </CardContent>
     </Card>
 
@@ -182,7 +188,11 @@ const userColumns = computed(() => [
           <DialogTitle>Create User</DialogTitle>
         </DialogHeader>
 
-        <form id="user-form" @submit.prevent="onSubmit" class="space-y-4">
+        <form
+          id="user-form"
+          class="space-y-4"
+          @submit.prevent="onSubmit"
+        >
           <div class="space-y-2">
             <Label for="email">Email</Label>
             <Input
@@ -191,7 +201,10 @@ const userColumns = computed(() => [
               type="email"
               :aria-invalid="emailField.errorMessage.value ? 'true' : undefined"
             />
-            <p v-if="emailField.errorMessage.value" class="text-sm text-destructive">
+            <p
+              v-if="emailField.errorMessage.value"
+              class="text-sm text-destructive"
+            >
               {{ emailField.errorMessage.value }}
             </p>
           </div>
@@ -207,7 +220,10 @@ const userColumns = computed(() => [
             <p class="text-xs text-muted-foreground">
               Password must be at least 8 characters
             </p>
-            <p v-if="passwordField.errorMessage.value" class="text-sm text-destructive">
+            <p
+              v-if="passwordField.errorMessage.value"
+              class="text-sm text-destructive"
+            >
               {{ passwordField.errorMessage.value }}
             </p>
           </div>
@@ -218,7 +234,10 @@ const userColumns = computed(() => [
               :checked="isAdminField.value.value"
               @update:checked="isAdminField.value.value = $event"
             />
-            <Label for="is_admin" class="cursor-pointer">Admin privileges</Label>
+            <Label
+              for="is_admin"
+              class="cursor-pointer"
+            >Admin privileges</Label>
           </div>
         </form>
 

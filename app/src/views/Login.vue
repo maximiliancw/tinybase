@@ -71,25 +71,40 @@ onMounted(async () => {
     <Card class="w-full max-w-md">
       <CardHeader class="space-y-2 text-center">
         <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-lg">
-          <Icon name="Box" :size="28" class="text-primary-foreground" />
+          <Icon
+            name="Box"
+            :size="28"
+            class="text-primary-foreground"
+          />
         </div>
         <h1 class="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
           {{ authStore.instanceName }}
         </h1>
-        <p class="text-sm text-muted-foreground">Admin Dashboard</p>
+        <p class="text-sm text-muted-foreground">
+          Admin Dashboard
+        </p>
       </CardHeader>
 
       <CardContent>
         <!-- First-time setup notice -->
-        <Alert v-if="needsSetup && !checkingSetup" class="mb-6">
-          <Icon name="ThumbsUp" :size="18" />
+        <Alert
+          v-if="needsSetup && !checkingSetup"
+          class="mb-6"
+        >
+          <Icon
+            name="ThumbsUp"
+            :size="18"
+          />
           <AlertTitle>Welcome!</AlertTitle>
           <AlertDescription>
             No users exist yet. Enter your credentials to create the first admin account.
           </AlertDescription>
         </Alert>
 
-        <form @submit.prevent="onSubmit" class="space-y-4">
+        <form
+          class="space-y-4"
+          @submit.prevent="onSubmit"
+        >
           <div class="space-y-2">
             <Label for="email">Email</Label>
             <Input
@@ -100,7 +115,10 @@ onMounted(async () => {
               autocomplete="email"
               :aria-invalid="emailField.errorMessage.value ? 'true' : undefined"
             />
-            <p v-if="emailField.errorMessage.value" class="text-sm text-destructive">
+            <p
+              v-if="emailField.errorMessage.value"
+              class="text-sm text-destructive"
+            >
               {{ emailField.errorMessage.value }}
             </p>
           </div>
@@ -115,7 +133,10 @@ onMounted(async () => {
               autocomplete="current-password"
               :aria-invalid="passwordField.errorMessage.value ? 'true' : undefined"
             />
-            <p v-if="passwordField.errorMessage.value" class="text-sm text-destructive">
+            <p
+              v-if="passwordField.errorMessage.value"
+              class="text-sm text-destructive"
+            >
               {{ passwordField.errorMessage.value }}
             </p>
           </div>
@@ -129,15 +150,17 @@ onMounted(async () => {
               authStore.loading
                 ? "Signing in..."
                 : needsSetup
-                ? "Create Admin & Sign In"
-                : "Sign In"
+                  ? "Create Admin & Sign In"
+                  : "Sign In"
             }}
           </Button>
         </form>
       </CardContent>
 
       <CardFooter class="justify-center border-t">
-        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
+        <p class="text-xs text-muted-foreground">
+          Powered by TinyBase
+        </p>
       </CardFooter>
     </Card>
   </div>

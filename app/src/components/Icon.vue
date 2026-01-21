@@ -7,7 +7,7 @@
  *
  * Usage:
  *   <Icon name="X" :size="20" />
- *   <Icon name="Settings" class="text-primary" />
+ *   <Icon name="Settings" icon-class="text-primary" />
  *
  * Note: This component imports all Lucide icons for convenience. For optimal
  * bundle size in production, import icons directly:
@@ -26,14 +26,14 @@ interface Props {
   /** Stroke width (default: 2) */
   strokeWidth?: number;
   /** Additional CSS classes */
-  class?: string;
+  iconClass?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   size: 24,
   color: "currentColor",
   strokeWidth: 2,
-  class: "",
+  iconClass: "",
 });
 
 // Icon name mapping for common aliases
@@ -96,12 +96,12 @@ const IconComponent = computed(() => {
 
 <template>
   <component
-    v-if="IconComponent"
     :is="IconComponent"
+    v-if="IconComponent"
     :size="size"
     :color="color"
     :stroke-width="strokeWidth"
-    :class="class"
+    :class="iconClass"
   />
   <span
     v-else

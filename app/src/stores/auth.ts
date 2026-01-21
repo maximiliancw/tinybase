@@ -114,7 +114,7 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const response = await api.auth.getInstanceInfo();
       instanceName.value = response.data.instance_name;
-    } catch (err) {
+    } catch {
       // Fallback to default name if fetch fails
       instanceName.value = "TinyBase";
     }

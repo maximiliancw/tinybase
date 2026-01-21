@@ -78,13 +78,20 @@ async function handleResetPassword() {
           :src="portalStore.config.logo_url"
           alt="Logo"
           class="mx-auto h-12 w-auto"
-        />
-        <h1 class="text-2xl font-bold">{{ portalStore.config.instance_name }}</h1>
-        <p class="text-sm text-muted-foreground">Set your new password</p>
+        >
+        <h1 class="text-2xl font-bold">
+          {{ portalStore.config.instance_name }}
+        </h1>
+        <p class="text-sm text-muted-foreground">
+          Set your new password
+        </p>
       </CardHeader>
 
       <CardContent>
-        <form @submit.prevent="handleResetPassword" class="space-y-4">
+        <form
+          class="space-y-4"
+          @submit.prevent="handleResetPassword"
+        >
           <div class="space-y-2">
             <Label for="password">New Password</Label>
             <Input
@@ -96,7 +103,9 @@ async function handleResetPassword() {
               autocomplete="new-password"
               minlength="8"
             />
-            <p class="text-xs text-muted-foreground">Must be at least 8 characters</p>
+            <p class="text-xs text-muted-foreground">
+              Must be at least 8 characters
+            </p>
           </div>
 
           <div class="space-y-2">
@@ -132,7 +141,9 @@ async function handleResetPassword() {
       </CardContent>
 
       <CardFooter class="justify-center">
-        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
+        <p class="text-xs text-muted-foreground">
+          Powered by TinyBase
+        </p>
       </CardFooter>
     </Card>
   </div>

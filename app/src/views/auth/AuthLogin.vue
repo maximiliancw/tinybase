@@ -104,13 +104,20 @@ async function handleLogin() {
           :src="portalStore.config.logo_url"
           alt="Logo"
           class="mx-auto h-12 w-auto"
-        />
-        <h1 class="text-2xl font-bold">{{ portalStore.config.instance_name }}</h1>
-        <p class="text-sm text-muted-foreground">Sign in to your account</p>
+        >
+        <h1 class="text-2xl font-bold">
+          {{ portalStore.config.instance_name }}
+        </h1>
+        <p class="text-sm text-muted-foreground">
+          Sign in to your account
+        </p>
       </CardHeader>
 
       <CardContent>
-        <form @submit.prevent="handleLogin" class="space-y-4">
+        <form
+          class="space-y-4"
+          @submit.prevent="handleLogin"
+        >
           <div class="space-y-2">
             <Label for="email">Email</Label>
             <Input
@@ -164,7 +171,9 @@ async function handleLogin() {
       </CardContent>
 
       <CardFooter class="justify-center">
-        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
+        <p class="text-xs text-muted-foreground">
+          Powered by TinyBase
+        </p>
       </CardFooter>
     </Card>
   </div>

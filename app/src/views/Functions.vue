@@ -283,8 +283,12 @@ const functionColumns = computed(() => {
     <!-- Page Header -->
     <header class="flex items-start justify-between">
       <div class="space-y-1">
-        <h1 class="text-3xl font-bold tracking-tight">Functions</h1>
-        <p class="text-muted-foreground">Registered server-side functions</p>
+        <h1 class="text-3xl font-bold tracking-tight">
+          Functions
+        </h1>
+        <p class="text-muted-foreground">
+          Registered server-side functions
+        </p>
       </div>
       <Button
         v-if="authStore.isAdmin"
@@ -297,7 +301,9 @@ const functionColumns = computed(() => {
     <!-- Loading State -->
     <Card v-if="functionsStore.loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">Loading functions...</p>
+        <p class="text-sm text-muted-foreground">
+          Loading functions...
+        </p>
       </CardContent>
     </Card>
 
@@ -322,11 +328,17 @@ const functionColumns = computed(() => {
         </DialogHeader>
 
         <div class="space-y-4">
-          <p v-if="selectedFunction?.description" class="text-sm text-muted-foreground">
+          <p
+            v-if="selectedFunction?.description"
+            class="text-sm text-muted-foreground"
+          >
             {{ selectedFunction.description }}
           </p>
 
-          <form @submit.prevent="handleCall" class="space-y-4">
+          <form
+            class="space-y-4"
+            @submit.prevent="handleCall"
+          >
             <div class="space-y-2">
               <Label for="payload">Payload (JSON)</Label>
               <Textarea
@@ -356,9 +368,14 @@ const functionColumns = computed(() => {
           </form>
 
           <!-- Result Display -->
-          <div v-if="callResult" class="space-y-3 rounded-lg border p-4">
+          <div
+            v-if="callResult"
+            class="space-y-3 rounded-lg border p-4"
+          >
             <div class="flex items-center gap-2">
-              <h4 class="font-semibold">Result</h4>
+              <h4 class="font-semibold">
+                Result
+              </h4>
               <Badge :variant="callResult.status === 'succeeded' ? 'default' : 'destructive'">
                 {{ callResult.status }}
               </Badge>
@@ -369,10 +386,16 @@ const functionColumns = computed(() => {
                 Duration: {{ callResult.duration_ms }}ms
               </span>
             </div>
-            <pre v-if="callResult.result" class="rounded bg-muted p-3 text-sm overflow-x-auto">{{
+            <pre
+              v-if="callResult.result"
+              class="rounded bg-muted p-3 text-sm overflow-x-auto"
+            >{{
               JSON.stringify(callResult.result, null, 2)
             }}</pre>
-            <div v-if="callResult.error_message" class="text-sm text-destructive">
+            <div
+              v-if="callResult.error_message"
+              class="text-sm text-destructive"
+            >
               <strong>{{ callResult.error_type }}:</strong>
               {{ callResult.error_message }}
             </div>
@@ -388,7 +411,10 @@ const functionColumns = computed(() => {
           <DialogTitle>Upload Function</DialogTitle>
         </DialogHeader>
 
-        <form @submit.prevent="handleUpload" class="space-y-4">
+        <form
+          class="space-y-4"
+          @submit.prevent="handleUpload"
+        >
           <div class="space-y-2">
             <Label for="upload-filename">Filename</Label>
             <Input
@@ -441,8 +467,8 @@ def my_function(client, payload):
           <Button
             type="button"
             variant="ghost"
-            @click="showUploadModal = false"
             :disabled="uploading"
+            @click="showUploadModal = false"
           >
             Cancel
           </Button>
@@ -467,15 +493,28 @@ def my_function(client, payload):
           </DialogTitle>
         </DialogHeader>
 
-        <div v-if="loadingVersions" class="flex items-center justify-center py-10">
-          <p class="text-sm text-muted-foreground">Loading versions...</p>
+        <div
+          v-if="loadingVersions"
+          class="flex items-center justify-center py-10"
+        >
+          <p class="text-sm text-muted-foreground">
+            Loading versions...
+          </p>
         </div>
 
-        <div v-else-if="selectedFunctionVersions.length === 0" class="py-10 text-center">
-          <p class="text-sm text-muted-foreground">No version history available.</p>
+        <div
+          v-else-if="selectedFunctionVersions.length === 0"
+          class="py-10 text-center"
+        >
+          <p class="text-sm text-muted-foreground">
+            No version history available.
+          </p>
         </div>
 
-        <div v-else class="rounded-lg border">
+        <div
+          v-else
+          class="rounded-lg border"
+        >
           <Table>
             <TableHeader>
               <TableRow>
@@ -488,7 +527,10 @@ def my_function(client, payload):
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow v-for="version in selectedFunctionVersions" :key="version.id">
+              <TableRow
+                v-for="version in selectedFunctionVersions"
+                :key="version.id"
+              >
                 <TableCell>
                   <code class="text-xs">{{ version.id.substring(0, 8) }}</code>
                 </TableCell>

@@ -192,8 +192,12 @@ function formatDate(dateStr: string): string {
     <!-- Page Header -->
     <header class="flex items-start justify-between">
       <div class="space-y-1">
-        <h1 class="text-3xl font-bold tracking-tight">Extensions</h1>
-        <p class="text-muted-foreground">Manage TinyBase plugins and integrations</p>
+        <h1 class="text-3xl font-bold tracking-tight">
+          Extensions
+        </h1>
+        <p class="text-muted-foreground">
+          Manage TinyBase plugins and integrations
+        </p>
       </div>
       <Button @click="openInstallModal">
         Install Extension
@@ -203,7 +207,9 @@ function formatDate(dateStr: string): string {
     <!-- Loading State -->
     <Card v-if="loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">Loading extensions...</p>
+        <p class="text-sm text-muted-foreground">
+          Loading extensions...
+        </p>
       </CardContent>
     </Card>
 
@@ -213,7 +219,9 @@ function formatDate(dateStr: string): string {
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
           🧩
         </div>
-        <h3 class="mb-1 text-lg font-semibold">No extensions installed</h3>
+        <h3 class="mb-1 text-lg font-semibold">
+          No extensions installed
+        </h3>
         <p class="mb-4 text-sm text-muted-foreground">
           Install extensions from GitHub to add new features to TinyBase.
         </p>
@@ -224,16 +232,27 @@ function formatDate(dateStr: string): string {
     </Card>
 
     <!-- Extensions Grid -->
-    <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card v-for="ext in extensions" :key="ext.id" class="flex flex-col">
+    <div
+      v-else
+      class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+    >
+      <Card
+        v-for="ext in extensions"
+        :key="ext.id"
+        class="flex flex-col"
+      >
         <CardHeader class="border-b pb-4">
           <div class="flex items-start justify-between gap-2">
-            <CardTitle class="text-lg">{{ ext.name }}</CardTitle>
+            <CardTitle class="text-lg">
+              {{ ext.name }}
+            </CardTitle>
             <Badge :variant="ext.is_enabled ? 'default' : 'secondary'">
               {{ ext.is_enabled ? "Enabled" : "Disabled" }}
             </Badge>
           </div>
-          <p class="text-xs text-muted-foreground">v{{ ext.version }}</p>
+          <p class="text-xs text-muted-foreground">
+            v{{ ext.version }}
+          </p>
           <Badge
             v-if="ext.update_available"
             variant="outline"
@@ -244,15 +263,23 @@ function formatDate(dateStr: string): string {
         </CardHeader>
 
         <CardContent class="flex-1 pt-4">
-          <p v-if="ext.description" class="text-sm mb-4">
+          <p
+            v-if="ext.description"
+            class="text-sm mb-4"
+          >
             {{ ext.description }}
           </p>
-          <p v-else class="text-sm text-muted-foreground mb-4">
+          <p
+            v-else
+            class="text-sm text-muted-foreground mb-4"
+          >
             No description provided.
           </p>
 
           <div class="space-y-1 text-xs text-muted-foreground">
-            <p v-if="ext.author">By {{ ext.author }}</p>
+            <p v-if="ext.author">
+              By {{ ext.author }}
+            </p>
             <p>Installed {{ formatDate(ext.installed_at) }}</p>
           </div>
         </CardContent>
@@ -260,11 +287,14 @@ function formatDate(dateStr: string): string {
         <CardFooter class="flex items-center justify-between border-t pt-4">
           <div class="flex items-center gap-2">
             <Switch
+              :id="`ext-${ext.id}`"
               :checked="ext.is_enabled"
               @update:checked="toggleEnabled(ext)"
-              :id="`ext-${ext.id}`"
             />
-            <Label :for="`ext-${ext.id}`" class="text-sm cursor-pointer">
+            <Label
+              :for="`ext-${ext.id}`"
+              class="text-sm cursor-pointer"
+            >
               {{ ext.is_enabled ? "Enabled" : "Disabled" }}
             </Label>
           </div>
@@ -279,7 +309,10 @@ function formatDate(dateStr: string): string {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Icon name="ExternalLink" :size="14" />
+                <Icon
+                  name="ExternalLink"
+                  :size="14"
+                />
                 GitHub
               </a>
             </Button>
@@ -303,7 +336,10 @@ function formatDate(dateStr: string): string {
         </DialogHeader>
 
         <div v-if="!showWarningAccepted">
-          <Alert variant="destructive" class="mb-4">
+          <Alert
+            variant="destructive"
+            class="mb-4"
+          >
             <AlertTitle>Security Warning</AlertTitle>
             <AlertDescription class="space-y-2">
               <p>
@@ -324,7 +360,12 @@ function formatDate(dateStr: string): string {
           </Button>
         </div>
 
-        <form id="install-form" v-else @submit.prevent="onSubmit" class="space-y-4">
+        <form
+          v-else
+          id="install-form"
+          class="space-y-4"
+          @submit.prevent="onSubmit"
+        >
           <div class="space-y-2">
             <Label for="repo_url">GitHub Repository URL</Label>
             <Input
@@ -338,7 +379,10 @@ function formatDate(dateStr: string): string {
             <p class="text-xs text-muted-foreground">
               The repository must contain an extension.toml manifest.
             </p>
-            <p v-if="repoUrlField.errorMessage.value" class="text-sm text-destructive">
+            <p
+              v-if="repoUrlField.errorMessage.value"
+              class="text-sm text-destructive"
+            >
               {{ repoUrlField.errorMessage.value }}
             </p>
           </div>
@@ -348,8 +392,8 @@ function formatDate(dateStr: string): string {
           <Button
             type="button"
             variant="ghost"
-            @click="showInstallModal = false"
             :disabled="installing"
+            @click="showInstallModal = false"
           >
             Cancel
           </Button>
@@ -386,15 +430,15 @@ function formatDate(dateStr: string): string {
           <Button
             type="button"
             variant="ghost"
-            @click="showUninstallModal = false"
             :disabled="uninstalling"
+            @click="showUninstallModal = false"
           >
             Cancel
           </Button>
           <Button
             variant="destructive"
-            @click="handleUninstall"
             :disabled="uninstalling"
+            @click="handleUninstall"
           >
             {{ uninstalling ? "Uninstalling..." : "Uninstall" }}
           </Button>

@@ -34,15 +34,27 @@ const chartConfig = {
 </script>
 
 <template>
-  <ChartContainer :config="chartConfig" class="h-[300px]">
-    <VisXYContainer :data="chartData" class="h-full">
+  <ChartContainer
+    :config="chartConfig"
+    class="h-[300px]"
+  >
+    <VisXYContainer
+      :data="chartData"
+      class="h-full"
+    >
       <VisGroupedBar
         :x="(d: FunctionStat, i: number) => i"
         :y="[(d: FunctionStat) => d.avg_runtime_ms || 0, (d: FunctionStat) => d.error_rate]"
         :color="['hsl(var(--primary))', 'hsl(var(--destructive))']"
       />
-      <VisAxis type="x" :tick-format="(i: number) => chartData[i]?.function_name || ''" />
-      <VisAxis type="y" label="Runtime (ms)" />
+      <VisAxis
+        type="x"
+        :tick-format="(i: number) => chartData[i]?.function_name || ''"
+      />
+      <VisAxis
+        type="y"
+        label="Runtime (ms)"
+      />
       <VisTooltip />
     </VisXYContainer>
   </ChartContainer>

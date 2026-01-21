@@ -198,8 +198,12 @@ const functionCallColumns = computed(() => [
   <section class="space-y-6 animate-in fade-in duration-500">
     <!-- Page Header -->
     <header class="space-y-1">
-      <h1 class="text-3xl font-bold tracking-tight">Function Calls</h1>
-      <p class="text-muted-foreground">Execution history for all functions</p>
+      <h1 class="text-3xl font-bold tracking-tight">
+        Function Calls
+      </h1>
+      <p class="text-muted-foreground">
+        Execution history for all functions
+      </p>
     </header>
 
     <!-- Filters -->
@@ -216,7 +220,9 @@ const functionCallColumns = computed(() => [
                 <SelectValue placeholder="All Functions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Functions</SelectItem>
+                <SelectItem value="">
+                  All Functions
+                </SelectItem>
                 <SelectItem
                   v-for="fn in functionsStore.functions"
                   :key="fn.name"
@@ -235,10 +241,18 @@ const functionCallColumns = computed(() => [
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
-                <SelectItem value="succeeded">Succeeded</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="running">Running</SelectItem>
+                <SelectItem value="">
+                  All Statuses
+                </SelectItem>
+                <SelectItem value="succeeded">
+                  Succeeded
+                </SelectItem>
+                <SelectItem value="failed">
+                  Failed
+                </SelectItem>
+                <SelectItem value="running">
+                  Running
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -250,9 +264,15 @@ const functionCallColumns = computed(() => [
                 <SelectValue placeholder="All Triggers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Triggers</SelectItem>
-                <SelectItem value="manual">Manual</SelectItem>
-                <SelectItem value="schedule">Schedule</SelectItem>
+                <SelectItem value="">
+                  All Triggers
+                </SelectItem>
+                <SelectItem value="manual">
+                  Manual
+                </SelectItem>
+                <SelectItem value="schedule">
+                  Schedule
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -270,7 +290,9 @@ const functionCallColumns = computed(() => [
     <!-- Loading State -->
     <Card v-if="functionsStore.loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">Loading function calls...</p>
+        <p class="text-sm text-muted-foreground">
+          Loading function calls...
+        </p>
       </CardContent>
     </Card>
 
@@ -280,7 +302,9 @@ const functionCallColumns = computed(() => [
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
           📜
         </div>
-        <p class="font-medium">No function calls yet</p>
+        <p class="font-medium">
+          No function calls yet
+        </p>
         <p class="text-sm text-muted-foreground">
           Function calls will appear here when functions are invoked.
         </p>
@@ -288,7 +312,10 @@ const functionCallColumns = computed(() => [
     </Card>
 
     <!-- Function Calls Table -->
-    <Card v-else ref="scrollContainer">
+    <Card
+      v-else
+      ref="scrollContainer"
+    >
       <DataTable
         :data="displayedCalls"
         :columns="functionCallColumns"

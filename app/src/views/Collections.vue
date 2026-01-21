@@ -156,14 +156,20 @@ const collectionColumns = computed(() => {
   <section class="space-y-6 animate-in fade-in duration-500">
     <!-- Page Header -->
     <header class="space-y-1">
-      <h1 class="text-3xl font-bold tracking-tight">Collections</h1>
-      <p class="text-muted-foreground">Manage your data collections</p>
+      <h1 class="text-3xl font-bold tracking-tight">
+        Collections
+      </h1>
+      <p class="text-muted-foreground">
+        Manage your data collections
+      </p>
     </header>
 
     <!-- Loading State -->
     <Card v-if="collectionsStore.loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">Loading collections...</p>
+        <p class="text-sm text-muted-foreground">
+          Loading collections...
+        </p>
       </CardContent>
     </Card>
 
@@ -173,7 +179,9 @@ const collectionColumns = computed(() => {
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
           📁
         </div>
-        <h3 class="mb-1 text-lg font-semibold">No collections yet</h3>
+        <h3 class="mb-1 text-lg font-semibold">
+          No collections yet
+        </h3>
         <p class="mb-4 text-sm text-muted-foreground">
           Create your first collection to start storing data.
         </p>
@@ -196,13 +204,13 @@ const collectionColumns = computed(() => {
         :header-action="
           authStore.isAdmin
             ? {
-                label: '+ New Collection',
-                action: () => {
-                  showCreateModal = true;
-                },
-                variant: 'default',
-                icon: 'Plus',
-              }
+              label: '+ New Collection',
+              action: () => {
+                showCreateModal = true;
+              },
+              variant: 'default',
+              icon: 'Plus',
+            }
             : undefined
         "
       />
@@ -215,7 +223,11 @@ const collectionColumns = computed(() => {
           <DialogTitle>Create Collection</DialogTitle>
         </DialogHeader>
 
-        <form id="collection-form" @submit.prevent="onSubmit" class="space-y-4">
+        <form
+          id="collection-form"
+          class="space-y-4"
+          @submit.prevent="onSubmit"
+        >
           <div class="space-y-2">
             <Label for="name">Name (snake_case)</Label>
             <Input
@@ -224,7 +236,10 @@ const collectionColumns = computed(() => {
               placeholder="my_collection"
               :aria-invalid="nameField.errorMessage.value ? 'true' : undefined"
             />
-            <p v-if="nameField.errorMessage.value" class="text-sm text-destructive">
+            <p
+              v-if="nameField.errorMessage.value"
+              class="text-sm text-destructive"
+            >
               {{ nameField.errorMessage.value }}
             </p>
           </div>
@@ -237,7 +252,10 @@ const collectionColumns = computed(() => {
               placeholder="My Collection"
               :aria-invalid="labelField.errorMessage.value ? 'true' : undefined"
             />
-            <p v-if="labelField.errorMessage.value" class="text-sm text-destructive">
+            <p
+              v-if="labelField.errorMessage.value"
+              class="text-sm text-destructive"
+            >
               {{ labelField.errorMessage.value }}
             </p>
           </div>
@@ -251,7 +269,10 @@ const collectionColumns = computed(() => {
               class="font-mono text-sm"
               :aria-invalid="schemaTextField.errorMessage.value ? 'true' : undefined"
             />
-            <p v-if="schemaTextField.errorMessage.value" class="text-sm text-destructive">
+            <p
+              v-if="schemaTextField.errorMessage.value"
+              class="text-sm text-destructive"
+            >
               {{ schemaTextField.errorMessage.value }}
             </p>
           </div>

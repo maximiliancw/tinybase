@@ -317,10 +317,17 @@ async function handleKeyAction(action: "download" | "delete") {
     <!-- Page Header -->
     <header class="flex items-start justify-between">
       <div class="space-y-1">
-        <h1 class="text-3xl font-bold tracking-tight">Files</h1>
-        <p class="text-muted-foreground">Manage files in storage</p>
+        <h1 class="text-3xl font-bold tracking-tight">
+          Files
+        </h1>
+        <p class="text-muted-foreground">
+          Manage files in storage
+        </p>
       </div>
-      <Button variant="ghost" @click="openKeyModal">
+      <Button
+        variant="ghost"
+        @click="openKeyModal"
+      >
         Access by Key
       </Button>
     </header>
@@ -328,7 +335,9 @@ async function handleKeyAction(action: "download" | "delete") {
     <!-- Loading State -->
     <Card v-if="loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">Checking storage status...</p>
+        <p class="text-sm text-muted-foreground">
+          Checking storage status...
+        </p>
       </CardContent>
     </Card>
 
@@ -338,12 +347,16 @@ async function handleKeyAction(action: "download" | "delete") {
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
           📦
         </div>
-        <h3 class="mb-1 text-lg font-semibold">File storage is not enabled</h3>
+        <h3 class="mb-1 text-lg font-semibold">
+          File storage is not enabled
+        </h3>
         <p class="mb-4 text-sm text-muted-foreground">
           Configure file storage in Settings to enable file uploads and management.
         </p>
         <Button as-child>
-          <router-link to="/settings">Go to Settings</router-link>
+          <router-link to="/settings">
+            Go to Settings
+          </router-link>
         </Button>
       </CardContent>
     </Card>
@@ -383,7 +396,9 @@ async function handleKeyAction(action: "download" | "delete") {
           <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
             📁
           </div>
-          <h3 class="mb-1 text-lg font-semibold">No files uploaded yet</h3>
+          <h3 class="mb-1 text-lg font-semibold">
+            No files uploaded yet
+          </h3>
           <p class="mb-4 text-sm text-muted-foreground">
             Upload files to get started, or use "Access by Key" to manage existing files.
           </p>
@@ -401,7 +416,11 @@ async function handleKeyAction(action: "download" | "delete") {
           <DialogTitle>Upload File</DialogTitle>
         </DialogHeader>
 
-        <form id="upload-form" @submit.prevent="onSubmit" class="space-y-4">
+        <form
+          id="upload-form"
+          class="space-y-4"
+          @submit.prevent="onSubmit"
+        >
           <div
             ref="dropZoneRef"
             class="border-2 border-dashed rounded-lg p-8 text-center transition-colors"
@@ -410,31 +429,43 @@ async function handleKeyAction(action: "download" | "delete") {
               'border-border': !isOverDropZone,
             }"
           >
-            <p v-if="!isOverDropZone" class="mb-3 text-sm text-muted-foreground">
+            <p
+              v-if="!isOverDropZone"
+              class="mb-3 text-sm text-muted-foreground"
+            >
               Drag and drop a file here, or
             </p>
-            <p v-else class="mb-3 text-sm font-semibold text-primary">
+            <p
+              v-else
+              class="mb-3 text-sm font-semibold text-primary"
+            >
               Drop file here
             </p>
             <Button
               type="button"
               variant="secondary"
-              @click="handleFileDialogClick"
               :disabled="uploading"
+              @click="handleFileDialogClick"
             >
               Browse Files
             </Button>
           </div>
 
-          <Field name="file" v-slot="{ errors, meta }">
+          <Field
+            v-slot="{ errors, meta }"
+            name="file"
+          >
             <input
               type="file"
               class="sr-only"
-              @change="handleFileSelect"
               :disabled="uploading"
               :aria-invalid="meta.touched && !meta.valid ? 'true' : 'false'"
-            />
-            <p v-if="meta.touched && errors[0]" class="text-sm text-destructive">
+              @change="handleFileSelect"
+            >
+            <p
+              v-if="meta.touched && errors[0]"
+              class="text-sm text-destructive"
+            >
               {{ errors[0] }}
             </p>
           </Field>
@@ -457,8 +488,8 @@ async function handleKeyAction(action: "download" | "delete") {
           <Button
             type="button"
             variant="ghost"
-            @click="showUploadModal = false"
             :disabled="uploading"
+            @click="showUploadModal = false"
           >
             Cancel
           </Button>
@@ -507,15 +538,15 @@ async function handleKeyAction(action: "download" | "delete") {
           <Button
             type="button"
             variant="destructive"
-            @click="handleKeyAction('delete')"
             :disabled="!manualKey.trim()"
+            @click="handleKeyAction('delete')"
           >
             Delete
           </Button>
           <Button
             type="button"
-            @click="handleKeyAction('download')"
             :disabled="!manualKey.trim()"
+            @click="handleKeyAction('download')"
           >
             Download
           </Button>

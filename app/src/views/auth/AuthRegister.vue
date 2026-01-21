@@ -107,13 +107,20 @@ async function handleRegister() {
           :src="portalStore.config.logo_url"
           alt="Logo"
           class="mx-auto h-12 w-auto"
-        />
-        <h1 class="text-2xl font-bold">{{ portalStore.config.instance_name }}</h1>
-        <p class="text-sm text-muted-foreground">Create a new account</p>
+        >
+        <h1 class="text-2xl font-bold">
+          {{ portalStore.config.instance_name }}
+        </h1>
+        <p class="text-sm text-muted-foreground">
+          Create a new account
+        </p>
       </CardHeader>
 
       <CardContent>
-        <form @submit.prevent="handleRegister" class="space-y-4">
+        <form
+          class="space-y-4"
+          @submit.prevent="handleRegister"
+        >
           <div class="space-y-2">
             <Label for="email">Email</Label>
             <Input
@@ -137,7 +144,9 @@ async function handleRegister() {
               autocomplete="new-password"
               minlength="8"
             />
-            <p class="text-xs text-muted-foreground">Must be at least 8 characters</p>
+            <p class="text-xs text-muted-foreground">
+              Must be at least 8 characters
+            </p>
           </div>
 
           <div class="space-y-2">
@@ -173,7 +182,9 @@ async function handleRegister() {
       </CardContent>
 
       <CardFooter class="justify-center">
-        <p class="text-xs text-muted-foreground">Powered by TinyBase</p>
+        <p class="text-xs text-muted-foreground">
+          Powered by TinyBase
+        </p>
       </CardFooter>
     </Card>
   </div>

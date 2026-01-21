@@ -306,14 +306,20 @@ const scheduleColumns = computed(() => [
   <section class="space-y-6 animate-in fade-in duration-500">
     <!-- Page Header -->
     <header class="space-y-1">
-      <h1 class="text-3xl font-bold tracking-tight">Schedules</h1>
-      <p class="text-muted-foreground">Manage function schedules</p>
+      <h1 class="text-3xl font-bold tracking-tight">
+        Schedules
+      </h1>
+      <p class="text-muted-foreground">
+        Manage function schedules
+      </p>
     </header>
 
     <!-- Loading State -->
     <Card v-if="functionsStore.loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">Loading schedules...</p>
+        <p class="text-sm text-muted-foreground">
+          Loading schedules...
+        </p>
       </CardContent>
     </Card>
 
@@ -323,11 +329,16 @@ const scheduleColumns = computed(() => [
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
           ⏰
         </div>
-        <h3 class="mb-1 text-lg font-semibold">No schedules yet</h3>
+        <h3 class="mb-1 text-lg font-semibold">
+          No schedules yet
+        </h3>
         <p class="mb-4 text-sm text-muted-foreground">
           Create schedules to run functions automatically.
         </p>
-        <Button size="sm" @click="showCreateModal = true">
+        <Button
+          size="sm"
+          @click="showCreateModal = true"
+        >
           Create Schedule
         </Button>
       </CardContent>
@@ -358,7 +369,11 @@ const scheduleColumns = computed(() => [
           <DialogTitle>Create Schedule</DialogTitle>
         </DialogHeader>
 
-        <form id="schedule-form" @submit.prevent="onSubmit" class="space-y-4">
+        <form
+          id="schedule-form"
+          class="space-y-4"
+          @submit.prevent="onSubmit"
+        >
           <div class="space-y-2">
             <Label for="name">Name</Label>
             <Input
@@ -366,7 +381,10 @@ const scheduleColumns = computed(() => [
               v-model="nameField.value.value"
               :aria-invalid="nameField.errorMessage.value ? 'true' : undefined"
             />
-            <p v-if="nameField.errorMessage.value" class="text-sm text-destructive">
+            <p
+              v-if="nameField.errorMessage.value"
+              class="text-sm text-destructive"
+            >
               {{ nameField.errorMessage.value }}
             </p>
           </div>
@@ -387,34 +405,61 @@ const scheduleColumns = computed(() => [
                 </SelectItem>
               </SelectContent>
             </Select>
-            <p v-if="selectedFunction?.description" class="text-xs text-muted-foreground">
+            <p
+              v-if="selectedFunction?.description"
+              class="text-xs text-muted-foreground"
+            >
               {{ selectedFunction.description }}
             </p>
           </div>
 
-          <Field name="method" v-slot="{ field }">
+          <Field
+            v-slot="{ field }"
+            name="method"
+          >
             <div class="space-y-2">
               <Label>Schedule Type</Label>
               <div class="flex gap-4">
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" v-bind="field" value="interval" class="cursor-pointer" />
+                  <input
+                    type="radio"
+                    v-bind="field"
+                    value="interval"
+                    class="cursor-pointer"
+                  >
                   <span class="text-sm">Interval</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" v-bind="field" value="cron" class="cursor-pointer" />
+                  <input
+                    type="radio"
+                    v-bind="field"
+                    value="cron"
+                    class="cursor-pointer"
+                  >
                   <span class="text-sm">Cron</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" v-bind="field" value="once" class="cursor-pointer" />
+                  <input
+                    type="radio"
+                    v-bind="field"
+                    value="once"
+                    class="cursor-pointer"
+                  >
                   <span class="text-sm">Once</span>
                 </label>
               </div>
             </div>
           </Field>
 
-          <Field name="method" v-slot="{ value: method }">
+          <Field
+            v-slot="{ value: method }"
+            name="method"
+          >
             <!-- Interval Options -->
-            <div v-if="method === 'interval'" class="grid gap-4 md:grid-cols-2">
+            <div
+              v-if="method === 'interval'"
+              class="grid gap-4 md:grid-cols-2"
+            >
               <div class="space-y-2">
                 <Label for="value">Value</Label>
                 <Input
@@ -432,17 +477,28 @@ const scheduleColumns = computed(() => [
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="seconds">Seconds</SelectItem>
-                    <SelectItem value="minutes">Minutes</SelectItem>
-                    <SelectItem value="hours">Hours</SelectItem>
-                    <SelectItem value="days">Days</SelectItem>
+                    <SelectItem value="seconds">
+                      Seconds
+                    </SelectItem>
+                    <SelectItem value="minutes">
+                      Minutes
+                    </SelectItem>
+                    <SelectItem value="hours">
+                      Hours
+                    </SelectItem>
+                    <SelectItem value="days">
+                      Days
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <!-- Cron Options -->
-            <div v-if="method === 'cron'" class="space-y-2">
+            <div
+              v-if="method === 'cron'"
+              class="space-y-2"
+            >
               <Label for="cron">Cron Expression</Label>
               <Input
                 id="cron"
@@ -455,7 +511,10 @@ const scheduleColumns = computed(() => [
             </div>
 
             <!-- Once Options -->
-            <div v-if="method === 'once'" class="grid gap-4 md:grid-cols-2">
+            <div
+              v-if="method === 'once'"
+              class="grid gap-4 md:grid-cols-2"
+            >
               <div class="space-y-2">
                 <Label for="date">Date</Label>
                 <Input
@@ -505,13 +564,22 @@ const scheduleColumns = computed(() => [
               spellcheck="false"
               placeholder="{}"
             />
-            <p v-if="functionSchema?.input_schema" class="text-xs text-muted-foreground">
+            <p
+              v-if="functionSchema?.input_schema"
+              class="text-xs text-muted-foreground"
+            >
               Schema-based template generated. Modify as needed for your use case.
             </p>
-            <p v-else-if="values.function_name" class="text-xs text-muted-foreground">
+            <p
+              v-else-if="values.function_name"
+              class="text-xs text-muted-foreground"
+            >
               This function has no input schema. Use an empty object {} or provide custom data.
             </p>
-            <p v-else class="text-xs text-muted-foreground">
+            <p
+              v-else
+              class="text-xs text-muted-foreground"
+            >
               Select a function to generate input data template from its schema.
             </p>
           </div>

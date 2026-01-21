@@ -194,7 +194,10 @@ const recordColumns = computed(() => {
         <CardTitle>Schema</CardTitle>
       </CardHeader>
       <CardContent>
-        <div v-if="collectionsStore.currentCollection" class="flex flex-wrap gap-2">
+        <div
+          v-if="collectionsStore.currentCollection"
+          class="flex flex-wrap gap-2"
+        >
           <Badge
             v-for="field in collectionsStore.currentCollection.schema?.fields || []"
             :key="field.name"
@@ -203,7 +206,10 @@ const recordColumns = computed(() => {
           >
             {{ field.name }}
             <span class="text-xs text-muted-foreground">({{ field.type }})</span>
-            <span v-if="field.required" class="text-yellow-500">*</span>
+            <span
+              v-if="field.required"
+              class="text-yellow-500"
+            >*</span>
           </Badge>
         </div>
       </CardContent>
@@ -216,8 +222,13 @@ const recordColumns = computed(() => {
       </CardHeader>
       <CardContent>
         <!-- Loading State -->
-        <div v-if="collectionsStore.loading" class="flex items-center justify-center py-10">
-          <p class="text-sm text-muted-foreground">Loading records...</p>
+        <div
+          v-if="collectionsStore.loading"
+          class="flex items-center justify-center py-10"
+        >
+          <p class="text-sm text-muted-foreground">
+            Loading records...
+          </p>
         </div>
 
         <!-- Empty State -->
@@ -228,14 +239,22 @@ const recordColumns = computed(() => {
           <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">
             📄
           </div>
-          <p class="mb-4 text-sm text-muted-foreground">No records yet</p>
-          <Button size="sm" @click="showCreateModal = true">
+          <p class="mb-4 text-sm text-muted-foreground">
+            No records yet
+          </p>
+          <Button
+            size="sm"
+            @click="showCreateModal = true"
+          >
             Create Record
           </Button>
         </div>
 
         <!-- Records Table -->
-        <div v-else ref="scrollContainer">
+        <div
+          v-else
+          ref="scrollContainer"
+        >
           <DataTable
             :data="records"
             :columns="recordColumns"
@@ -294,7 +313,11 @@ const recordColumns = computed(() => {
           <DialogTitle>Create Record</DialogTitle>
         </DialogHeader>
 
-        <form id="record-form" @submit.prevent="handleCreateRecord" class="space-y-4">
+        <form
+          id="record-form"
+          class="space-y-4"
+          @submit.prevent="handleCreateRecord"
+        >
           <div class="space-y-2">
             <Label for="data">Record Data (JSON)</Label>
             <Textarea

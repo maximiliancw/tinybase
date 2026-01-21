@@ -313,18 +313,28 @@ const saveSettings = handleSubmit(async (formValues) => {
   <section class="space-y-6 animate-in fade-in duration-500">
     <!-- Page Header -->
     <header class="space-y-1">
-      <h1 class="text-3xl font-bold tracking-tight">Settings</h1>
-      <p class="text-muted-foreground">Configure your TinyBase instance</p>
+      <h1 class="text-3xl font-bold tracking-tight">
+        Settings
+      </h1>
+      <p class="text-muted-foreground">
+        Configure your TinyBase instance
+      </p>
     </header>
 
     <!-- Loading State -->
     <Card v-if="loading">
       <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">Loading settings...</p>
+        <p class="text-sm text-muted-foreground">
+          Loading settings...
+        </p>
       </CardContent>
     </Card>
 
-    <form v-else @submit.prevent="saveSettings" class="space-y-6">
+    <form
+      v-else
+      class="space-y-6"
+      @submit.prevent="saveSettings"
+    >
       <!-- General Settings -->
       <Card>
         <CardHeader>
@@ -347,7 +357,11 @@ const saveSettings = handleSubmit(async (formValues) => {
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem v-for="tz in commonTimezones" :key="tz" :value="tz">
+                  <SelectItem
+                    v-for="tz in commonTimezones"
+                    :key="tz"
+                    :value="tz"
+                  >
                     {{ tz }}
                   </SelectItem>
                 </SelectContent>
@@ -391,24 +405,36 @@ const saveSettings = handleSubmit(async (formValues) => {
               :checked="values.allow_public_registration"
               @update:checked="values.allow_public_registration = $event"
             />
-            <Label for="allow_public_registration" class="cursor-pointer">
+            <Label
+              for="allow_public_registration"
+              class="cursor-pointer"
+            >
               Allow public registration
             </Label>
           </div>
 
-          <div v-if="values.allow_public_registration" class="space-y-4 pl-6 border-l-2 border-muted">
+          <div
+            v-if="values.allow_public_registration"
+            class="space-y-4 pl-6 border-l-2 border-muted"
+          >
             <div class="flex items-center space-x-2">
               <Switch
                 id="auth_portal_enabled"
                 :checked="values.auth_portal_enabled"
                 @update:checked="values.auth_portal_enabled = $event"
               />
-              <Label for="auth_portal_enabled" class="cursor-pointer">
+              <Label
+                for="auth_portal_enabled"
+                class="cursor-pointer"
+              >
                 Enable custom auth portal
               </Label>
             </div>
 
-            <div v-if="values.auth_portal_enabled" class="space-y-4 pl-6 border-l-2 border-muted">
+            <div
+              v-if="values.auth_portal_enabled"
+              class="space-y-4 pl-6 border-l-2 border-muted"
+            >
               <div class="space-y-2">
                 <Label for="auth_portal_logo_url">Logo URL</Label>
                 <Input
@@ -444,7 +470,10 @@ const saveSettings = handleSubmit(async (formValues) => {
                   placeholder="https://example.com/dashboard"
                   :aria-invalid="loginRedirectUrlField.errorMessage.value ? 'true' : undefined"
                 />
-                <p v-if="loginRedirectUrlField.errorMessage.value" class="text-sm text-destructive">
+                <p
+                  v-if="loginRedirectUrlField.errorMessage.value"
+                  class="text-sm text-destructive"
+                >
                   {{ loginRedirectUrlField.errorMessage.value }}
                 </p>
               </div>
@@ -457,7 +486,10 @@ const saveSettings = handleSubmit(async (formValues) => {
                   placeholder="https://example.com/onboarding"
                   :aria-invalid="registerRedirectUrlField.errorMessage.value ? 'true' : undefined"
                 />
-                <p v-if="registerRedirectUrlField.errorMessage.value" class="text-sm text-destructive">
+                <p
+                  v-if="registerRedirectUrlField.errorMessage.value"
+                  class="text-sm text-destructive"
+                >
                   {{ registerRedirectUrlField.errorMessage.value }}
                 </p>
               </div>
@@ -467,7 +499,10 @@ const saveSettings = handleSubmit(async (formValues) => {
                 variant="outline"
                 @click="openPreviewInNewTab"
               >
-                <Icon name="ExternalLink" :size="16" />
+                <Icon
+                  name="ExternalLink"
+                  :size="16"
+                />
                 Preview Auth Portal
               </Button>
             </div>
@@ -549,12 +584,18 @@ const saveSettings = handleSubmit(async (formValues) => {
               :checked="values.storage_enabled"
               @update:checked="values.storage_enabled = $event"
             />
-            <Label for="storage_enabled" class="cursor-pointer">
+            <Label
+              for="storage_enabled"
+              class="cursor-pointer"
+            >
               Enable S3 storage
             </Label>
           </div>
 
-          <div v-if="values.storage_enabled" class="space-y-4 pl-6 border-l-2 border-muted">
+          <div
+            v-if="values.storage_enabled"
+            class="space-y-4 pl-6 border-l-2 border-muted"
+          >
             <div class="grid gap-4 md:grid-cols-2">
               <div class="space-y-2">
                 <Label for="storage_endpoint">Endpoint</Label>
@@ -623,16 +664,24 @@ const saveSettings = handleSubmit(async (formValues) => {
               type="button"
               @click="showCreateTokenForm = true"
             >
-              <Icon name="Plus" :size="16" />
+              <Icon
+                name="Plus"
+                :size="16"
+              />
               Create Token
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <!-- New Token Alert -->
-          <Alert v-if="newlyCreatedToken" class="mb-4">
+          <Alert
+            v-if="newlyCreatedToken"
+            class="mb-4"
+          >
             <AlertDescription class="space-y-2">
-              <p class="font-semibold">Token created successfully!</p>
+              <p class="font-semibold">
+                Token created successfully!
+              </p>
               <p class="text-sm">
                 Make sure to copy your token now. You won't be able to see it again.
               </p>
@@ -647,7 +696,10 @@ const saveSettings = handleSubmit(async (formValues) => {
                   size="sm"
                   @click="copyTokenToClipboard(newlyCreatedToken.token_value)"
                 >
-                  <Icon name="Copy" :size="14" />
+                  <Icon
+                    name="Copy"
+                    :size="14"
+                  />
                   Copy
                 </Button>
                 <Button
@@ -662,15 +714,28 @@ const saveSettings = handleSubmit(async (formValues) => {
             </AlertDescription>
           </Alert>
 
-          <div v-if="loadingTokens" class="flex items-center justify-center py-10">
-            <p class="text-sm text-muted-foreground">Loading tokens...</p>
+          <div
+            v-if="loadingTokens"
+            class="flex items-center justify-center py-10"
+          >
+            <p class="text-sm text-muted-foreground">
+              Loading tokens...
+            </p>
           </div>
 
-          <div v-else-if="applicationTokens.length === 0" class="text-center py-10">
-            <p class="text-sm text-muted-foreground">No application tokens yet</p>
+          <div
+            v-else-if="applicationTokens.length === 0"
+            class="text-center py-10"
+          >
+            <p class="text-sm text-muted-foreground">
+              No application tokens yet
+            </p>
           </div>
 
-          <div v-else class="rounded-lg border">
+          <div
+            v-else
+            class="rounded-lg border"
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -684,7 +749,10 @@ const saveSettings = handleSubmit(async (formValues) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow v-for="token in applicationTokens" :key="token.id">
+                <TableRow
+                  v-for="token in applicationTokens"
+                  :key="token.id"
+                >
                   <TableCell>{{ token.name }}</TableCell>
                   <TableCell>
                     <span class="text-sm text-muted-foreground">
@@ -697,16 +765,16 @@ const saveSettings = handleSubmit(async (formValues) => {
                         !token.is_valid
                           ? 'destructive'
                           : token.is_active
-                          ? 'default'
-                          : 'secondary'
+                            ? 'default'
+                            : 'secondary'
                       "
                     >
                       {{
                         !token.is_valid
                           ? "Invalid"
                           : token.is_active
-                          ? "Active"
-                          : "Inactive"
+                            ? "Active"
+                            : "Inactive"
                       }}
                     </Badge>
                   </TableCell>
@@ -770,7 +838,10 @@ const saveSettings = handleSubmit(async (formValues) => {
           <DialogTitle>Create Application Token</DialogTitle>
         </DialogHeader>
 
-        <form @submit.prevent="onCreateToken" class="space-y-4">
+        <form
+          class="space-y-4"
+          @submit.prevent="onCreateToken"
+        >
           <div class="space-y-2">
             <Label for="token_name">Name</Label>
             <Input
@@ -779,7 +850,10 @@ const saveSettings = handleSubmit(async (formValues) => {
               placeholder="My Application"
               :aria-invalid="tokenNameField.errorMessage.value ? 'true' : undefined"
             />
-            <p v-if="tokenNameField.errorMessage.value" class="text-sm text-destructive">
+            <p
+              v-if="tokenNameField.errorMessage.value"
+              class="text-sm text-destructive"
+            >
               {{ tokenNameField.errorMessage.value }}
             </p>
           </div>
@@ -816,8 +890,8 @@ const saveSettings = handleSubmit(async (formValues) => {
           </Button>
           <Button
             type="submit"
-            @click="onCreateToken"
             :disabled="creatingToken"
+            @click="onCreateToken"
           >
             {{ creatingToken ? "Creating..." : "Create Token" }}
           </Button>

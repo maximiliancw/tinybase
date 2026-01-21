@@ -198,8 +198,14 @@ function isVNode(value: any): value is VNode {
 <template>
   <div class="space-y-4">
     <!-- Search Bar and Header Action -->
-    <div v-if="searchable || headerAction" class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div v-if="searchable" class="flex-1 space-y-1">
+    <div
+      v-if="searchable || headerAction"
+      class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div
+        v-if="searchable"
+        class="flex-1 space-y-1"
+      >
         <Input
           v-model="searchQuery"
           :placeholder="searchPlaceholder"
@@ -232,21 +238,36 @@ function isVNode(value: any): value is VNode {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead v-for="column in columns" :key="column.key">
+            <TableHead
+              v-for="column in columns"
+              :key="column.key"
+            >
               {{ column.label }}
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-if="paginatedData.length === 0">
-            <TableCell :colspan="columns.length" class="h-24 text-center">
+            <TableCell
+              :colspan="columns.length"
+              class="h-24 text-center"
+            >
               {{ emptyMessage }}
             </TableCell>
           </TableRow>
-          <TableRow v-for="(row, index) in paginatedData" :key="index">
-            <TableCell v-for="column in columns" :key="column.key">
+          <TableRow
+            v-for="(row, index) in paginatedData"
+            :key="index"
+          >
+            <TableCell
+              v-for="column in columns"
+              :key="column.key"
+            >
               <!-- Actions Column -->
-              <div v-if="isActionsColumn(column)" class="flex gap-2">
+              <div
+                v-if="isActionsColumn(column)"
+                class="flex gap-2"
+              >
                 <Button
                   v-for="(button, btnIndex) in column.actions"
                   :key="btnIndex"
@@ -255,15 +276,19 @@ function isVNode(value: any): value is VNode {
                   :disabled="isButtonDisabled(button, row)"
                   @click="handleAction(button, row)"
                 >
-                  <Icon v-if="button.icon" :name="button.icon" :size="14" />
+                  <Icon
+                    v-if="button.icon"
+                    :name="button.icon"
+                    :size="14"
+                  />
                   {{ getButtonLabel(button, row) }}
                 </Button>
               </div>
               <!-- Regular Column -->
               <template v-else>
                 <component
-                  v-if="isVNode(renderCell(column, row))"
                   :is="renderCell(column, row)"
+                  v-if="isVNode(renderCell(column, row))"
                 />
                 <span v-else>{{ renderCell(column, row) }}</span>
               </template>
@@ -275,15 +300,24 @@ function isVNode(value: any): value is VNode {
 
     <!-- Mobile List View -->
     <div class="md:hidden space-y-4">
-      <div v-if="paginatedData.length === 0" class="flex flex-col items-center justify-center py-16 text-center border rounded-lg">
-        <p class="text-sm text-muted-foreground">{{ emptyMessage }}</p>
+      <div
+        v-if="paginatedData.length === 0"
+        class="flex flex-col items-center justify-center py-16 text-center border rounded-lg"
+      >
+        <p class="text-sm text-muted-foreground">
+          {{ emptyMessage }}
+        </p>
       </div>
       <div
         v-for="(row, index) in paginatedData"
         :key="index"
         class="rounded-lg border p-4 space-y-2"
       >
-        <div v-for="column in columns" :key="column.key" class="flex justify-between gap-4">
+        <div
+          v-for="column in columns"
+          :key="column.key"
+          class="flex justify-between gap-4"
+        >
           <!-- Actions Column -->
           <template v-if="isActionsColumn(column)">
             <span class="text-sm font-medium">{{ column.label }}</span>
@@ -294,10 +328,14 @@ function isVNode(value: any): value is VNode {
                 size="sm"
                 :variant="button.variant || 'ghost'"
                 :disabled="isButtonDisabled(button, row)"
-                @click="handleAction(button, row)"
                 class="w-full"
+                @click="handleAction(button, row)"
               >
-                <Icon v-if="button.icon" :name="button.icon" :size="14" />
+                <Icon
+                  v-if="button.icon"
+                  :name="button.icon"
+                  :size="14"
+                />
                 {{ getButtonLabel(button, row) }}
               </Button>
             </div>
@@ -307,8 +345,8 @@ function isVNode(value: any): value is VNode {
             <span class="text-sm font-medium text-muted-foreground">{{ column.label }}</span>
             <div class="text-sm">
               <component
-                v-if="isVNode(renderCell(column, row))"
                 :is="renderCell(column, row)"
+                v-if="isVNode(renderCell(column, row))"
               />
               <span v-else>{{ renderCell(column, row) }}</span>
             </div>
@@ -318,7 +356,10 @@ function isVNode(value: any): value is VNode {
     </div>
 
     <!-- Pagination -->
-    <div v-if="paginated && totalPages > 1" class="flex items-center justify-between border-t pt-4">
+    <div
+      v-if="paginated && totalPages > 1"
+      class="flex items-center justify-between border-t pt-4"
+    >
       <Button
         size="sm"
         variant="outline"
@@ -327,7 +368,10 @@ function isVNode(value: any): value is VNode {
       >
         Previous
       </Button>
-      <p v-if="paginationInfo" class="text-sm text-muted-foreground">
+      <p
+        v-if="paginationInfo"
+        class="text-sm text-muted-foreground"
+      >
         {{ paginationInfo.start }}-{{ paginationInfo.end }} of
         {{ paginationInfo.total }}
       </p>

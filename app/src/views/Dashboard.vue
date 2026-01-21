@@ -111,7 +111,9 @@ async function fetchMetrics() {
   <section class="space-y-6 animate-in fade-in duration-500">
     <!-- Page Header -->
     <header class="space-y-1">
-      <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
+      <h1 class="text-3xl font-bold tracking-tight">
+        Dashboard
+      </h1>
       <p class="text-muted-foreground">
         Welcome to your TinyBase instance's admin dashboard
       </p>
@@ -121,41 +123,73 @@ async function fetchMetrics() {
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card v-if="authStore.isAdmin">
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Total Users</CardTitle>
-          <Icon name="Users" :size="16" class="text-muted-foreground" />
+          <CardTitle class="text-sm font-medium">
+            Total Users
+          </CardTitle>
+          <Icon
+            name="Users"
+            :size="16"
+            class="text-muted-foreground"
+          />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ stats.users }}</div>
+          <div class="text-2xl font-bold">
+            {{ stats.users }}
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Collections</CardTitle>
-          <Icon name="Collections" :size="16" class="text-muted-foreground" />
+          <CardTitle class="text-sm font-medium">
+            Collections
+          </CardTitle>
+          <Icon
+            name="Collections"
+            :size="16"
+            class="text-muted-foreground"
+          />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ stats.collections }}</div>
+          <div class="text-2xl font-bold">
+            {{ stats.collections }}
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Functions</CardTitle>
-          <Icon name="Functions" :size="16" class="text-muted-foreground" />
+          <CardTitle class="text-sm font-medium">
+            Functions
+          </CardTitle>
+          <Icon
+            name="Functions"
+            :size="16"
+            class="text-muted-foreground"
+          />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ stats.functions }}</div>
+          <div class="text-2xl font-bold">
+            {{ stats.functions }}
+          </div>
         </CardContent>
       </Card>
 
       <Card v-if="authStore.isAdmin">
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Active Schedules</CardTitle>
-          <Icon name="Schedules" :size="16" class="text-muted-foreground" />
+          <CardTitle class="text-sm font-medium">
+            Active Schedules
+          </CardTitle>
+          <Icon
+            name="Schedules"
+            :size="16"
+            class="text-muted-foreground"
+          />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ stats.activeSchedules }}</div>
+          <div class="text-2xl font-bold">
+            {{ stats.activeSchedules }}
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -173,12 +207,22 @@ async function fetchMetrics() {
             class="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent"
           >
             <div class="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
-              <Icon name="FolderPlus" :size="20" class="text-primary" />
+              <Icon
+                name="FolderPlus"
+                :size="20"
+                class="text-primary"
+              />
             </div>
             <div class="flex-1">
-              <p class="text-sm font-medium">Create Collection</p>
+              <p class="text-sm font-medium">
+                Create Collection
+              </p>
             </div>
-            <Icon name="Arrow" :size="16" class="text-muted-foreground" />
+            <Icon
+              name="Arrow"
+              :size="16"
+              class="text-muted-foreground"
+            />
           </router-link>
 
           <router-link
@@ -187,12 +231,22 @@ async function fetchMetrics() {
             class="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent"
           >
             <div class="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
-              <Icon name="UserPlus" :size="20" class="text-primary" />
+              <Icon
+                name="UserPlus"
+                :size="20"
+                class="text-primary"
+              />
             </div>
             <div class="flex-1">
-              <p class="text-sm font-medium">Create User</p>
+              <p class="text-sm font-medium">
+                Create User
+              </p>
             </div>
-            <Icon name="Arrow" :size="16" class="text-muted-foreground" />
+            <Icon
+              name="Arrow"
+              :size="16"
+              class="text-muted-foreground"
+            />
           </router-link>
 
           <router-link
@@ -201,32 +255,53 @@ async function fetchMetrics() {
             class="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent"
           >
             <div class="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
-              <Icon name="Schedules" :size="20" class="text-primary" />
+              <Icon
+                name="Schedules"
+                :size="20"
+                class="text-primary"
+              />
             </div>
             <div class="flex-1">
-              <p class="text-sm font-medium">Create Schedule</p>
+              <p class="text-sm font-medium">
+                Create Schedule
+              </p>
             </div>
-            <Icon name="Arrow" :size="16" class="text-muted-foreground" />
+            <Icon
+              name="Arrow"
+              :size="16"
+              class="text-muted-foreground"
+            />
           </router-link>
         </div>
       </CardContent>
     </Card>
 
     <!-- Charts Section -->
-    <div v-if="authStore.isAdmin" class="grid gap-4 md:grid-cols-2">
+    <div
+      v-if="authStore.isAdmin"
+      class="grid gap-4 md:grid-cols-2"
+    >
       <!-- Collection Sizes Chart -->
       <Card>
         <CardHeader>
           <div class="flex items-center justify-between">
             <CardTitle>Collection Sizes</CardTitle>
-            <p v-if="metrics.collected_at" class="text-xs text-muted-foreground">
+            <p
+              v-if="metrics.collected_at"
+              class="text-xs text-muted-foreground"
+            >
               Updated {{ timeAgo }} ({{ formattedDate }})
             </p>
           </div>
         </CardHeader>
         <CardContent>
-          <div v-if="metricsLoading" class="flex h-[300px] items-center justify-center">
-            <p class="text-sm text-muted-foreground">Loading metrics...</p>
+          <div
+            v-if="metricsLoading"
+            class="flex h-[300px] items-center justify-center"
+          >
+            <p class="text-sm text-muted-foreground">
+              Loading metrics...
+            </p>
           </div>
 
           <div
@@ -234,15 +309,24 @@ async function fetchMetrics() {
             class="flex h-[300px] flex-col items-center justify-center text-center"
           >
             <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <Icon name="Collections" :size="32" class="text-muted-foreground" />
+              <Icon
+                name="Collections"
+                :size="32"
+                class="text-muted-foreground"
+              />
             </div>
-            <p class="font-medium">No metrics available yet</p>
+            <p class="font-medium">
+              No metrics available yet
+            </p>
             <p class="text-sm text-muted-foreground">
               Metrics will be collected automatically by the scheduler.
             </p>
           </div>
 
-          <CollectionSizesChart v-else :data="metrics.collection_sizes" />
+          <CollectionSizesChart
+            v-else
+            :data="metrics.collection_sizes"
+          />
         </CardContent>
       </Card>
 
@@ -251,14 +335,22 @@ async function fetchMetrics() {
         <CardHeader>
           <div class="flex items-center justify-between">
             <CardTitle>Function Statistics</CardTitle>
-            <p v-if="metrics.collected_at" class="text-xs text-muted-foreground">
+            <p
+              v-if="metrics.collected_at"
+              class="text-xs text-muted-foreground"
+            >
               Updated {{ timeAgo }} ({{ formattedDate }})
             </p>
           </div>
         </CardHeader>
         <CardContent>
-          <div v-if="metricsLoading" class="flex h-[300px] items-center justify-center">
-            <p class="text-sm text-muted-foreground">Loading metrics...</p>
+          <div
+            v-if="metricsLoading"
+            class="flex h-[300px] items-center justify-center"
+          >
+            <p class="text-sm text-muted-foreground">
+              Loading metrics...
+            </p>
           </div>
 
           <div
@@ -266,15 +358,24 @@ async function fetchMetrics() {
             class="flex h-[300px] flex-col items-center justify-center text-center"
           >
             <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <Icon name="Functions" :size="32" class="text-muted-foreground" />
+              <Icon
+                name="Functions"
+                :size="32"
+                class="text-muted-foreground"
+              />
             </div>
-            <p class="font-medium">No function statistics available yet</p>
+            <p class="font-medium">
+              No function statistics available yet
+            </p>
             <p class="text-sm text-muted-foreground">
               Metrics will be collected automatically by the scheduler.
             </p>
           </div>
 
-          <FunctionStatsChart v-else :data="metrics.function_stats" />
+          <FunctionStatsChart
+            v-else
+            :data="metrics.function_stats"
+          />
         </CardContent>
       </Card>
     </div>

@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+build
+
+# Generated files
+src/client
+*.gen.ts
+*.gen.js
+
+# Cache
+.cache
+.vite
+
+# Logs
+*.log
+
+# Lock files
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
