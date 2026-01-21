@@ -408,7 +408,7 @@ function resetChanges() {
           <!-- General Settings -->
           <Card>
             <CardHeader>
-              <CardTitle>General</CardTitle>
+              <CardTitle class="text-primary">General</CardTitle>
             </CardHeader>
             <CardContent class="space-y-4">
               <div class="grid gap-4 md:grid-cols-2">
@@ -443,7 +443,9 @@ function resetChanges() {
           <!-- Scheduler & Rate Limiting Settings -->
           <Card>
             <CardHeader>
-              <CardTitle>Scheduler & Rate Limiting</CardTitle>
+              <CardTitle class="text-primary">
+                Scheduler & Rate Limiting
+              </CardTitle>
             </CardHeader>
             <CardContent class="space-y-6">
               <!-- Maintenance Tasks -->
@@ -571,7 +573,7 @@ function resetChanges() {
           <Card>
             <CardHeader>
               <div class="flex items-center justify-between">
-                <CardTitle>Authentication</CardTitle>
+                <CardTitle class="text-primary">Authentication</CardTitle>
                 <Button
                   v-if="authPortalEnabled"
                   type="button"
@@ -695,7 +697,7 @@ function resetChanges() {
             <CardHeader>
               <div class="flex items-center justify-between">
                 <div>
-                  <CardTitle>Application Tokens</CardTitle>
+                  <CardTitle class="text-primary">Application Tokens</CardTitle>
                   <CardDescription class="mt-1">
                     Create API tokens for programmatic access
                   </CardDescription>
@@ -831,7 +833,7 @@ function resetChanges() {
           <!-- Storage Settings -->
           <Card>
             <CardHeader>
-              <CardTitle>Storage (S3-Compatible)</CardTitle>
+              <CardTitle class="text-primary">Storage</CardTitle>
               <CardDescription>Configure S3-compatible object storage for file uploads</CardDescription>
             </CardHeader>
             <CardContent class="space-y-4">
