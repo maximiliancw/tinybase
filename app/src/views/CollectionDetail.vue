@@ -7,6 +7,7 @@
 import { onMounted, ref, computed, h } from 'vue';
 import { useToast } from '../composables/useToast';
 import { useRoute } from 'vue-router';
+import { RouterLink } from 'vue-router';
 import { useInfiniteScroll } from '@vueuse/core';
 import { useCollectionsStore, type Record } from '../stores/collections';
 import { useAuthStore } from '../stores/auth';
@@ -131,7 +132,19 @@ const recordColumns = computed(() => {
       key: 'id',
       label: 'ID',
       render: (value: any) =>
-        h('code', { class: 'text-xs text-muted-foreground' }, `${value.slice(0, 8)}...`),
+        authStore.isAdmin
+          ? h(
+              RouterLink,
+              {
+                to: {
+                  name: 'record-detail',
+                  params: { name: collectionName.value, id: value },
+                },
+                class: 'text-primary hover:underline font-medium cursor-pointer transition-colors',
+              },
+              () => h('code', { class: 'text-xs' }, `${value.slice(0, 8)}...`)
+            )
+          : h('code', { class: 'text-xs text-muted-foreground' }, `${value.slice(0, 8)}...`),
     },
   ];
 

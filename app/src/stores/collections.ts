@@ -135,6 +135,48 @@ export const useCollectionsStore = defineStore('collections', () => {
     }
   }
 
+  async function fetchRecord(
+    collectionName: string,
+    recordId: string
+  ): Promise<RecordResponse | null> {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await api.collections.getRecord({
+        path: { collection_name: collectionName, record_id: recordId },
+      });
+      return response.data as RecordResponse;
+    } catch (err: any) {
+      error.value = err.error?.detail || 'Failed to fetch record';
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function updateRecord(
+    collectionName: string,
+    recordId: string,
+    data: Record<string, any>
+  ): Promise<RecordResponse | null> {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await api.collections.updateRecord({
+        path: { collection_name: collectionName, record_id: recordId },
+        body: { data },
+      });
+      return response.data as RecordResponse;
+    } catch (err: any) {
+      error.value = err.error?.detail || 'Failed to update record';
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function deleteRecord(collectionName: string, recordId: string): Promise<boolean> {
     loading.value = true;
     error.value = null;
@@ -166,6 +208,8 @@ export const useCollectionsStore = defineStore('collections', () => {
     deleteCollection,
     fetchRecords,
     createRecord,
+    fetchRecord,
+    updateRecord,
     deleteRecord,
   };
 });

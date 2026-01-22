@@ -13,6 +13,7 @@ const Login = () => import('../views/Login.vue');
 const Dashboard = () => import('../views/Dashboard.vue');
 const Collections = () => import('../views/Collections.vue');
 const CollectionDetail = () => import('../views/CollectionDetail.vue');
+const RecordDetail = () => import('../views/RecordDetail.vue');
 const Users = () => import('../views/Users.vue');
 const Functions = () => import('../views/Functions.vue');
 const Schedules = () => import('../views/Schedules.vue');
@@ -80,6 +81,12 @@ const router = createRouter({
       name: 'collection-detail',
       component: CollectionDetail,
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/admin/collections/:name/records/:id',
+      name: 'record-detail',
+      component: RecordDetail,
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/admin/users',
