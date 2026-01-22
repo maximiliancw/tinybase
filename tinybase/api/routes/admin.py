@@ -18,9 +18,7 @@ from sqlmodel import select
 from tinybase.auth import (
     CurrentAdminUser,
     DbSession,
-    create_application_token,
     hash_password,
-    revoke_application_token,
 )
 from tinybase.db.models import (
     ApplicationToken,
