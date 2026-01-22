@@ -5,8 +5,8 @@
  * List and manage data collections.
  */
 import { onMounted, ref, computed, h, watch } from 'vue';
+import { RouterLink } from 'vue-router';
 import { useToast } from '../composables/useToast';
-import { useRoute } from 'vue-router';
 import { useUrlSearchParams } from '@vueuse/core';
 import { useField, useForm } from 'vee-validate';
 import { useCollectionsStore } from '../stores/collections';
@@ -39,7 +39,6 @@ import {
 import { FolderOpen } from 'lucide-vue-next';
 
 const toast = useToast();
-const route = useRoute();
 const collectionsStore = useCollectionsStore();
 const authStore = useAuthStore();
 
@@ -140,9 +139,12 @@ const collectionColumns = computed(() => {
       label: 'Name',
       render: (value: any) =>
         h(
-          'router-link',
-          { to: `/collections/${value}`, class: 'text-primary hover:underline' },
-          value
+          RouterLink,
+          {
+            to: { name: 'collection-detail', params: { name: value } },
+            class: 'text-primary hover:underline font-medium cursor-pointer transition-colors',
+          },
+          () => value
         ),
     },
     { key: 'label', label: 'Label' },

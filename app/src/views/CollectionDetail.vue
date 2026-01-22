@@ -31,7 +31,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { FileText } from 'lucide-vue-next';
+import { FileText, Database, Calendar, Hash } from 'lucide-vue-next';
 
 const toast = useToast();
 const route = useRoute();
@@ -178,13 +178,66 @@ const recordColumns = computed(() => {
   <section class="space-y-6 animate-in fade-in duration-500">
     <!-- Page Header -->
     <header class="space-y-1">
-      <h1 class="text-3xl font-bold tracking-tight">
-        {{ collectionsStore.currentCollection?.label || collectionName }}
-      </h1>
+      <div class="flex items-center gap-3">
+        <h1 class="text-3xl font-bold tracking-tight">
+          {{ collectionsStore.currentCollection?.label || collectionName }}
+        </h1>
+      </div>
       <p class="text-muted-foreground">
         Collection: <code class="text-sm">{{ collectionName }}</code>
       </p>
     </header>
+
+    <!-- Stats Cards -->
+    <div class="grid gap-4 md:grid-cols-3">
+      <Card>
+        <CardContent class="pt-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-muted-foreground">Total Records</p>
+              <p class="text-2xl font-bold">{{ total.toLocaleString() }}</p>
+            </div>
+            <div class="rounded-full bg-primary/10 p-3">
+              <Database class="h-5 w-5 text-primary" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent class="pt-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-muted-foreground">Fields</p>
+              <p class="text-2xl font-bold">
+                {{ collectionsStore.currentCollection?.schema?.fields?.length || 0 }}
+              </p>
+            </div>
+            <div class="rounded-full bg-primary/10 p-3">
+              <Hash class="h-5 w-5 text-primary" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent class="pt-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-muted-foreground">Created</p>
+              <p class="text-sm font-semibold">
+                {{
+                  collectionsStore.currentCollection?.created_at
+                    ? new Date(collectionsStore.currentCollection.created_at).toLocaleDateString()
+                    : '-'
+                }}
+              </p>
+            </div>
+            <div class="rounded-full bg-primary/10 p-3">
+              <Calendar class="h-5 w-5 text-primary" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
 
     <!-- Schema Info -->
     <Card>
