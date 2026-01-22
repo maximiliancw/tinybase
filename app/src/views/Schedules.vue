@@ -340,7 +340,7 @@ const scheduleColumns = computed(() => [
         :page-size="20"
         search-placeholder="Search schedules..."
         :header-action="{
-          label: '+ New Schedule',
+          label: 'New Schedule',
           action: () => {
             showCreateModal = true;
           },

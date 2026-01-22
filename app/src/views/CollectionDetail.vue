@@ -308,7 +308,7 @@ const recordColumns = computed(() => {
             :paginated="false"
             search-placeholder="Search records..."
             :header-action="{
-              label: '+ New Record',
+              label: 'New Record',
               action: () => {
                 showCreateModal = true;
               },

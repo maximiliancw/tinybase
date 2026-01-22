@@ -220,7 +220,7 @@ const collectionColumns = computed(() => {
         :header-action="
           authStore.isAdmin
             ? {
-                label: '+ New Collection',
+                label: 'New Collection',
                 action: () => {
                   showCreateModal = true;
                 },

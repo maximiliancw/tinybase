@@ -162,7 +162,7 @@ const userColumns = computed(() => [
         :page-size="20"
         search-placeholder="Search users..."
         :header-action="{
-          label: '+ New User',
+          label: 'New User',
           action: () => {
             showCreateModal = true;
           },
