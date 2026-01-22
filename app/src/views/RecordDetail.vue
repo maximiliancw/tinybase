@@ -165,12 +165,7 @@ const canDelete = computed(() => {
           <div class="flex items-center justify-between">
             <CardTitle>Metadata</CardTitle>
             <div v-if="authStore.isAdmin" class="flex gap-2">
-              <Button
-                v-if="canEdit"
-                variant="outline"
-                size="sm"
-                @click="showEditModal = true"
-              >
+              <Button v-if="canEdit" variant="outline" size="sm" @click="showEditModal = true">
                 <Edit2 class="h-4 w-4 mr-2" />
                 Edit
               </Button>
@@ -241,8 +236,7 @@ const canDelete = computed(() => {
                 <pre
                   v-if="typeof getFieldValue(field.name) === 'object'"
                   class="text-sm font-mono whitespace-pre-wrap break-words"
-                >
-{{ formatValue(getFieldValue(field.name)) }}
+                  >{{ formatValue(getFieldValue(field.name)) }}
                 </pre>
                 <p v-else class="text-sm">
                   {{ formatValue(getFieldValue(field.name)) }}
@@ -250,9 +244,7 @@ const canDelete = computed(() => {
               </div>
             </div>
           </div>
-          <div v-else class="text-sm text-muted-foreground">
-            Loading schema...
-          </div>
+          <div v-else class="text-sm text-muted-foreground">Loading schema...</div>
         </CardContent>
       </Card>
 
@@ -262,8 +254,8 @@ const canDelete = computed(() => {
           <CardTitle>Raw JSON</CardTitle>
         </CardHeader>
         <CardContent>
-          <pre class="rounded-md border bg-muted/50 p-4 text-sm font-mono overflow-auto">
-{{ JSON.stringify(record.data, null, 2) }}
+          <pre class="rounded-md border bg-muted/50 p-4 text-sm font-mono overflow-auto"
+            >{{ JSON.stringify(record.data, null, 2) }}
           </pre>
         </CardContent>
       </Card>
@@ -282,13 +274,7 @@ const canDelete = computed(() => {
         <form id="edit-form" class="space-y-4" @submit.prevent="handleUpdate">
           <div class="space-y-2">
             <Label for="data">Record Data (JSON)</Label>
-            <Textarea
-              id="data"
-              v-model="editData"
-              :rows="15"
-              class="font-mono text-sm"
-              required
-            />
+            <Textarea id="data" v-model="editData" :rows="15" class="font-mono text-sm" required />
             <p class="text-xs text-muted-foreground">
               Fields:
               {{
@@ -303,9 +289,7 @@ const canDelete = computed(() => {
         </form>
 
         <DialogFooter>
-          <Button type="button" variant="ghost" @click="showEditModal = false">
-            Cancel
-          </Button>
+          <Button type="button" variant="ghost" @click="showEditModal = false"> Cancel </Button>
           <Button type="submit" form="edit-form" :disabled="collectionsStore.loading">
             <Save class="h-4 w-4 mr-2" />
             {{ collectionsStore.loading ? 'Updating...' : 'Update Record' }}
@@ -324,9 +308,7 @@ const canDelete = computed(() => {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button type="button" variant="ghost" @click="showDeleteDialog = false">
-            Cancel
-          </Button>
+          <Button type="button" variant="ghost" @click="showDeleteDialog = false"> Cancel </Button>
           <Button type="button" variant="destructive" @click="handleDelete">
             <Trash2 class="h-4 w-4 mr-2" />
             Delete

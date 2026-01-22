@@ -205,7 +205,9 @@ const [authPortalLogoUrl] = defineField('auth_portal_logo_url');
 const [authPortalPrimaryColor] = defineField('auth_portal_primary_color');
 const [authPortalBackgroundImageUrl] = defineField('auth_portal_background_image_url');
 const [loginRedirectUrl, loginRedirectUrlAttrs] = defineField('auth_portal_login_redirect_url');
-const [registerRedirectUrl, registerRedirectUrlAttrs] = defineField('auth_portal_register_redirect_url');
+const [registerRedirectUrl, registerRedirectUrlAttrs] = defineField(
+  'auth_portal_register_redirect_url'
+);
 
 // New field for workers (to be implemented in backend later)
 const [schedulerWorkers] = defineField('scheduler_workers');
@@ -317,8 +319,8 @@ const saveSettings = handleSubmit(async (formValues) => {
       'max_concurrent_functions_per_user',
       'scheduler_workers',
     ];
-    
-    numericFields.forEach(field => {
+
+    numericFields.forEach((field) => {
       if (payload[field] === '' || payload[field] === null || payload[field] === undefined) {
         payload[field] = null;
       }
@@ -340,7 +342,7 @@ const saveSettings = handleSubmit(async (formValues) => {
 
     // Reset form dirty state since changes are saved
     // This will be handled by the watch after the store updates
-    
+
     toast.success('Settings saved successfully');
     await authStore.fetchInstanceInfo(); // Update instance name in header
   } catch (err: any) {
@@ -378,11 +380,7 @@ function resetChanges() {
         >
           Reset Changes
         </Button>
-        <Button
-          type="button"
-          :disabled="!meta.dirty || saving"
-          @click="saveSettings"
-        >
+        <Button type="button" :disabled="!meta.dirty || saving" @click="saveSettings">
           {{ saving ? 'Saving...' : 'Save Settings' }}
         </Button>
       </div>
@@ -416,7 +414,8 @@ function resetChanges() {
                   <Label for="instance_name">Instance Name</Label>
                   <Input id="instance_name" v-model="instanceName" />
                   <FieldDescription>
-                    Display name for this TinyBase instance, shown in the admin UI header and API responses.
+                    Display name for this TinyBase instance, shown in the admin UI header and API
+                    responses.
                   </FieldDescription>
                 </div>
 
@@ -443,9 +442,7 @@ function resetChanges() {
           <!-- Scheduler & Rate Limiting Settings -->
           <Card>
             <CardHeader>
-              <CardTitle class="text-primary">
-                Scheduler & Rate Limiting
-              </CardTitle>
+              <CardTitle class="text-primary"> Scheduler & Rate Limiting </CardTitle>
             </CardHeader>
             <CardContent class="space-y-6">
               <!-- Maintenance Tasks -->
@@ -461,12 +458,15 @@ function resetChanges() {
                       min="1"
                     />
                     <FieldDescription>
-                      How often expired and invalid tokens are removed from the database. Default: 60 minutes.
+                      How often expired and invalid tokens are removed from the database. Default:
+                      60 minutes.
                     </FieldDescription>
                   </div>
 
                   <div class="space-y-2">
-                    <Label for="metrics_collection_interval">Metrics Collection Interval (minutes)</Label>
+                    <Label for="metrics_collection_interval"
+                      >Metrics Collection Interval (minutes)</Label
+                    >
                     <Input
                       id="metrics_collection_interval"
                       v-model.number="metricsCollectionInterval"
@@ -474,7 +474,8 @@ function resetChanges() {
                       min="1"
                     />
                     <FieldDescription>
-                      How often system metrics are collected and stored. Default: 360 minutes (6 hours).
+                      How often system metrics are collected and stored. Default: 360 minutes (6
+                      hours).
                     </FieldDescription>
                   </div>
                 </div>
@@ -485,7 +486,9 @@ function resetChanges() {
                 <h3 class="text-sm font-semibold">Engine</h3>
                 <div class="grid gap-4 md:grid-cols-2">
                   <div class="space-y-2">
-                    <Label for="scheduler_function_timeout_seconds">Function Timeout (seconds)</Label>
+                    <Label for="scheduler_function_timeout_seconds"
+                      >Function Timeout (seconds)</Label
+                    >
                     <Input
                       id="scheduler_function_timeout_seconds"
                       v-model.number="schedulerFunctionTimeout"
@@ -494,7 +497,8 @@ function resetChanges() {
                       placeholder="null = no limit"
                     />
                     <FieldDescription>
-                      Maximum execution time for scheduled functions. Functions exceeding this limit are terminated. Leave empty for no timeout.
+                      Maximum execution time for scheduled functions. Functions exceeding this limit
+                      are terminated. Leave empty for no timeout.
                     </FieldDescription>
                   </div>
 
@@ -508,7 +512,8 @@ function resetChanges() {
                       placeholder="null = auto"
                     />
                     <FieldDescription>
-                      Number of worker processes available for executing scheduled functions. Leave empty to auto-detect based on CPU cores.
+                      Number of worker processes available for executing scheduled functions. Leave
+                      empty to auto-detect based on CPU cores.
                     </FieldDescription>
                   </div>
                 </div>
@@ -528,12 +533,15 @@ function resetChanges() {
                       placeholder="null = no limit"
                     />
                     <FieldDescription>
-                      Maximum number of scheduled tasks processed in a single scheduler tick. Leave empty for no limit.
+                      Maximum number of scheduled tasks processed in a single scheduler tick. Leave
+                      empty for no limit.
                     </FieldDescription>
                   </div>
 
                   <div class="space-y-2 flex-1 min-w-[200px]">
-                    <Label for="scheduler_max_concurrent_executions">Max Concurrent Executions</Label>
+                    <Label for="scheduler_max_concurrent_executions"
+                      >Max Concurrent Executions</Label
+                    >
                     <Input
                       id="scheduler_max_concurrent_executions"
                       v-model.number="schedulerMaxConcurrentExecutions"
@@ -542,7 +550,8 @@ function resetChanges() {
                       placeholder="null = no limit"
                     />
                     <FieldDescription>
-                      Maximum number of functions that can run simultaneously across all users. Leave empty for no limit.
+                      Maximum number of functions that can run simultaneously across all users.
+                      Leave empty for no limit.
                     </FieldDescription>
                   </div>
 
@@ -558,7 +567,8 @@ function resetChanges() {
                       placeholder="null = no limit"
                     />
                     <FieldDescription>
-                      Maximum number of functions a single user can execute concurrently. Leave empty for no limit.
+                      Maximum number of functions a single user can execute concurrently. Leave
+                      empty for no limit.
                     </FieldDescription>
                   </div>
                 </div>
@@ -589,29 +599,21 @@ function resetChanges() {
             <CardContent class="space-y-4">
               <div class="space-y-2">
                 <div class="flex items-center space-x-2">
-                  <Switch
-                    id="allow_public_registration"
-                    v-model="allowPublicRegistration"
-                  />
+                  <Switch id="allow_public_registration" v-model="allowPublicRegistration" />
                   <Label for="allow_public_registration" class="cursor-pointer">
                     Allow public registration
                   </Label>
                 </div>
                 <FieldDescription class="pl-9">
-                  When enabled, anyone can create a new user account through the registration page. When disabled, only admins can create users.
+                  When enabled, anyone can create a new user account through the registration page.
+                  When disabled, only admins can create users.
                 </FieldDescription>
               </div>
 
-              <div
-                v-if="allowPublicRegistration"
-                class="space-y-4"
-              >
+              <div v-if="allowPublicRegistration" class="space-y-4">
                 <div class="space-y-2">
                   <div class="flex items-center space-x-2">
-                    <Switch
-                      id="auth_portal_enabled"
-                      v-model="authPortalEnabled"
-                    />
+                    <Switch id="auth_portal_enabled" v-model="authPortalEnabled" />
                     <Label for="auth_portal_enabled" class="cursor-pointer">
                       Enable custom auth portal
                     </Label>
@@ -631,7 +633,8 @@ function resetChanges() {
                         placeholder="https://example.com/logo.png"
                       />
                       <FieldDescription>
-                        URL to your logo image displayed on the login and registration pages. Must be publicly accessible.
+                        URL to your logo image displayed on the login and registration pages. Must
+                        be publicly accessible.
                       </FieldDescription>
                     </div>
 
@@ -643,7 +646,8 @@ function resetChanges() {
                         placeholder="https://example.com/bg.jpg"
                       />
                       <FieldDescription>
-                        URL to a background image for the auth portal pages. Must be publicly accessible.
+                        URL to a background image for the auth portal pages. Must be publicly
+                        accessible.
                       </FieldDescription>
                     </div>
                   </div>
@@ -670,7 +674,8 @@ function resetChanges() {
                         placeholder="https://example.com/dashboard"
                       />
                       <FieldDescription>
-                        URL where users are redirected after successful login. Leave empty to use the default dashboard.
+                        URL where users are redirected after successful login. Leave empty to use
+                        the default dashboard.
                       </FieldDescription>
                     </div>
 
@@ -683,7 +688,8 @@ function resetChanges() {
                         placeholder="https://example.com/onboarding"
                       />
                       <FieldDescription>
-                        URL where users are redirected after successful registration. Leave empty to use the default dashboard.
+                        URL where users are redirected after successful registration. Leave empty to
+                        use the default dashboard.
                       </FieldDescription>
                     </div>
                   </div>
@@ -717,7 +723,11 @@ function resetChanges() {
                     Make sure to copy your token now. You won't be able to see it again.
                   </p>
                   <div class="flex items-center gap-2">
-                    <Input :value="newlyCreatedToken.token_value" readonly class="font-mono text-sm" />
+                    <Input
+                      :value="newlyCreatedToken.token_value"
+                      readonly
+                      class="font-mono text-sm"
+                    />
                     <Button
                       type="button"
                       size="sm"
@@ -773,10 +783,16 @@ function resetChanges() {
                       <TableCell>
                         <Badge
                           :variant="
-                            !token.is_valid ? 'destructive' : token.is_active ? 'default' : 'secondary'
+                            !token.is_valid
+                              ? 'destructive'
+                              : token.is_active
+                                ? 'default'
+                                : 'secondary'
                           "
                         >
-                          {{ !token.is_valid ? 'Invalid' : token.is_active ? 'Active' : 'Inactive' }}
+                          {{
+                            !token.is_valid ? 'Invalid' : token.is_active ? 'Active' : 'Inactive'
+                          }}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -787,7 +803,9 @@ function resetChanges() {
                       <TableCell>
                         <span class="text-sm">
                           {{
-                            token.expires_at ? new Date(token.expires_at).toLocaleDateString() : 'Never'
+                            token.expires_at
+                              ? new Date(token.expires_at).toLocaleDateString()
+                              : 'Never'
                           }}
                         </span>
                       </TableCell>
@@ -834,19 +852,19 @@ function resetChanges() {
           <Card>
             <CardHeader>
               <CardTitle class="text-primary">Storage</CardTitle>
-              <CardDescription>Configure S3-compatible object storage for file uploads</CardDescription>
+              <CardDescription
+                >Configure S3-compatible object storage for file uploads</CardDescription
+              >
             </CardHeader>
             <CardContent class="space-y-4">
               <div class="space-y-2">
                 <div class="flex items-center space-x-2">
-                  <Switch
-                    id="storage_enabled"
-                    v-model="storageEnabled"
-                  />
+                  <Switch id="storage_enabled" v-model="storageEnabled" />
                   <Label for="storage_enabled" class="cursor-pointer"> Enable S3 storage </Label>
                 </div>
                 <FieldDescription class="pl-9">
-                  When enabled, file uploads are stored in S3-compatible object storage instead of the local filesystem.
+                  When enabled, file uploads are stored in S3-compatible object storage instead of
+                  the local filesystem.
                 </FieldDescription>
               </div>
 
@@ -860,31 +878,26 @@ function resetChanges() {
                       placeholder="https://s3.amazonaws.com"
                     />
                     <FieldDescription>
-                      S3-compatible storage service endpoint URL (e.g., https://s3.amazonaws.com or https://s3.us-east-1.amazonaws.com).
+                      S3-compatible storage service endpoint URL (e.g., https://s3.amazonaws.com or
+                      https://s3.us-east-1.amazonaws.com).
                     </FieldDescription>
                   </div>
 
                   <div class="space-y-2">
                     <Label for="storage_bucket">Bucket</Label>
-                    <Input
-                      id="storage_bucket"
-                      v-model="storageBucket"
-                      placeholder="my-bucket"
-                    />
+                    <Input id="storage_bucket" v-model="storageBucket" placeholder="my-bucket" />
                     <FieldDescription>
-                      Name of the S3 bucket where files will be stored. The bucket must already exist.
+                      Name of the S3 bucket where files will be stored. The bucket must already
+                      exist.
                     </FieldDescription>
                   </div>
 
                   <div class="space-y-2">
                     <Label for="storage_region">Region</Label>
-                    <Input
-                      id="storage_region"
-                      v-model="storageRegion"
-                      placeholder="us-east-1"
-                    />
+                    <Input id="storage_region" v-model="storageRegion" placeholder="us-east-1" />
                     <FieldDescription>
-                      AWS region where the bucket is located (e.g., us-east-1, eu-west-1). Required for AWS S3.
+                      AWS region where the bucket is located (e.g., us-east-1, eu-west-1). Required
+                      for AWS S3.
                     </FieldDescription>
                   </div>
                 </div>
@@ -899,7 +912,8 @@ function resetChanges() {
                       autocomplete="off"
                     />
                     <FieldDescription>
-                      S3 access key ID for authentication. Leave empty to keep the existing credentials unchanged.
+                      S3 access key ID for authentication. Leave empty to keep the existing
+                      credentials unchanged.
                     </FieldDescription>
                   </div>
 
@@ -912,7 +926,8 @@ function resetChanges() {
                       autocomplete="off"
                     />
                     <FieldDescription>
-                      S3 secret access key for authentication. Leave empty to keep the existing credentials unchanged.
+                      S3 secret access key for authentication. Leave empty to keep the existing
+                      credentials unchanged.
                     </FieldDescription>
                   </div>
                 </div>
