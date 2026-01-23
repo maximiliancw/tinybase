@@ -12,12 +12,16 @@
 </head>
 <body>
     <div class="container">
-        <h2>Welcome to {{ instance_name }}!</h2>
-        <p>Your account has been successfully created.</p>
-        <p>You can now log in to your account using the email address: <strong>{{ email }}</strong></p>
+        <h2>👋 Welcome to {{ instance_name }}!</h2>
+        <p>Your account has been successfully created. We're happy to have you onboard 🙌🏻</p>
+        <p>
+            You can now log in to your account using this email address:
+            <strong>{{ email }}</strong>
+        </p>
         {% if login_url %}
-        <p>Click the button below to access your account:</p>
-        <a href="{{ login_url }}" class="button">Log In</a>
+        <p>Click this button to access your account:<br/>
+            <a href="{{ login_url }}" class="button">Log In</a>
+        </p>
         {% endif %}
         <p>If you have any questions or need assistance, please don't hesitate to contact us.</p>
         <div class="footer">
