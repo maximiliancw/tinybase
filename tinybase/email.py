@@ -8,18 +8,80 @@ import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Optional
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from tinybase.config import settings
 
 logger = logging.getLogger(__name__)
+
+_template_dir_suffix = Path("templates" / "emails")
+
+# Internal template directory (fallback)
+_internal_template_dir = Path(__file__).parent.parent / _template_dir_suffix
+
+# Template environment - will be initialized on first use
+_template_env: Environment | None = None
+
+
+def _get_template_env() -> Environment:
+    """
+    Get or create the template environment.
+
+    Checks for user templates in the current working directory first,
+    then falls back to internal templates.
+
+    Returns:
+        Jinja2 Environment configured with appropriate template loader
+    """
+    global _template_env
+
+    if _template_env is not None:
+        return _template_env
+
+    # Check for user templates in working directory
+    user_template_dir = Path.cwd() / _template_dir_suffix
+    template_dirs = []
+
+    if user_template_dir.exists() and any(user_template_dir.glob("*.tpl")):
+        # User has custom templates
+        template_dirs.append(str(user_template_dir))
+        logger.info(f"Using custom email templates from {user_template_dir}")
+    else:
+        # Fallback to internal templates
+        template_dirs.append(str(_internal_template_dir))
+        logger.debug(f"Using internal email templates from {_internal_template_dir}")
+
+    # Create environment with fallback loader
+    _template_env = Environment(
+        loader=FileSystemLoader(template_dirs),
+        autoescape=select_autoescape(["html", "xml"], default_for_string=True),
+    )
+
+    return _template_env
+
+
+def _render_template(template_name: str, context: dict) -> str:
+    """
+    Render an email template with the given context.
+
+    Args:
+        template_name: Base name of the template (without extension)
+        context: Dictionary of variables to pass to the template
+
+    Returns:
+        HTML email body
+    """
+    env = _get_template_env()
+    template = env.get_template(f"{template_name}.tpl")
+    return template.render(**context)
 
 
 def send_email(
     to_email: str,
     subject: str,
     html_body: str,
-    text_body: Optional[str] = None,
 ) -> bool:
     """
     Send an email using SMTP.
@@ -28,7 +90,6 @@ def send_email(
         to_email: Recipient email address
         subject: Email subject
         html_body: HTML email body
-        text_body: Optional plain text email body
 
     Returns:
         True if email was sent successfully, False otherwise
@@ -56,11 +117,7 @@ def send_email(
         msg["From"] = f"{config.email_from_name} <{config.email_from_address}>"
         msg["To"] = to_email
 
-        # Add text and HTML parts
-        if text_body:
-            text_part = MIMEText(text_body, "plain")
-            msg.attach(text_part)
-
+        # Add HTML part
         html_part = MIMEText(html_body, "html")
         msg.attach(html_part)
 
@@ -101,50 +158,110 @@ def send_password_reset_email(to_email: str, reset_token: str, reset_url: str) -
 
     subject = f"[{instance_name}] Password Reset Request"
 
-    html_body = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <style>
-            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-            .button {{ display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }}
-            .button:hover {{ background-color: #0056b3; }}
-            .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h2>Password Reset Request</h2>
-            <p>You requested to reset your password for your {instance_name} account.</p>
-            <p>Click the button below to reset your password:</p>
-            <a href="{reset_url}" class="button">Reset Password</a>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #666;">{reset_url}</p>
-            <p>This link will expire in 1 hour.</p>
-            <p>If you didn't request this password reset, you can safely ignore this email.</p>
-            <div class="footer">
-                <p>This is an automated message from {instance_name}.</p>
-            </div>
-        </div>
-    </body>
-    </html>
+    context = {
+        "instance_name": instance_name,
+        "reset_url": reset_url,
+    }
+
+    html_body = _render_template("password-reset-request", context)
+
+    return send_email(to_email, subject, html_body)
+
+
+def send_account_creation_email(to_email: str, login_url: str | None = None) -> bool:
     """
+    Send an account creation welcome email.
 
-    text_body = f"""
-Password Reset Request
+    Args:
+        to_email: Recipient email address
+        login_url: Optional URL to the login page
 
-You requested to reset your password for your {instance_name} account.
-
-Click this link to reset your password:
-{reset_url}
-
-This link will expire in 1 hour.
-
-If you didn't request this password reset, you can safely ignore this email.
-
-This is an automated message from {instance_name}.
+    Returns:
+        True if email was sent successfully, False otherwise
     """
+    config = settings()
+    instance_name = config.email_from_name
 
-    return send_email(to_email, subject, html_body, text_body)
+    subject = f"Welcome to {instance_name}!"
+
+    context = {
+        "instance_name": instance_name,
+        "email": to_email,
+        "login_url": login_url,
+    }
+
+    html_body = _render_template("account-creation", context)
+
+    return send_email(to_email, subject, html_body)
+
+
+def send_login_link_email(to_email: str, login_url: str, expiry_minutes: int = 15) -> bool:
+    """
+    Send a login link email.
+
+    Args:
+        to_email: Recipient email address
+        login_url: Full URL to the login page with token
+        expiry_minutes: Number of minutes until the link expires
+
+    Returns:
+        True if email was sent successfully, False otherwise
+    """
+    config = settings()
+    instance_name = config.email_from_name
+
+    subject = f"[{instance_name}] Login Link"
+
+    context = {
+        "instance_name": instance_name,
+        "login_url": login_url,
+        "expiry_minutes": expiry_minutes,
+    }
+
+    html_body = _render_template("login-with-link", context)
+
+    return send_email(to_email, subject, html_body)
+
+
+def send_admin_report_email(
+    to_email: str,
+    report_date: str,
+    summary: dict | None = None,
+    collections: dict | None = None,
+    functions: dict | None = None,
+    users: dict | None = None,
+    notes: str | None = None,
+) -> bool:
+    """
+    Send an admin report email.
+
+    Args:
+        to_email: Recipient email address
+        report_date: Date/time when the report was generated
+        summary: Optional summary metrics dictionary
+        collections: Optional dictionary mapping collection names to record counts
+        functions: Optional dictionary mapping function names to statistics
+        users: Optional dictionary with user statistics (total, admins, regular)
+        notes: Optional additional notes to include in the report
+
+    Returns:
+        True if email was sent successfully, False otherwise
+    """
+    config = settings()
+    instance_name = config.email_from_name
+
+    subject = f"[{instance_name}] Admin Report - {report_date}"
+
+    context = {
+        "instance_name": instance_name,
+        "report_date": report_date,
+        "summary": summary,
+        "collections": collections,
+        "functions": functions,
+        "users": users,
+        "notes": notes,
+    }
+
+    html_body = _render_template("admin-report", context)
+
+    return send_email(to_email, subject, html_body)
