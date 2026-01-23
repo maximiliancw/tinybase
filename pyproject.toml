@@ -84,6 +84,7 @@ dev = [
     "pytest-cov>=4.1.0",
     "httpx>=0.27.0",
     "ruff>=0.7.0",
+    "djlint>=1.36.4",
 ]
 docs = [
     "mike>=2.1.3",
