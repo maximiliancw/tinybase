@@ -41,7 +41,7 @@ COPY pyproject.toml README.md LICENSE ./
 COPY tinybase/ ./tinybase/
 
 # Copy built admin UI (includes auth portal) from frontend builder stage
-COPY --from=frontend-builder /app/dist ./tinybase/admin_static/
+COPY --from=frontend-builder /app/dist ./tinybase/static/app/
 
 # Install TinyBase using uv
 RUN uv pip install --no-cache .

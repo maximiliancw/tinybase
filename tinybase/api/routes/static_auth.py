@@ -13,11 +13,11 @@ from fastapi.staticfiles import StaticFiles
 from tinybase.config import settings
 
 
-def get_admin_static_dir() -> Path | None:
+def get_app_static_dir() -> Path | None:
     """
-    Get the path to admin static files (same as admin UI).
+    Get the path to app static files (same as admin UI).
 
-    Returns the built-in admin_static directory if using "builtin",
+    Returns the built-in static/app directory if using "builtin",
     or a custom path if specified in settings.
 
     Returns:
@@ -26,8 +26,8 @@ def get_admin_static_dir() -> Path | None:
     config = settings()
 
     if config.admin_static_dir == "builtin":
-        # Look for bundled admin_static directory
-        builtin_path = Path(__file__).parent.parent.parent / "admin_static"
+        # Look for bundled static/app directory
+        builtin_path = Path(__file__).parent.parent.parent / "static" / "app"
         if builtin_path.exists():
             return builtin_path
         return None
@@ -41,7 +41,7 @@ def get_admin_static_dir() -> Path | None:
 
 def mount_auth_portal(app: FastAPI) -> bool:
     """
-    Mount the admin SPA static files to /auth.
+    Mount the admin SPA static files.
 
     The auth portal is integrated into the admin SPA, so we serve
     the same static files at /auth. The router will handle routing
@@ -53,7 +53,7 @@ def mount_auth_portal(app: FastAPI) -> bool:
     Returns:
         True if auth portal was mounted, False if static files not found.
     """
-    static_dir = get_admin_static_dir()
+    static_dir = get_app_static_dir()
 
     if static_dir is None:
         return False

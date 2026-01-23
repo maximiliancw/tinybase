@@ -51,7 +51,7 @@ RUN uv sync --frozen --no-dev
 
 # Copy application
 COPY tinybase/ ./tinybase/
-COPY --from=ui-builder /app/dist ./tinybase/admin_static/
+COPY --from=ui-builder /app/dist ./tinybase/static/app/
 
 # Create data directory
 RUN mkdir -p /data

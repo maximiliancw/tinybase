@@ -239,7 +239,7 @@ cd app
 yarn build
 ```
 
-Built files go to `app/dist/`. For the Python package, copy to `tinybase/admin_static/`.
+Built files go to `app/dist/`. For the Python package, copy to `tinybase/static/app/`. If using Docker, this will be done automatically per default.
 
 ## Debugging
 

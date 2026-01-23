@@ -384,7 +384,9 @@ yarn install
 yarn build
 ```
 
-This produces a `/app/dist` directory, which should be copied into the Python package (e.g. `tinybase/admin_static`) during the build process.
+This produces a `/app/dist` directory, which should be copied into the Python package (e.g. `tinybase/static/app`) during the build process.
+
+> Note: Per default, this is done automatically during the Docker build process.
 
 At runtime, FastAPI serves the admin UI at:
 

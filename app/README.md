@@ -57,7 +57,7 @@ yarn build
 yarn preview
 ```
 
-> Note: The built files in `dist/` should be copied to `PROJECT_ROOT/tinybase/admin_static/` for integrated deployment with TinyBase.
+> Note: The built files in `dist/` should be copied to `PROJECT_ROOT/tinybase/static/app/` for integrated deployment with TinyBase. Per default, this happens automatically during the Docker build process.
 
 ## Type-Safe API Client
 

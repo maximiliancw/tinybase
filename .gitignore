@@ -85,9 +85,9 @@ alembic.ini
 .DS_Store
 Thumbs.db
 
-# Built admin static (populated at build time)
-tinybase/admin_static/*
-!tinybase/admin_static/.gitkeep
+# Built app static (populated at build time)
+tinybase/static/app/*
+!tinybase/static/app/.gitkeep
 
 # MkDocs documentation site
 site/
