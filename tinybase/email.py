@@ -2,7 +2,6 @@
 Email sending utilities for TinyBase.
 
 Provides SMTP-based email sending with support for password reset emails.
-Can also use extension hooks as a fallback if SMTP is not configured.
 """
 
 import logging
@@ -23,7 +22,7 @@ def send_email(
     text_body: Optional[str] = None,
 ) -> bool:
     """
-    Send an email using SMTP or extension hooks.
+    Send an email using SMTP.
 
     Args:
         to_email: Recipient email address
@@ -36,19 +35,19 @@ def send_email(
     """
     config = settings()
 
-    # If email is not enabled, try extension hooks
+    # Check if email is enabled
     if not config.email_enabled:
-        logger.debug("Email not enabled, attempting to use extension hooks")
-        return _send_via_extension_hooks(to_email, subject, html_body, text_body)
+        logger.error("Email sending requested but email is not enabled")
+        return False
 
     # Validate SMTP configuration
     if not config.email_smtp_host:
-        logger.warning("Email enabled but SMTP host not configured")
-        return _send_via_extension_hooks(to_email, subject, html_body, text_body)
+        logger.error("Email enabled but SMTP host not configured")
+        return False
 
     if not config.email_from_address:
-        logger.warning("Email enabled but from address not configured")
-        return _send_via_extension_hooks(to_email, subject, html_body, text_body)
+        logger.error("Email enabled but from address not configured")
+        return False
 
     try:
         # Create message
@@ -82,37 +81,7 @@ def send_email(
 
     except Exception as e:
         logger.error(f"Failed to send email via SMTP: {e}")
-        # Fallback to extension hooks
-        return _send_via_extension_hooks(to_email, subject, html_body, text_body)
-
-
-def _send_via_extension_hooks(
-    to_email: str,
-    subject: str,
-    html_body: str,
-    text_body: Optional[str] = None,
-) -> bool:
-    """
-    Attempt to send email via extension hooks.
-
-    This allows extensions to handle email sending if SMTP is not configured.
-    For now, this is a placeholder that logs a warning.
-
-    Args:
-        to_email: Recipient email address
-        subject: Email subject
-        html_body: HTML email body
-        text_body: Optional plain text email body
-
-    Returns:
-        False (extensions can be added later to handle this)
-    """
-    logger.warning(
-        f"Email sending requested but SMTP not configured. "
-        f"Configure email settings or use an extension to handle email sending. "
-        f"Recipient: {to_email}, Subject: {subject}"
-    )
-    return False
+        return False
 
 
 def send_password_reset_email(to_email: str, reset_token: str, reset_url: str) -> bool:
@@ -130,7 +99,7 @@ def send_password_reset_email(to_email: str, reset_token: str, reset_url: str) -
     config = settings()
     instance_name = config.email_from_name
 
-    subject = f"Password Reset Request - {instance_name}"
+    subject = f"[{instance_name}] Password Reset Request"
 
     html_body = f"""
     <!DOCTYPE html>
