@@ -198,3 +198,58 @@ def serve(
         log_level=uvicorn_log_level,
         log_config=None,  # Let our setup_logging() handle all configuration
     )
+
+
+@app.command()
+def templates(
+    destination: Annotated[
+        Path, typer.Argument(help="Destination directory (default: current directory)")
+    ] = Path("."),
+) -> None:
+    """
+    Copy email templates to your workspace for customization.
+
+    This command copies the default email templates to your workspace,
+    allowing you to customize them (e.g., change wording or language).
+    Templates in your workspace take precedence over the built-in templates.
+    """
+    import shutil
+
+    source_dir = Path(__file__).parent.parent.parent / "templates" / "emails"
+    dest_dir = destination.resolve() / "templates" / "emails"
+
+    if not source_dir.exists():
+        typer.secho("Error: Internal templates not found!", fg=typer.colors.RED, bold=True)
+        raise typer.Exit(1)
+
+    # Create destination directory
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy all template files
+    template_files = list(source_dir.glob("*.tpl"))
+    if not template_files:
+        typer.secho("Warning: No template files found to copy", fg=typer.colors.YELLOW)
+        raise typer.Exit(1)
+
+    copied_count = 0
+    for template_file in template_files:
+        dest_file = dest_dir / template_file.name
+        if dest_file.exists():
+            typer.echo(f"  Skipping {template_file.name} (already exists)")
+        else:
+            shutil.copy2(template_file, dest_file)
+            typer.echo(f"  Copied {template_file.name}")
+            copied_count += 1
+
+    if copied_count > 0:
+        typer.echo("")
+        typer.secho(
+            f"Successfully copied {copied_count} template(s) to {dest_dir}", fg=typer.colors.GREEN
+        )
+        typer.echo("")
+        typer.echo(
+            "You can now customize these templates. They will be used instead of the built-in ones."
+        )
+    else:
+        typer.echo("")
+        typer.secho("All templates already exist in destination directory", fg=typer.colors.YELLOW)
