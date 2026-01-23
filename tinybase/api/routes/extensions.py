@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlmodel import select
 
-from tinybase.auth import CurrentAdminUser, DbSession
+from tinybase.auth import CurrentAdminUser, DBSession
 from tinybase.db.models import Extension
 from tinybase.extensions import (
     InstallError,
@@ -105,7 +105,7 @@ def extension_to_response(ext: Extension, update_version: str | None = None) -> 
     description="Get a paginated list of installed extensions.",
 )
 def list_extensions(
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
     enabled_only: bool = Query(default=False, description="Only show enabled extensions"),
     check_updates: bool = Query(default=False, description="Check for available updates"),
@@ -154,7 +154,7 @@ def list_extensions(
 )
 def create_extension(
     request: ExtensionInstallRequest,
-    session: DbSession,
+    session: DBSession,
     admin: CurrentAdminUser,
 ) -> ExtensionInfo:
     """Install an extension from GitHub."""
@@ -180,7 +180,7 @@ def create_extension(
 )
 def get_extension(
     extension_name: str,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
     check_updates: bool = Query(default=False, description="Check for available updates"),
 ) -> ExtensionInfo:
@@ -211,7 +211,7 @@ def get_extension(
 def update_extension(
     extension_name: str,
     request: ExtensionUpdateRequest,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> ExtensionInfo:
     """Update extension settings (enable/disable)."""
@@ -242,7 +242,7 @@ def update_extension(
 )
 def delete_extension(
     extension_name: str,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> None:
     """Uninstall an extension."""

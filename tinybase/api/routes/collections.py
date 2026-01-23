@@ -13,7 +13,7 @@ from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from pydantic import BaseModel, Field, ValidationError
 
-from tinybase.auth import CurrentAdminUser, CurrentUser, CurrentUserOptional, DbSession
+from tinybase.auth import CurrentAdminUser, CurrentUser, CurrentUserOptional, DBSession
 from tinybase.collections.service import CollectionService, check_access
 from tinybase.extensions.hooks import (
     RecordCreateEvent,
@@ -146,7 +146,7 @@ def record_to_response(record: Any) -> RecordResponse:
     description="Get a list of all collections. Available to all authenticated users.",
 )
 def list_collections(
-    session: DbSession,
+    session: DBSession,
     _user: CurrentUserOptional,
 ) -> list[CollectionResponse]:
     """List all available collections."""
@@ -164,7 +164,7 @@ def list_collections(
 )
 def create_collection(
     request: CollectionCreate,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> CollectionResponse:
     """Create a new collection (admin only)."""
@@ -194,7 +194,7 @@ def create_collection(
 )
 def get_collection(
     collection_name: str,
-    session: DbSession,
+    session: DBSession,
     _user: CurrentUserOptional,
 ) -> CollectionResponse:
     """Get collection details by name."""
@@ -219,7 +219,7 @@ def get_collection(
 def update_collection(
     collection_name: str,
     request: CollectionUpdate,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> CollectionResponse:
     """Update a collection (admin only)."""
@@ -256,7 +256,7 @@ def update_collection(
 )
 def delete_collection(
     collection_name: str,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> None:
     """Delete a collection (admin only)."""
@@ -285,7 +285,7 @@ def delete_collection(
 )
 def list_records(
     collection_name: str,
-    session: DbSession,
+    session: DBSession,
     _user: CurrentUserOptional,
     limit: int = Query(default=100, ge=1, le=1000, description="Page size"),
     offset: int = Query(default=0, ge=0, description="Page offset"),
@@ -340,7 +340,7 @@ def list_records(
 def create_record(
     collection_name: str,
     request: RecordCreate,
-    session: DbSession,
+    session: DBSession,
     user: CurrentUser,
     background_tasks: BackgroundTasks,
 ) -> RecordResponse:
@@ -399,7 +399,7 @@ def create_record(
 def get_record(
     collection_name: str,
     record_id: UUID,
-    session: DbSession,
+    session: DBSession,
     _user: CurrentUserOptional,
 ) -> RecordResponse:
     """Get a specific record by ID."""
@@ -446,7 +446,7 @@ def update_record(
     collection_name: str,
     record_id: UUID,
     request: RecordUpdate,
-    session: DbSession,
+    session: DBSession,
     user: CurrentUser,
     background_tasks: BackgroundTasks,
 ) -> RecordResponse:
@@ -519,7 +519,7 @@ def update_record(
 def delete_record(
     collection_name: str,
     record_id: UUID,
-    session: DbSession,
+    session: DBSession,
     user: CurrentUser,
     background_tasks: BackgroundTasks,
 ) -> None:

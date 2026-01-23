@@ -12,7 +12,7 @@ from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from tinybase.auth import CurrentUser, DbSession
+from tinybase.auth import CurrentUser, DBSession
 from tinybase.storage import StorageError, StorageService
 
 router = APIRouter(prefix="/files", tags=["files"])
@@ -57,7 +57,7 @@ class StorageStatusResponse(BaseModel):
     description="Check if file storage is enabled and configured.",
 )
 def get_storage_status(
-    session: DbSession,
+    session: DBSession,
     _user: CurrentUser,
 ) -> StorageStatusResponse:
     """Check if storage is enabled."""
@@ -72,7 +72,7 @@ def get_storage_status(
     description="Upload a file to storage. Returns the storage key.",
 )
 async def upload_file(
-    session: DbSession,
+    session: DBSession,
     user: CurrentUser,
     file: UploadFile = File(...),
     path_prefix: str = Query(default="", description="Optional path prefix"),
@@ -118,7 +118,7 @@ async def upload_file(
 )
 def download_file(
     key: str,
-    session: DbSession,
+    session: DBSession,
     _user: CurrentUser,
 ) -> Response:
     """Download a file from storage."""
@@ -181,7 +181,7 @@ def download_file(
 )
 def delete_file(
     key: str,
-    session: DbSession,
+    session: DBSession,
     _user: CurrentUser,
 ) -> None:
     """Delete a file from storage."""
@@ -210,7 +210,7 @@ def delete_file(
 )
 def get_presigned_url(
     key: str,
-    session: DbSession,
+    session: DBSession,
     _user: CurrentUser,
     expires_in: int = Query(default=3600, ge=60, le=86400, description="Expiration in seconds"),
 ) -> PresignedUrlResponse:

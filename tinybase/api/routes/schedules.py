@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlmodel import select
 
-from tinybase.auth import CurrentAdminUser, DbSession
+from tinybase.auth import CurrentAdminUser, DBSession
 from tinybase.db.models import FunctionSchedule, utcnow
 from tinybase.functions.core import get_global_registry
 from tinybase.schedule import parse_schedule_config
@@ -108,7 +108,7 @@ def schedule_to_response(schedule: FunctionSchedule) -> ScheduleResponse:
     description="Get a paginated list of function schedules.",
 )
 def list_schedules(
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
     function_name: str | None = Query(default=None, description="Filter by function name"),
     is_active: bool | None = Query(default=None, description="Filter by active status"),
@@ -149,7 +149,7 @@ def list_schedules(
 )
 def create_schedule(
     request: ScheduleCreate,
-    session: DbSession,
+    session: DBSession,
     admin: CurrentAdminUser,
 ) -> ScheduleResponse:
     """Create a new schedule."""
@@ -199,7 +199,7 @@ def create_schedule(
 )
 def get_schedule(
     schedule_id: UUID,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> ScheduleResponse:
     """Get a specific schedule by ID."""
@@ -223,7 +223,7 @@ def get_schedule(
 def update_schedule(
     schedule_id: UUID,
     request: ScheduleUpdate,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> ScheduleResponse:
     """Update a schedule."""
@@ -284,7 +284,7 @@ def update_schedule(
 )
 def delete_schedule(
     schedule_id: UUID,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> None:
     """Delete a schedule."""

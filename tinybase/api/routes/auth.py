@@ -20,16 +20,14 @@ from sqlmodel import select
 from tinybase.auth import (
     CurrentUser,
     CurrentUserOptional,
-    DbSession,
+    DBSession,
     create_auth_token,
-    hash_password,
-    verify_password,
-)
-from tinybase.auth_jwt import (
     create_refresh_token,
+    hash_password,
     revoke_all_user_tokens,
     revoke_token,
     verify_jwt_token,
+    verify_password,
 )
 from tinybase.db.models import InstanceSettings, PasswordResetToken, User
 from tinybase.email import send_password_reset_email
@@ -164,7 +162,7 @@ class PortalConfigResponse(BaseModel):
     summary="Get public instance info",
     description="Get public information about this TinyBase instance (no auth required).",
 )
-def get_instance_info(session: DbSession) -> InstanceInfoResponse:
+def get_instance_info(session: DBSession) -> InstanceInfoResponse:
     """
     Get public instance information.
 
@@ -182,7 +180,7 @@ def get_instance_info(session: DbSession) -> InstanceInfoResponse:
     summary="Check setup status",
     description="Check if initial setup is needed (no users exist yet).",
 )
-def get_setup_status(session: DbSession) -> SetupStatusResponse:
+def get_setup_status(session: DBSession) -> SetupStatusResponse:
     """
     Check if the system needs initial setup.
 
@@ -206,7 +204,7 @@ def get_setup_status(session: DbSession) -> SetupStatusResponse:
 def register(
     request: Request,
     body: RegisterRequest,
-    session: DbSession,
+    session: DBSession,
     background_tasks: BackgroundTasks,
 ) -> RegisterResponse:
     """
@@ -263,7 +261,7 @@ def register(
 def login(
     request: Request,
     body: LoginRequest,
-    session: DbSession,
+    session: DBSession,
     background_tasks: BackgroundTasks,
 ) -> LoginResponse:
     """
@@ -362,7 +360,7 @@ def get_me(user: CurrentUser) -> UserInfo:
 def request_password_reset(
     request: Request,
     body: PasswordResetRequest,
-    session: DbSession,
+    session: DBSession,
     background_tasks: BackgroundTasks,
 ) -> PasswordResetRequestResponse:
     """
@@ -405,7 +403,7 @@ def request_password_reset(
 def confirm_password_reset(
     request: Request,
     body: PasswordResetConfirm,
-    session: DbSession,
+    session: DBSession,
 ) -> PasswordResetConfirmResponse:
     """
     Confirm password reset with token.
@@ -462,7 +460,7 @@ def confirm_password_reset(
 @limiter.limit("20/minute")
 def refresh_token(
     request: Request,
-    session: DbSession,
+    session: DBSession,
     user: CurrentUser,
 ) -> LoginResponse:
     """
@@ -531,7 +529,7 @@ class LogoutResponse(BaseModel):
 )
 def logout(
     user: CurrentUser,
-    session: DbSession,
+    session: DBSession,
 ) -> LogoutResponse:
     """
     Logout the current user by revoking all their tokens.
@@ -552,7 +550,7 @@ def logout(
     description="Get public portal configuration. Supports preview mode for admins.",
 )
 def get_portal_config(
-    session: DbSession,
+    session: DBSession,
     preview: bool = Query(default=False, description="Enable preview mode (admin only)"),
     logo_url: str | None = Query(default=None, description="Preview logo URL"),
     primary_color: str | None = Query(default=None, description="Preview primary color"),

@@ -48,7 +48,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 # Local
-from tinybase.auth import validate_token
+from tinybase.auth import get_token_user
 from tinybase.db.models import User
 ```
 

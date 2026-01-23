@@ -15,11 +15,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlmodel import select
 
-from tinybase.auth import (
-    CurrentAdminUser,
-    DbSession,
-    hash_password,
-)
+from tinybase.auth import CurrentAdminUser, DBSession, hash_password
 from tinybase.db.models import (
     ApplicationToken,
     FunctionCall,
@@ -183,7 +179,7 @@ def user_to_response(user: User) -> UserInfo:
     description="Get a paginated list of function call records.",
 )
 def list_function_calls(
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
     function_name: str | None = Query(default=None, description="Filter by function name"),
     status_filter: FunctionCallStatus | None = Query(
@@ -240,7 +236,7 @@ def list_function_calls(
 )
 def get_function_call(
     call_id: UUID,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> FunctionCallInfo:
     """Get a specific function call by ID."""
@@ -261,7 +257,7 @@ def get_function_call(
     description="Get aggregated function execution metrics over a time period.",
 )
 def get_function_metrics(
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
     hours: int = Query(default=24, ge=1, le=720, description="Time period in hours"),
 ) -> dict:
@@ -316,7 +312,7 @@ def get_function_metrics(
     description="Get a paginated list of users.",
 )
 def list_users(
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
     limit: int = Query(default=100, ge=1, le=1000, description="Page size"),
     offset: int = Query(default=0, ge=0, description="Page offset"),
@@ -346,7 +342,7 @@ def list_users(
 )
 def create_user(
     request: UserCreate,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> UserInfo:
     """Create a new user."""
@@ -379,7 +375,7 @@ def create_user(
 )
 def get_user(
     user_id: UUID,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> UserInfo:
     """Get a specific user by ID."""
@@ -403,7 +399,7 @@ def get_user(
 def update_user(
     user_id: UUID,
     request: UserUpdate,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> UserInfo:
     """Update a user's details."""
@@ -456,7 +452,7 @@ def update_user(
 )
 def delete_user(
     user_id: UUID,
-    session: DbSession,
+    session: DBSession,
     admin: CurrentAdminUser,
 ) -> None:
     """Delete a user."""
@@ -611,7 +607,7 @@ def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse
     )
 
 
-def get_or_create_settings(session: DbSession) -> InstanceSettings:
+def get_or_create_settings(session: DBSession) -> InstanceSettings:
     """Get the singleton settings instance, creating it if it doesn't exist."""
     from tinybase.config import settings as app_settings
 
@@ -648,7 +644,7 @@ def get_or_create_settings(session: DbSession) -> InstanceSettings:
     description="Get the current instance configuration.",
 )
 def get_settings(
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> InstanceSettingsResponse:
     """Get current instance settings."""
@@ -664,7 +660,7 @@ def get_settings(
 )
 def update_settings(
     request: InstanceSettingsUpdate,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> InstanceSettingsResponse:
     """Update instance settings."""
@@ -857,7 +853,7 @@ class MetricsResponse(BaseModel):
     description="Get the most recent collected metrics (collection sizes and function statistics).",
 )
 def get_metrics(
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> MetricsResponse:
     """Get the latest collected metrics."""
@@ -980,7 +976,7 @@ def token_to_response(token: ApplicationToken) -> ApplicationTokenInfo:
     description="Get a list of all application tokens.",
 )
 def list_application_tokens(
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> ApplicationTokenListResponse:
     """List all application tokens."""
@@ -999,7 +995,7 @@ def list_application_tokens(
 )
 def create_application_token(
     request: ApplicationTokenCreate,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> ApplicationTokenCreateResponse:
     """Create a new application token."""
@@ -1031,7 +1027,7 @@ def create_application_token(
 def update_application_token(
     token_id: UUID,
     request: ApplicationTokenUpdate,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> ApplicationTokenInfo:
     """Update an application token."""
@@ -1065,7 +1061,7 @@ def update_application_token(
 )
 def revoke_application_token(
     token_id: UUID,
-    session: DbSession,
+    session: DBSession,
     _admin: CurrentAdminUser,
 ) -> None:
     """Revoke an application token."""
@@ -1092,7 +1088,7 @@ def revoke_application_token(
 def upload_function(
     request: FunctionUploadRequest,
     admin: CurrentAdminUser,
-    session: DbSession,
+    session: DBSession,
 ) -> FunctionUploadResponse:
     """
     Upload a function file and trigger hot-reload.
@@ -1218,7 +1214,7 @@ def upload_function(
 def upload_functions_batch(
     request: BatchUploadRequest,
     admin: CurrentAdminUser,
-    session: DbSession,
+    session: DBSession,
 ) -> list[FunctionUploadResponse]:
     """
     Upload multiple functions at once.
@@ -1264,7 +1260,7 @@ def upload_functions_batch(
 def list_function_versions(
     function_name: str,
     _admin: CurrentAdminUser,
-    session: DbSession,
+    session: DBSession,
     limit: int = Query(50, ge=1, le=100, description="Number of versions to return"),
 ) -> list[FunctionVersionInfo]:
     """

@@ -86,20 +86,21 @@ tinybase/api/
 
 ### Core Services
 
-#### Authentication (`tinybase/auth.py`)
+#### Authentication (`tinybase/auth/`)
 
 Handles user authentication:
 
 - Password hashing (bcrypt)
-- Token generation/validation
+- JWT token generation/validation
 - User role checking
+- FastAPI dependency injection
 
 ```python
 # Key functions
 def hash_password(password: str) -> str
 def verify_password(password: str, hash: str) -> bool
-def create_token(user: User, session: Session) -> Token
-def validate_token(token: str, session: Session) -> User | None
+def create_auth_token(user: User, session: Session) -> tuple[AuthToken, str]
+def get_token_user(token: str, session: Session) -> User | None
 ```
 
 #### Function Registry (`tinybase/functions/`)

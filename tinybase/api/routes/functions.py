@@ -12,7 +12,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
-from tinybase.auth import CurrentAdminUser, CurrentUserOptional, DbSession
+from tinybase.auth import CurrentAdminUser, CurrentUserOptional, DBSession
 from tinybase.functions.core import execute_function, get_global_registry
 from tinybase.rate_limit import check_rate_limit
 from tinybase.utils import AuthLevel, FunctionCallStatus, TriggerType
@@ -104,7 +104,7 @@ def list_functions(user: CurrentUserOptional) -> list[FunctionInfo]:
 async def call_function(
     function_name: str,
     request: Request,
-    session: DbSession,
+    session: DBSession,
     user: CurrentUserOptional,
     payload: dict[str, Any] | None = None,
     _rate_limit: None = Depends(check_rate_limit),

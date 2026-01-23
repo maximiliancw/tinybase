@@ -15,21 +15,13 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
 
-from tinybase.auth_jwt import (
-    create_access_token as jwt_create_access_token,
-)
-from tinybase.auth_jwt import (
-    create_application_token as jwt_create_application_token,
-)
-from tinybase.auth_jwt import (
-    create_internal_token as jwt_create_internal_token,
-)
-from tinybase.auth_jwt import (
-    get_user_from_token,
-)
-from tinybase.db.core import get_session
-from tinybase.db.models import AuthToken, User
-from tinybase.utils import utcnow
+from ..db.core import get_session
+from ..db.models import AuthToken, User
+from ..utils import utcnow
+from .jwt import create_access_token as jwt_create_access_token
+from .jwt import create_application_token as jwt_create_application_token
+from .jwt import create_internal_token as jwt_create_internal_token
+from .jwt import get_user_from_token
 
 logger = logging.getLogger(__name__)
 
@@ -193,7 +185,7 @@ def get_current_admin_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 CurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional)]
 CurrentAdminUser = Annotated[User, Depends(get_current_admin_user)]
-DbSession = Annotated[Session, Depends(get_session)]
+DBSession = Annotated[Session, Depends(get_session)]
 
 
 # =============================================================================
@@ -227,7 +219,7 @@ def cleanup_expired_tokens(session: Session) -> int:
 
     if count > 0:
         session.commit()
-        logger.info(f"Cleaned up {count} expired JWT tokens")
+        logger.info(f"Removed {count} expired JWT tokens during cleanup")
 
     return count
 
