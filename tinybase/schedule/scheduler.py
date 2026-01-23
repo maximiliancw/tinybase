@@ -60,6 +60,8 @@ class Scheduler:
         self._cached_function_timeout: int | None = None
         self._cached_max_schedules_per_tick: int | None = None
         self._cached_max_concurrent_executions: int | None = None
+        self._cached_admin_report_enabled: bool | None = None
+        self._cached_admin_report_interval_days: int | None = None
         self._settings_cache_ticks = 0
         self._settings_cache_ttl = 60  # Refresh every 60 ticks
         # Semaphore to limit concurrent executions (will be updated when settings change)
@@ -136,6 +138,9 @@ class Scheduler:
                     await self._run_token_cleanup()
                 if self._tick_count % metrics_interval == 0:
                     await self._run_metrics_collection()
+
+                # Check and send admin report emails if needed
+                await self._check_and_send_admin_report()
 
             except Exception as e:
                 logger.exception(f"Error in scheduler loop: {e}")
@@ -240,6 +245,19 @@ class Scheduler:
                         )
 
                     self._cached_max_concurrent_executions = new_max_concurrent
+
+                    # Admin report email settings
+                    if instance_settings:
+                        self._cached_admin_report_enabled = (
+                            instance_settings.admin_report_email_enabled
+                        )
+                        self._cached_admin_report_interval_days = (
+                            instance_settings.admin_report_email_interval_days
+                        )
+                    else:
+                        self._cached_admin_report_enabled = True
+                        self._cached_admin_report_interval_days = 7
+
                     self._settings_cache_ticks = 0
 
             except Exception as e:
@@ -312,6 +330,143 @@ class Scheduler:
                 collect_metrics(session)
             except Exception as e:
                 logger.exception(f"Error during metrics collection: {e}")
+
+    async def _check_and_send_admin_report(self) -> None:
+        """Check if it's time to send admin report emails and send them if needed."""
+        # Check if admin reports are enabled
+        if not self._cached_admin_report_enabled:
+            return
+
+        engine = get_engine()
+        with Session(engine) as session:
+            try:
+                instance_settings = session.get(InstanceSettings, 1)
+                if not instance_settings:
+                    return
+
+                # Check if it's time to send
+                now = utcnow()
+                interval_days = self._cached_admin_report_interval_days or 7
+                last_sent = instance_settings.last_admin_report_sent_at
+
+                # If never sent, send now (but only if email is configured)
+                if last_sent is None:
+                    # Check if email is enabled and configured
+                    config = settings()
+                    if not config.email_enabled or not config.email_from_address:
+                        return
+                    # Send first report
+                    await self._send_admin_report_emails(session, instance_settings, now)
+                    return
+
+                # Check if interval has passed
+                time_since_last = (now - last_sent).total_seconds()
+                interval_seconds = interval_days * 24 * 60 * 60
+
+                if time_since_last >= interval_seconds:
+                    await self._send_admin_report_emails(session, instance_settings, now)
+
+            except Exception as e:
+                logger.exception(f"Error checking admin report email schedule: {e}")
+
+    async def _send_admin_report_emails(
+        self, session: Session, instance_settings: InstanceSettings, report_date: datetime
+    ) -> None:
+        """Send admin report emails to all admin users."""
+        from sqlalchemy import func
+        from sqlmodel import select
+
+        from tinybase.db.models import User
+        from tinybase.email import send_admin_report_email
+        from tinybase.metrics import get_latest_metrics
+
+        try:
+            # Get all admin users
+            admin_users = session.exec(select(User).where(User.is_admin == True)).all()  # noqa: E712
+
+            if not admin_users:
+                logger.debug("No admin users found, skipping admin report email")
+                return
+
+            # Get latest metrics
+            metrics = get_latest_metrics(session)
+
+            # Prepare report data
+            summary = {}
+            collections = {}
+            functions = {}
+            users = {"total": 0, "admins": 0, "regular": 0}
+
+            # Get collection sizes from metrics
+            if metrics and "collection_sizes" in metrics:
+                collection_metric = metrics["collection_sizes"]
+                if collection_metric and collection_metric.data:
+                    collections = collection_metric.data
+
+            # Get function stats from metrics
+            if metrics and "function_stats" in metrics:
+                function_metric = metrics["function_stats"]
+                if function_metric and function_metric.data:
+                    for func_name, stats in function_metric.data.items():
+                        error_rate = stats.get("error_rate", 0.0)
+                        functions[func_name] = {
+                            "total_calls": stats.get("total_calls", 0),
+                            "success_rate": 1.0
+                            - (error_rate / 100.0),  # Convert percentage to decimal
+                            "avg_duration_ms": stats.get("avg_runtime_ms"),
+                        }
+
+            # Get user statistics
+            total_users = session.exec(select(func.count(User.id))).one()
+            admin_count = session.exec(
+                select(func.count(User.id)).where(User.is_admin == True)  # noqa: E712
+            ).one()
+            users = {
+                "total": total_users,
+                "admins": admin_count,
+                "regular": total_users - admin_count,
+            }
+
+            # Calculate summary
+            total_collections = len(collections)
+            total_records = sum(collections.values()) if collections else 0
+            total_functions = len(functions)
+            total_function_calls = sum(f.get("total_calls", 0) for f in functions.values())
+
+            summary = {
+                "Total Collections": total_collections,
+                "Total Records": total_records,
+                "Total Functions": total_functions,
+                "Total Function Calls": total_function_calls,
+                "Total Users": users["total"],
+            }
+
+            # Format report date
+            report_date_str = report_date.strftime("%Y-%m-%d %H:%M:%S UTC")
+
+            # Send email to each admin
+            for admin in admin_users:
+                try:
+                    send_admin_report_email(
+                        to_email=admin.email,
+                        report_date=report_date_str,
+                        summary=summary,
+                        collections=collections,
+                        functions=functions,
+                        users=users,
+                    )
+                    logger.info(f"Sent admin report email to {admin.email}")
+                except Exception as e:
+                    logger.error(f"Failed to send admin report email to {admin.email}: {e}")
+
+            # Update last sent time
+            instance_settings.last_admin_report_sent_at = report_date
+            session.add(instance_settings)
+            session.commit()
+
+        except Exception as e:
+            logger.exception(f"Error sending admin report emails: {e}")
+            session.rollback()
 
     async def _process_due_schedules(self) -> None:
         """

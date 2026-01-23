@@ -405,6 +405,19 @@ class InstanceSettings(SQLModel, table=True):
     storage_secret_key: str | None = Field(default=None, max_length=200)
     storage_region: str | None = Field(default=None, max_length=50)
 
+    # Admin report email settings
+    admin_report_email_enabled: bool = Field(
+        default=True, description="Enable periodic admin report emails"
+    )
+    admin_report_email_interval_days: int = Field(
+        default=7,
+        ge=1,
+        description="Interval between admin report emails in days (default: weekly)",
+    )
+    last_admin_report_sent_at: datetime | None = Field(
+        default=None, description="Last time admin report email was sent"
+    )
+
     updated_at: datetime = Field(default_factory=utcnow)
 
 

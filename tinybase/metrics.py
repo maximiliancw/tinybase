@@ -12,16 +12,33 @@ from datetime import timedelta
 from sqlalchemy import func
 from sqlmodel import Session, select
 
+from tinybase.config import settings
 from tinybase.db.models import Collection, FunctionCall, Metrics, Record
 from tinybase.utils import FunctionCallStatus, utcnow
 
 logger = logging.getLogger(__name__)
 
-# How long to look back for function stats (default: 24 hours)
-FUNCTION_STATS_LOOKBACK_HOURS = 24
 
-# Maximum number of old metric snapshots to keep (to prevent unbounded growth)
-MAX_METRIC_SNAPSHOTS = 1000
+def get_function_stats_lookback_hours() -> int:
+    """
+    Get how many hours to look back for function stats.
+    This is configurable via settings.
+    """
+    try:
+        return int(getattr(settings(), "scheduler_function_stats_lookback_hours", 24))
+    except Exception:
+        return 24  # Fallback to default
+
+
+def get_max_metric_snapshots() -> int:
+    """
+    Get the maximum number of old metric snapshots to keep.
+    This is configurable via settings.
+    """
+    try:
+        return int(getattr(settings(), "scheduler_metrics_max_snapshots", 1000))
+    except Exception:
+        return 1000  # Fallback to default
 
 
 def collect_metrics(session: Session) -> None:
@@ -103,7 +120,7 @@ def _collect_function_stats(session: Session) -> dict[str, dict]:
         Dictionary mapping function names to their statistics.
     """
     # Calculate cutoff time
-    cutoff_time = utcnow() - timedelta(hours=FUNCTION_STATS_LOOKBACK_HOURS)
+    cutoff_time = utcnow() - timedelta(hours=get_function_stats_lookback_hours())
 
     # Get all function calls from the lookback period
     statement = select(FunctionCall).where(FunctionCall.created_at >= cutoff_time)
@@ -142,17 +159,17 @@ def _cleanup_old_metrics(session: Session) -> None:
     """
     Remove old metric snapshots to prevent unbounded database growth.
 
-    Keeps only the most recent MAX_METRIC_SNAPSHOTS snapshots.
+    Keeps only the most recent `get_max_metric_snapshots()` snapshots.
     """
     # Count total metrics
     count_stmt = select(func.count(Metrics.id))
     total_count = session.exec(count_stmt).one()
-
-    if total_count <= MAX_METRIC_SNAPSHOTS:
+    max_snapshots = get_max_metric_snapshots()
+    if total_count <= max_snapshots:
         return
 
     # Delete oldest metrics
-    to_delete = total_count - MAX_METRIC_SNAPSHOTS
+    to_delete = total_count - max_snapshots
     statement = select(Metrics).order_by(Metrics.collected_at.asc()).limit(to_delete)
     old_metrics = session.exec(statement).all()
 
@@ -160,3 +177,43 @@ def _cleanup_old_metrics(session: Session) -> None:
         session.delete(metric)
 
     logger.info(f"Cleaned up {to_delete} old metric snapshots")
+
+
+def get_latest_metrics(session: Session) -> dict[str, Metrics] | None:
+    """
+    Get the latest collected metrics.
+
+    Returns:
+        Dictionary with keys "collection_sizes" and "function_stats",
+        each containing the most recent Metrics object, or None if no metrics exist.
+    """
+    try:
+        # Get most recent collection_sizes metric
+        collection_sizes_stmt = (
+            select(Metrics)
+            .where(Metrics.metric_type == "collection_sizes")
+            .order_by(Metrics.collected_at.desc())
+            .limit(1)
+        )
+        collection_sizes_metric = session.exec(collection_sizes_stmt).first()
+
+        # Get most recent function_stats metric
+        function_stats_stmt = (
+            select(Metrics)
+            .where(Metrics.metric_type == "function_stats")
+            .order_by(Metrics.collected_at.desc())
+            .limit(1)
+        )
+        function_stats_metric = session.exec(function_stats_stmt).first()
+
+        result = {}
+        if collection_sizes_metric:
+            result["collection_sizes"] = collection_sizes_metric
+        if function_stats_metric:
+            result["function_stats"] = function_stats_metric
+
+        return result if result else None
+
+    except Exception as e:
+        logger.exception(f"Error getting latest metrics: {e}")
+        return None

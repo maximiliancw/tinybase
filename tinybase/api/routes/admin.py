@@ -534,6 +534,10 @@ class InstanceSettingsResponse(BaseModel):
     auth_portal_register_redirect_url: str | None = Field(
         default=None, description="Auth portal register redirect URL"
     )
+    admin_report_email_enabled: bool = Field(description="Enable periodic admin report emails")
+    admin_report_email_interval_days: int = Field(
+        description="Interval between admin report emails in days"
+    )
     updated_at: str = Field(description="Last update time")
 
 
@@ -573,6 +577,10 @@ class InstanceSettingsUpdate(BaseModel):
     auth_portal_background_image_url: str | None = Field(default=None, max_length=500)
     auth_portal_login_redirect_url: str | None = Field(default=None, max_length=500)
     auth_portal_register_redirect_url: str | None = Field(default=None, max_length=500)
+    admin_report_email_enabled: bool | None = Field(default=None)
+    admin_report_email_interval_days: int | None = Field(
+        default=None, ge=1, description="Interval between admin report emails in days"
+    )
 
 
 def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse:
@@ -597,6 +605,8 @@ def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse
         auth_portal_background_image_url=settings.auth_portal_background_image_url,
         auth_portal_login_redirect_url=settings.auth_portal_login_redirect_url,
         auth_portal_register_redirect_url=settings.auth_portal_register_redirect_url,
+        admin_report_email_enabled=settings.admin_report_email_enabled,
+        admin_report_email_interval_days=settings.admin_report_email_interval_days,
         updated_at=settings.updated_at.isoformat(),
     )
 
@@ -792,6 +802,16 @@ def update_settings(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Register redirect URL is required when auth portal is enabled",
             )
+
+    if request.admin_report_email_enabled is not None:
+        settings.admin_report_email_enabled = request.admin_report_email_enabled
+    if request.admin_report_email_interval_days is not None:
+        if request.admin_report_email_interval_days < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="admin_report_email_interval_days must be at least 1",
+            )
+        settings.admin_report_email_interval_days = request.admin_report_email_interval_days
 
     settings.updated_at = utcnow()
     session.add(settings)
