@@ -527,20 +527,28 @@ class FunctionSchedule(SQLModel, table=True):
 
 ## Configuration
 
-### tinybase.config
+### tinybase.settings
 
-Configuration management.
+Configuration management with static config (environment variables) and runtime settings (database).
 
-#### Settings
+#### Config (Static)
 
 ```python
-from tinybase.config import settings
+from tinybase.settings import config
 
-config = settings()
-
-# Access settings
+# Access static configuration (from env vars / TOML)
 print(config.server_host)
 print(config.db_url)
+```
+
+#### Settings (Runtime)
+
+```python
+from tinybase.settings import settings
+
+# Access runtime settings (from database)
+print(settings.instance_name)
+print(settings.storage.enabled)
 ```
 
 **Properties:**

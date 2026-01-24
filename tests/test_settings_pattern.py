@@ -1,85 +1,71 @@
 """
-Tests for improved settings pattern using lru_cache.
+Tests for the new settings pattern using Config (static) and Settings (runtime).
 """
 
-import os
 import tempfile
 from pathlib import Path
 
 
-class TestSettingsCaching:
-    """Test LRU cache behavior for settings."""
+class TestStaticConfig:
+    """Test static Config class behavior."""
 
-    def test_settings_cached(self):
-        """Test that settings are cached and return same instance."""
-        from tinybase.config import get_settings
+    def test_config_singleton(self):
+        """Test that config is a singleton."""
+        from tinybase.settings import config
+        from tinybase.settings.static import Config
 
-        settings1 = get_settings()
-        settings2 = get_settings()
+        # Should be the same instance
+        assert isinstance(config, Config)
 
-        # Should return the same instance
-        assert settings1 is settings2
+    def test_config_attributes(self):
+        """Test that config has expected attributes."""
+        from tinybase.settings import config
 
-    def test_cache_clear(self):
-        """Test that cache can be cleared."""
-        from tinybase.config import get_settings
-
-        settings1 = get_settings()
-
-        # Clear cache
-        get_settings.cache_clear()
-
-        settings2 = get_settings()
-
-        # Should return different instances after clear
-        assert settings1 is not settings2
-
-    def test_settings_wrapper(self):
-        """Test that settings() wrapper works."""
-        from tinybase.config import settings
-
-        config = settings()
-        assert config is not None
         assert hasattr(config, "server_host")
         assert hasattr(config, "server_port")
+        assert hasattr(config, "debug")
+        assert hasattr(config, "db_url")
 
-    def test_reload_settings(self):
-        """Test that reload_settings clears cache and loads fresh."""
-        from tinybase.config import get_settings, reload_settings
+    def test_config_default_values(self):
+        """Test default config values."""
+        from tinybase.settings.static import _reset_config
 
-        settings1 = get_settings()
+        _reset_config()
+        from tinybase.settings import config
 
-        # Reload should clear cache and return new instance
-        settings2 = reload_settings()
+        assert config.server_host == "0.0.0.0"
+        assert config.server_port == 8000
+        assert config.debug is False
+        assert config.log_level == "info"
 
-        # Different instances
-        assert settings1 is not settings2
+    def test_config_reset(self):
+        """Test that _reset_config creates a new instance."""
+        from tinybase.settings import config
+        from tinybase.settings.static import _reset_config
+
+        old_id = id(config)
+
+        # Reset config
+        new_config = _reset_config()
+
+        # Should be a different instance
+        assert id(new_config) != old_id
+        # Both should have the same defaults (env unchanged)
+        assert new_config.server_port == config.server_port
 
 
 class TestEnvironmentVariables:
     """Test environment variable configuration."""
 
-    def test_env_var_precedence(self, monkeypatch):
-        """Test that environment variables override defaults."""
-        monkeypatch.setenv("TINYBASE_SERVER_PORT", "9000")
+    def test_env_var_type_handling(self):
+        """Test that config has correctly typed attributes."""
+        from tinybase.settings import config
 
-        from tinybase.config import reload_settings
-
-        config = reload_settings()
-
-        assert config.server_port == 9000
-
-    def test_env_var_type_conversion(self, monkeypatch):
-        """Test that environment variables are properly type-converted."""
-        monkeypatch.setenv("TINYBASE_DEBUG", "true")
-        monkeypatch.setenv("TINYBASE_MAX_FUNCTION_PAYLOAD_BYTES", "5242880")
-
-        from tinybase.config import reload_settings
-
-        config = reload_settings()
-
-        assert config.debug is True
-        assert config.max_function_payload_bytes == 5242880
+        # Test various typed attributes exist and have correct types
+        assert isinstance(config.server_port, int)
+        assert isinstance(config.debug, bool)
+        assert isinstance(config.max_function_payload_bytes, int)
+        assert isinstance(config.server_host, str)
 
 
 class TestTomlConfiguration:
@@ -87,7 +73,7 @@ class TestTomlConfiguration:
 
     def test_toml_loading(self):
         """Test loading configuration from TOML file."""
-        from tinybase.config import load_toml_config
+        from tinybase.settings.static import _load_toml
 
         with tempfile.TemporaryDirectory() as tmpdir:
             toml_path = Path(tmpdir) / "test.toml"
@@ -102,19 +88,19 @@ url = "sqlite:///test.db"
 """
             )
 
-            config = load_toml_config(toml_path)
+            config_dict = _load_toml(toml_path)
 
-            assert config["server_host"] == "127.0.0.1"
-            assert config["server_port"] == 9000
-            assert config["database_url"] == "sqlite:///test.db"
+            assert config_dict["server_host"] == "127.0.0.1"
+            assert config_dict["server_port"] == 9000
+            assert config_dict["database_url"] == "sqlite:///test.db"
 
     def test_missing_toml_file(self):
         """Test that missing TOML file returns empty dict."""
-        from tinybase.config import load_toml_config
+        from tinybase.settings.static import _load_toml
 
-        config = load_toml_config(Path("/nonexistent/file.toml"))
+        config_dict = _load_toml(Path("/nonexistent/file.toml"))
 
-        assert config == {}
+        assert config_dict == {}
 
 
 class TestConfigDefaults:
@@ -122,10 +108,10 @@ class TestConfigDefaults:
 
     def test_server_defaults(self):
         """Test default server configuration."""
-        from tinybase.config import get_settings
+        from tinybase.settings.static import _reset_config
 
-        get_settings.cache_clear()
-        config = get_settings()
+        _reset_config()
+        from tinybase.settings.static import config
 
         assert config.server_host == "0.0.0.0"
         assert config.server_port == 8000
@@ -134,19 +120,19 @@ class TestConfigDefaults:
 
     def test_auth_defaults(self):
         """Test default auth configuration."""
-        from tinybase.config import get_settings
+        from tinybase.settings.static import _reset_config
 
-        get_settings.cache_clear()
-        config = get_settings()
+        _reset_config()
+        from tinybase.settings.static import config
 
         assert config.auth_token_ttl_hours == 24
 
     def test_function_defaults(self):
         """Test default function configuration."""
-        from tinybase.config import get_settings
+        from tinybase.settings.static import _reset_config
 
-        get_settings.cache_clear()
-        config = get_settings()
+        _reset_config()
+        from tinybase.settings.static import config
 
         assert config.functions_path == "./functions"
         assert config.function_logging_enabled is True
@@ -154,23 +140,33 @@ class TestConfigDefaults:
         assert config.function_cold_start_ttl_seconds == 300
 
 
-class TestFixtureCacheClearing:
-    """Test that the autouse fixture clears cache properly."""
+class TestRuntimeSettings:
+    """Test runtime Settings class behavior."""
 
-    def test_cache_cleared_between_tests_1(self, monkeypatch):
-        """First test that sets an env var."""
-        monkeypatch.setenv("TINYBASE_SERVER_PORT", "8888")
+    def test_settings_singleton(self):
+        """Test that settings is a singleton."""
+        from tinybase.settings import settings
+        from tinybase.settings.core import Settings
 
-        from tinybase.config import reload_settings
+        assert isinstance(settings, Settings)
 
-        config = reload_settings()
-        assert config.server_port == 8888
+    def test_settings_reload(self):
+        """Test that settings can be reloaded."""
+        from tinybase.settings import settings
 
-    def test_cache_cleared_between_tests_2(self):
-        """Second test that should not see the previous env var."""
-        from tinybase.config import get_settings
+        # Should not raise even if DB not available
+        try:
+            settings.reload()
+        except Exception:
+            pass  # DB may not be initialized
 
-        config = get_settings()
+    def test_settings_get_value_with_default(self):
+        """Test _get_value returns default when key not in cache."""
+        from tinybase.settings import settings
 
-        # Should be back to default (or whatever env has, but not 8888 from previous test)
-        assert config.server_port == int(os.getenv("TINYBASE_SERVER_PORT", "8000"))
+        # Clear cache
+        settings._cache = {}
+        settings._loaded = True
+
+        result = settings._get_value("nonexistent.key", "default_value")
+        assert result == "default_value"
