@@ -16,10 +16,10 @@ from tinybase.settings import config
 
 logger = logging.getLogger(__name__)
 
-_template_dir_suffix = Path("templates") / "emails"
+_template_dir_suffix = Path("templates")
 
-# Internal template directory (fallback)
-_internal_template_dir = Path(__file__).parent.parent / _template_dir_suffix
+# Internal template directory (fallback) - inside tinybase package
+_internal_template_dir = Path(__file__).parent / _template_dir_suffix
 
 # Template environment - will be initialized on first use
 _template_env: Environment | None = None
@@ -44,7 +44,7 @@ def _get_template_env() -> Environment:
     user_template_dir = Path.cwd() / _template_dir_suffix
     template_dirs = []
 
-    if user_template_dir.exists() and any(user_template_dir.glob("*.tpl")):
+    if user_template_dir.exists() and any(user_template_dir.glob("emails/*.j2")):
         # User has custom templates
         template_dirs.append(str(user_template_dir))
         logger.info(f"Using custom email templates from {user_template_dir}")
@@ -74,7 +74,7 @@ def _render_template(template_name: str, context: dict) -> str:
         HTML email body
     """
     env = _get_template_env()
-    template = env.get_template(f"{template_name}.tpl")
+    template = env.get_template(f"emails/{template_name}.j2")
     return template.render(**context)
 
 

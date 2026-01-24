@@ -4,8 +4,6 @@ Basic tests for TinyBase.
 These tests verify the core functionality works correctly.
 """
 
-import pytest
-
 from tests.utils import get_admin_token, get_user_token
 
 
@@ -387,7 +385,6 @@ def test_admin_get_function_call_not_found(client, admin_token):
     assert response.status_code == 404
 
 
-@pytest.mark.skip(reason="Email templates not yet implemented")
 def test_password_reset_request(client):
     """Test requesting a password reset."""
     # Register a user first
@@ -422,7 +419,6 @@ def test_password_reset_request_nonexistent_email(client):
     assert "message" in data
 
 
-@pytest.mark.skip(reason="Email templates not yet implemented")
 def test_password_reset_confirm(client):
     """Test confirming password reset with valid token."""
     from sqlmodel import Session, select
