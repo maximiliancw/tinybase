@@ -9,7 +9,7 @@ Pydantic models at runtime for validation and OpenAPI documentation.
 from tinybase.collections.schemas import (
     CollectionModelRegistry,
     build_pydantic_model_from_schema,
-    get_registry,
+    get_collection_registry,
 )
 from tinybase.collections.service import CollectionService
 
@@ -17,5 +17,5 @@ __all__ = [
     "CollectionModelRegistry",
     "CollectionService",
     "build_pydantic_model_from_schema",
-    "get_registry",
+    "get_collection_registry",
 ]

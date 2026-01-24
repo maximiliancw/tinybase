@@ -247,20 +247,20 @@ class CollectionModelRegistry:
 
 
 # Global registry instance
-_registry: CollectionModelRegistry | None = None
+_collections: CollectionModelRegistry | None = None
 
 
-def get_registry() -> CollectionModelRegistry:
+def get_collection_registry() -> CollectionModelRegistry:
     """Get the global collection model registry."""
-    global _registry
-    if _registry is None:
-        _registry = CollectionModelRegistry()
-    return _registry
+    global _collections
+    if _collections is None:
+        _collections = CollectionModelRegistry()
+    return _collections
 
 
-def reset_registry() -> None:
-    """Reset the global registry (primarily for testing)."""
-    global _registry
-    if _registry is not None:
-        _registry.clear()
-    _registry = None
+def reset_collection_registry() -> None:
+    """Reset the global collection registry (primarily for testing)."""
+    global _collections
+    if _collections is not None:
+        _collections.clear()
+    _collections = None

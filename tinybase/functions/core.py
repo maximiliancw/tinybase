@@ -122,23 +122,23 @@ class FunctionRegistry:
 
 
 # Global registry instance
-_registry: FunctionRegistry | None = None
+_functions: FunctionRegistry | None = None
 
 
-def get_global_registry() -> FunctionRegistry:
+def get_function_registry() -> FunctionRegistry:
     """Get the global function registry, creating it if needed."""
-    global _registry
-    if _registry is None:
-        _registry = FunctionRegistry()
-    return _registry
+    global _functions
+    if _functions is None:
+        _functions = FunctionRegistry()
+    return _functions
 
 
-def reset_global_registry() -> None:
-    """Reset the global registry (primarily for testing)."""
-    global _registry
-    if _registry is not None:
-        _registry.clear()
-    _registry = None
+def reset_function_registry() -> None:
+    """Reset the global function registry (primarily for testing)."""
+    global _functions
+    if _functions is not None:
+        _functions.clear()
+    _functions = None
 
 
 # =============================================================================
@@ -207,7 +207,7 @@ def execute_function(
         FunctionCallResult with execution status and result/error
     """
     from tinybase.auth import create_internal_token
-    from tinybase.config import settings
+    from tinybase.settings import config
     from tinybase.extensions.hooks import (
         FunctionCallEvent,
         FunctionCompleteEvent,
@@ -257,7 +257,6 @@ def execute_function(
     _run_async_hook(run_function_call_hooks(call_event))
 
     # Create internal token for subprocess to call back
-    config = settings()
     internal_token = create_internal_token(
         session=session,
         user_id=user_id,

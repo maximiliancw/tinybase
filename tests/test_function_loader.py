@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tinybase.functions.core import get_global_registry, reset_global_registry
+from tinybase.functions.core import get_function_registry, reset_function_registry
 from tinybase.functions.loader import (
     ensure_functions_package,
     extract_function_metadata,
@@ -25,9 +25,9 @@ class TestFunctionLoader:
     @pytest.fixture(autouse=True)
     def reset_registry(self):
         """Reset registry before each test."""
-        reset_global_registry()
+        reset_function_registry()
         yield
-        reset_global_registry()
+        reset_function_registry()
 
     def test_extract_function_metadata_success(self):
         """Test successful metadata extraction."""
@@ -248,7 +248,7 @@ if __name__ == "__main__":
                     assert loaded_count == 2
 
                     # Verify functions are registered
-                    registry = get_global_registry()
+                    registry = get_function_registry()
                     assert registry.get("function_one") is not None
                     assert registry.get("function_two") is not None
                     assert registry.get("function_one").description == "First function"
@@ -344,7 +344,7 @@ print("No SDK")
 
                     assert loaded_count == 1
 
-                    registry = get_global_registry()
+                    registry = get_function_registry()
                     assert registry.get("valid_function") is not None
 
     def test_load_functions_excludes_underscore_files(self):
@@ -415,7 +415,7 @@ def my_func(client, payload: dict) -> dict:
                     # Only my_function.py should be loaded
                     assert loaded_count == 1
 
-                    registry = get_global_registry()
+                    registry = get_function_registry()
                     assert registry.get("my_function") is not None
                     assert registry.get("should_not_load") is None
 
@@ -510,6 +510,6 @@ if __name__ == "__main__":
                     assert loaded_count == 5
 
                     # Verify all functions are registered
-                    registry = get_global_registry()
+                    registry = get_function_registry()
                     for i in range(5):
                         assert registry.get(f"function_{i}") is not None

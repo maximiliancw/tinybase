@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from tinybase.auth import CurrentAdminUser, CurrentUserOptional, DBSession
-from tinybase.functions.core import execute_function, get_global_registry
+from tinybase.functions.core import execute_function, get_function_registry
 from tinybase.rate_limit import check_rate_limit
 from tinybase.utils import AuthLevel, FunctionCallStatus, TriggerType
 
@@ -65,7 +65,7 @@ def list_functions(user: CurrentUserOptional) -> list[FunctionInfo]:
     - Authenticated users: "public" and "auth" functions
     - Admin users: all functions
     """
-    registry = get_global_registry()
+    registry = get_function_registry()
     functions = registry.all()
 
     result = []
@@ -118,7 +118,7 @@ async def call_function(
 
     Rate limiting is enforced per user to prevent excessive concurrent executions.
     """
-    registry = get_global_registry()
+    registry = get_function_registry()
     meta = registry.get(function_name)
 
     if meta is None:
@@ -152,9 +152,8 @@ async def call_function(
     # We just pass the payload through here
 
     # Validate payload size
-    from tinybase.config import settings
+    from tinybase.settings import config
 
-    config = settings()
     payload_json = json.dumps(payload or {})
     payload_size = len(payload_json.encode("utf-8"))
 
@@ -233,7 +232,7 @@ def get_function_schema(
     Returns the Pydantic model JSON schemas, which can be used to
     generate form UIs or validate input before calling.
     """
-    registry = get_global_registry()
+    registry = get_function_registry()
     meta = registry.get(function_name)
 
     if meta is None:
@@ -284,7 +283,7 @@ def list_functions_admin(_admin: CurrentAdminUser) -> list[AdminFunctionInfo]:
 
     Returns extended metadata including module, file path, and timestamps.
     """
-    registry = get_global_registry()
+    registry = get_function_registry()
     functions = registry.all()
 
     return [

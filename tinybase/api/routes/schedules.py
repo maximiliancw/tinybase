@@ -13,7 +13,7 @@ from sqlmodel import select
 
 from tinybase.auth import CurrentAdminUser, DBSession
 from tinybase.db.models import FunctionSchedule, utcnow
-from tinybase.functions.core import get_global_registry
+from tinybase.functions.core import get_function_registry
 from tinybase.schedule import parse_schedule_config
 
 router = APIRouter(prefix="/admin/schedules", tags=["schedules"])
@@ -154,7 +154,7 @@ def create_schedule(
 ) -> ScheduleResponse:
     """Create a new schedule."""
     # Verify function exists
-    registry = get_global_registry()
+    registry = get_function_registry()
     if registry.get(request.function_name) is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

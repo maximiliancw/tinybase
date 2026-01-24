@@ -14,7 +14,7 @@ from sqlmodel import Session, select
 
 from tinybase.collections.schemas import (
     build_pydantic_model_from_schema,
-    get_registry,
+    get_collection_registry,
 )
 from tinybase.db.models import Collection, Record
 from tinybase.utils import AccessRule, utcnow
@@ -107,7 +107,7 @@ class CollectionService:
             session: SQLModel database session
         """
         self.session = session
-        self.registry = get_registry()
+        self.registry = get_collection_registry()
 
     # =========================================================================
     # Collection Operations
@@ -485,7 +485,7 @@ def load_collections_into_registry(session: Session) -> None:
     Args:
         session: Database session
     """
-    registry = get_registry()
+    registry = get_collection_registry()
     collections = session.exec(select(Collection)).all()
 
     for collection in collections:

@@ -10,7 +10,7 @@ from typing import Callable
 
 from pydantic import BaseModel
 
-from tinybase.functions.core import FunctionMeta, get_global_registry
+from tinybase.functions.core import FunctionMeta, get_function_registry
 from tinybase.utils import AuthLevel, utcnow
 
 
@@ -94,7 +94,7 @@ def register(
         )
 
         # Register with global registry
-        registry = get_global_registry()
+        registry = get_function_registry()
         registry.register(meta)
 
         # Store metadata on the function for inspection

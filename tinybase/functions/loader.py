@@ -11,7 +11,7 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from tinybase.functions.core import FunctionMeta, get_global_registry
+from tinybase.functions.core import FunctionMeta, get_function_registry
 from tinybase.utils import AuthLevel
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ def load_functions_from_directory(dir_path: Path) -> int:
     2. Register functions in the global registry
     3. Pre-warm dependencies for all functions (parallel) to reduce latency
     """
-    registry = get_global_registry()
+    registry = get_function_registry()
     loaded = 0
     function_files = [f for f in dir_path.glob("*.py") if not f.name.startswith("_")]
 
@@ -139,7 +139,7 @@ def reload_single_function(file_path: Path) -> bool:
     Returns:
         True if successful, False otherwise
     """
-    registry = get_global_registry()
+    registry = get_function_registry()
 
     # Step 1: Extract metadata
     metadata = extract_function_metadata(file_path)
@@ -222,9 +222,7 @@ def load_functions_from_settings() -> int:
     Returns:
         Total number of files loaded
     """
-    from tinybase.config import settings
-
-    config = settings()
+    from tinybase.settings import config
 
     # Load from functions package directory only
     functions_path = Path(config.functions_path)
