@@ -216,7 +216,7 @@ class TestFunctionProcessPool:
 
     def test_get_pool_singleton(self):
         """Test that get_pool returns singleton."""
-        with patch("tinybase.settings.config.config") as mock_config:
+        with patch("tinybase.settings.static.config") as mock_config:
             mock_config.function_cold_start_pool_size = 3
             mock_config.function_cold_start_ttl_seconds = 300
 

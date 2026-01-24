@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
         payload = {"value": 5}
 
-        with patch("tinybase.settings.config.config") as mock_config:
+        with patch("tinybase.settings.static.config") as mock_config:
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
             payload = {}
 
-            with patch("tinybase.settings.config.config") as mock_config:
+            with patch("tinybase.settings.static.config") as mock_config:
                 mock_config.server_port = 8000
                 mock_config.function_logging_enabled = False
                 mock_config.scheduler_function_timeout_seconds = 30
@@ -196,7 +196,7 @@ if __name__ == "__main__":
 
         payload = {"value": 3}
 
-        with patch("tinybase.settings.config.config") as mock_config:
+        with patch("tinybase.settings.static.config") as mock_config:
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
@@ -253,7 +253,7 @@ if __name__ == "__main__":
 
         payload = {"value": 1}
 
-        with patch("tinybase.settings.config.config") as mock_config:
+        with patch("tinybase.settings.static.config") as mock_config:
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
@@ -300,7 +300,7 @@ if __name__ == "__main__":
 
         payload = {"value": 2}
 
-        with patch("tinybase.settings.config.config") as mock_config:
+        with patch("tinybase.settings.static.config") as mock_config:
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = True
             mock_config.function_logging_level = "INFO"
@@ -372,7 +372,7 @@ if __name__ == "__main__":
 
             payload = {}
 
-            with patch("tinybase.settings.config.config") as mock_config:
+            with patch("tinybase.settings.static.config") as mock_config:
                 mock_config.server_port = 8000
                 mock_config.function_logging_enabled = False
                 mock_config.scheduler_function_timeout_seconds = 1  # Short timeout
@@ -437,7 +437,7 @@ if __name__ == "__main__":
 
         payload = {"value": 4}
 
-        with patch("tinybase.settings.config.config") as mock_config:
+        with patch("tinybase.settings.static.config") as mock_config:
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
