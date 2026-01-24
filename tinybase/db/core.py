@@ -10,13 +10,13 @@ from typing import Any
 from sqlalchemy import Engine
 from sqlmodel import Session, SQLModel, create_engine
 
-from tinybase.config import settings
+from tinybase.settings import settings
 
 # Global engine instance (initialized lazily)
-_engine: Engine | None = None
+_db_engine: Engine | None = None
 
 
-def get_engine() -> Engine:
+def get_db_engine() -> Engine:
     """
     Get or create the SQLAlchemy engine.
 
@@ -26,10 +26,13 @@ def get_engine() -> Engine:
     Returns:
         SQLAlchemy Engine instance.
     """
-    global _engine
+    global _db_engine
 
-    if _engine is None:
-        db_url = settings().db_url
+    if _db_engine is None:
+        # Import config here to get the current instance (may be reset during testing)
+        from tinybase.settings.static import config
+
+        db_url = config.db_url
 
         # Configure connection arguments based on database type
         connect_args: dict[str, Any] = {}
@@ -39,9 +42,9 @@ def get_engine() -> Engine:
             # check_same_thread=False allows usage across threads (safe with proper session management)
             connect_args["check_same_thread"] = False
 
-        _engine = create_engine(
+        _db_engine = create_engine(
             db_url,
-            echo=settings().debug,  # Log SQL statements in debug mode
+            echo=config.debug,  # Log SQL statements in debug mode
             connect_args=connect_args,
         )
 
@@ -49,16 +52,16 @@ def get_engine() -> Engine:
         if db_url.startswith("sqlite"):
             from sqlalchemy import event
 
-            @event.listens_for(_engine, "connect")
+            @event.listens_for(_db_engine, "connect")
             def set_sqlite_pragma(dbapi_connection: Any, connection_record: Any) -> None:
                 cursor = dbapi_connection.cursor()
                 cursor.execute("PRAGMA foreign_keys=ON")
                 cursor.close()
 
-    return _engine
+    return _db_engine
 
 
-def get_session() -> Generator[Session, None, None]:
+def get_db_session() -> Generator[Session, None, None]:
     """
     Get a database session as a context manager / generator.
 
@@ -79,14 +82,14 @@ def get_session() -> Generator[Session, None, None]:
             session.add(item)
             session.commit()
     """
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         yield session
 
 
-def create_db_and_tables() -> None:
+def init_db() -> None:
     """
-    Create all database tables defined in SQLModel models.
+    Create all database tables and load settings from database.
 
     This function should be called during application startup to ensure
     all required tables exist in the database.
@@ -94,43 +97,20 @@ def create_db_and_tables() -> None:
     # Import models to ensure they're registered with SQLModel
     from tinybase.db import models  # noqa: F401
 
-    engine = get_engine()
+    engine = get_db_engine()
     SQLModel.metadata.create_all(engine)
 
-    # Run schema migrations for adding new columns to existing tables
-    _run_migrations(engine)
+    # Load settings from database after tables are created
+    settings.load()
 
 
-def _run_migrations(engine: Engine) -> None:
+def reset_db_engine() -> None:
     """
-    Run schema migrations for existing databases.
-
-    SQLModel.metadata.create_all() only creates new tables, it doesn't
-    add new columns to existing tables. This function handles adding
-    new columns introduced in schema updates.
-    """
-    from sqlalchemy import inspect, text
-
-    inspector = inspect(engine)
-
-    # Migration: Add input_data column to function_schedule table
-    if "function_schedule" in inspector.get_table_names():
-        columns = [col["name"] for col in inspector.get_columns("function_schedule")]
-        if "input_data" not in columns:
-            with engine.connect() as conn:
-                conn.execute(
-                    text("ALTER TABLE function_schedule ADD COLUMN input_data JSON DEFAULT '{}'")
-                )
-                conn.commit()
-
-
-def reset_engine() -> None:
-    """
-    Reset the global engine instance.
+    Reset the global database engine instance.
 
     This is primarily useful for testing when you need to switch databases.
     """
-    global _engine
-    if _engine is not None:
-        _engine.dispose()
-        _engine = None
+    global _db_engine
+    if _db_engine is not None:
+        _db_engine.dispose()
+        _db_engine = None

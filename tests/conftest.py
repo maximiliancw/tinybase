@@ -15,11 +15,15 @@ from tests.utils import create_collection, create_record, get_admin_token, get_u
 @pytest.fixture(autouse=True)
 def clear_settings_cache():
     """Clear settings cache before and after each test."""
-    from tinybase.config import get_settings
+    # Just clear the cache without trying to load from DB
+    # The client fixture will properly initialize the database
+    from tinybase.settings import settings
 
-    get_settings.cache_clear()
+    settings._cache = {}
+    settings._loaded = False
     yield
-    get_settings.cache_clear()
+    settings._cache = {}
+    settings._loaded = False
 
 
 @pytest.fixture(scope="function")
@@ -41,23 +45,31 @@ def client():
     # Import after setting env vars
     from tinybase.api.app import create_app
     from tinybase.auth import hash_password
-    from tinybase.collections.schemas import reset_registry
-    from tinybase.config import reload_settings
-    from tinybase.db.core import create_db_and_tables, get_engine, reset_engine
+    from tinybase.collections.schemas import reset_collection_registry
+    from tinybase.db.core import get_db_engine, init_db, reset_db_engine
     from tinybase.db.models import User
-    from tinybase.functions.core import reset_global_registry
+    from tinybase.functions.core import reset_function_registry
+    from tinybase.settings import settings
 
     # Reset everything
-    reset_engine()
-    reset_global_registry()
-    reset_registry()
-    reload_settings()
+    reset_db_engine()
+    reset_function_registry()
+    reset_collection_registry()
+
+    # Reset static config to pick up new env vars
+    from tinybase.settings.static import _reset_config
+
+    _reset_config()
+
+    # Reset settings cache
+    settings._loaded = False
+    settings._cache = {}
 
     # Create tables
-    create_db_and_tables()
+    init_db()
 
     # Create test admin user
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         admin = User(
             email="admin@test.com",
@@ -74,9 +86,9 @@ def client():
         yield test_client
 
     # Cleanup
-    reset_engine()
-    reset_global_registry()
-    reset_registry()
+    reset_db_engine()
+    reset_function_registry()
+    reset_collection_registry()
 
     # Remove temp database
     try:
@@ -137,10 +149,10 @@ def test_record(client, admin_token, test_collection):
 @pytest.fixture
 def mock_functions(client):
     """Register mock functions for API testing."""
-    from tinybase.functions.core import FunctionMeta, get_global_registry
+    from tinybase.functions.core import FunctionMeta, get_function_registry
     from tinybase.utils import AuthLevel
 
-    registry = get_global_registry()
+    registry = get_function_registry()
 
     # Public function
     registry.register(
@@ -202,4 +214,4 @@ def mock_functions(client):
 
     yield
 
-    # Cleanup handled by reset_global_registry in client fixture
+    # Cleanup handled by reset_function_registry in client fixture

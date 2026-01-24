@@ -14,11 +14,11 @@ from uuid import UUID
 from sqlmodel import Session, select
 
 from tinybase.auth import cleanup_expired_tokens
-from tinybase.config import settings
-from tinybase.db.core import get_engine
-from tinybase.db.models import FunctionSchedule, InstanceSettings
-from tinybase.functions.core import execute_function, get_global_registry
+from tinybase.db.core import get_db_engine
+from tinybase.db.models import FunctionSchedule
+from tinybase.functions.core import execute_function, get_function_registry
 from tinybase.metrics import collect_metrics
+from tinybase.settings import config, settings
 from tinybase.utils import TriggerType, utcnow
 
 from .utils import parse_schedule_config
@@ -62,6 +62,7 @@ class Scheduler:
         self._cached_max_concurrent_executions: int | None = None
         self._cached_admin_report_enabled: bool | None = None
         self._cached_admin_report_interval_days: int | None = None
+        self._last_admin_report_sent: datetime | None = None
         self._settings_cache_ticks = 0
         self._settings_cache_ttl = 60  # Refresh every 60 ticks
         # Semaphore to limit concurrent executions (will be updated when settings change)
@@ -117,7 +118,7 @@ class Scheduler:
         Runs every `scheduler_interval_seconds` and processes any due schedules.
         Also performs periodic maintenance tasks like token cleanup.
         """
-        interval = settings().scheduler_interval_seconds
+        interval = config.scheduler_interval_seconds
 
         while self._running:
             loop_start = utcnow()
@@ -172,118 +173,52 @@ class Scheduler:
             or self._settings_cache_ticks >= self._settings_cache_ttl
         ):
             try:
-                engine = get_engine()
-                with Session(engine) as session:
-                    instance_settings = session.get(InstanceSettings, 1)
-                    config = settings()
+                # Token cleanup interval
+                self._cached_cleanup_interval = settings.jobs.token_cleanup.interval
 
-                    # Token cleanup interval
-                    if instance_settings and instance_settings.token_cleanup_interval:
-                        self._cached_cleanup_interval = instance_settings.token_cleanup_interval
-                    else:
-                        self._cached_cleanup_interval = getattr(
-                            config, "scheduler_token_cleanup_interval", 60
-                        )
+                # Metrics collection interval
+                self._cached_metrics_interval = settings.jobs.metrics.interval
 
-                    # Metrics collection interval
-                    if instance_settings and instance_settings.metrics_collection_interval:
-                        self._cached_metrics_interval = (
-                            instance_settings.metrics_collection_interval
-                        )
-                    else:
-                        self._cached_metrics_interval = getattr(
-                            config, "scheduler_metrics_collection_interval", 360
-                        )
+                # Function timeout
+                self._cached_function_timeout = settings.scheduler.function_timeout_seconds
 
-                    # Function timeout
-                    if instance_settings and instance_settings.scheduler_function_timeout_seconds:
-                        self._cached_function_timeout = (
-                            instance_settings.scheduler_function_timeout_seconds
-                        )
-                    else:
-                        self._cached_function_timeout = getattr(
-                            config,
-                            "scheduler_function_timeout_seconds",
-                            DEFAULT_FUNCTION_TIMEOUT_SECONDS,
-                        )
+                # Max schedules per tick
+                self._cached_max_schedules_per_tick = settings.scheduler.max_schedules_per_tick
 
-                    # Max schedules per tick
-                    if instance_settings and instance_settings.scheduler_max_schedules_per_tick:
-                        self._cached_max_schedules_per_tick = (
-                            instance_settings.scheduler_max_schedules_per_tick
-                        )
-                    else:
-                        self._cached_max_schedules_per_tick = getattr(
-                            config,
-                            "scheduler_max_schedules_per_tick",
-                            DEFAULT_MAX_SCHEDULES_PER_TICK,
-                        )
+                # Max concurrent executions
+                new_max_concurrent = settings.scheduler.max_concurrent_executions
 
-                    # Max concurrent executions
-                    new_max_concurrent = None
-                    if instance_settings and instance_settings.scheduler_max_concurrent_executions:
-                        new_max_concurrent = instance_settings.scheduler_max_concurrent_executions
-                    else:
-                        new_max_concurrent = getattr(
-                            config,
-                            "scheduler_max_concurrent_executions",
-                            DEFAULT_MAX_CONCURRENT_EXECUTIONS,
-                        )
+                # Update semaphore and executor if max_concurrent changed
+                if self._cached_max_concurrent_executions != new_max_concurrent:
+                    logger.info(
+                        f"Updating max concurrent executions from "
+                        f"{self._cached_max_concurrent_executions} to {new_max_concurrent}"
+                    )
+                    # Shutdown old executor
+                    self._executor.shutdown(wait=False)
+                    # Create new semaphore and executor
+                    self._execution_semaphore = asyncio.Semaphore(new_max_concurrent)
+                    self._executor = concurrent.futures.ThreadPoolExecutor(
+                        max_workers=new_max_concurrent, thread_name_prefix="scheduler-exec"
+                    )
 
-                    # Update semaphore and executor if max_concurrent changed
-                    if self._cached_max_concurrent_executions != new_max_concurrent:
-                        logger.info(
-                            f"Updating max concurrent executions from "
-                            f"{self._cached_max_concurrent_executions} to {new_max_concurrent}"
-                        )
-                        # Shutdown old executor
-                        self._executor.shutdown(wait=False)
-                        # Create new semaphore and executor
-                        self._execution_semaphore = asyncio.Semaphore(new_max_concurrent)
-                        self._executor = concurrent.futures.ThreadPoolExecutor(
-                            max_workers=new_max_concurrent, thread_name_prefix="scheduler-exec"
-                        )
+                self._cached_max_concurrent_executions = new_max_concurrent
 
-                    self._cached_max_concurrent_executions = new_max_concurrent
+                # Admin report email settings
+                self._cached_admin_report_enabled = settings.jobs.admin_report.enabled
+                self._cached_admin_report_interval_days = settings.jobs.admin_report.interval_days
 
-                    # Admin report email settings
-                    if instance_settings:
-                        self._cached_admin_report_enabled = (
-                            instance_settings.admin_report_email_enabled
-                        )
-                        self._cached_admin_report_interval_days = (
-                            instance_settings.admin_report_email_interval_days
-                        )
-                    else:
-                        self._cached_admin_report_enabled = True
-                        self._cached_admin_report_interval_days = 7
-
-                    self._settings_cache_ticks = 0
+                self._settings_cache_ticks = 0
 
             except Exception as e:
                 logger.warning(f"Failed to refresh scheduler settings: {e}")
                 # Use fallback if query fails
                 if self._cached_cleanup_interval is None:
-                    config = settings()
-                    self._cached_cleanup_interval = getattr(
-                        config, "scheduler_token_cleanup_interval", 60
-                    )
-                    self._cached_metrics_interval = getattr(
-                        config, "scheduler_metrics_collection_interval", 360
-                    )
-                    self._cached_function_timeout = getattr(
-                        config,
-                        "scheduler_function_timeout_seconds",
-                        DEFAULT_FUNCTION_TIMEOUT_SECONDS,
-                    )
-                    self._cached_max_schedules_per_tick = getattr(
-                        config, "scheduler_max_schedules_per_tick", DEFAULT_MAX_SCHEDULES_PER_TICK
-                    )
-                    self._cached_max_concurrent_executions = getattr(
-                        config,
-                        "scheduler_max_concurrent_executions",
-                        DEFAULT_MAX_CONCURRENT_EXECUTIONS,
-                    )
+                    self._cached_cleanup_interval = 60
+                    self._cached_metrics_interval = 360
+                    self._cached_function_timeout = DEFAULT_FUNCTION_TIMEOUT_SECONDS
+                    self._cached_max_schedules_per_tick = DEFAULT_MAX_SCHEDULES_PER_TICK
+                    self._cached_max_concurrent_executions = DEFAULT_MAX_CONCURRENT_EXECUTIONS
                 self._settings_cache_ticks = 0
         else:
             self._settings_cache_ticks += 1
@@ -315,7 +250,7 @@ class Scheduler:
 
     async def _run_token_cleanup(self) -> None:
         """Run token cleanup maintenance task."""
-        engine = get_engine()
+        engine = get_db_engine()
         with Session(engine) as session:
             try:
                 cleanup_expired_tokens(session)
@@ -324,7 +259,7 @@ class Scheduler:
 
     async def _run_metrics_collection(self) -> None:
         """Run metrics collection task."""
-        engine = get_engine()
+        engine = get_db_engine()
         with Session(engine) as session:
             try:
                 collect_metrics(session)
@@ -337,41 +272,31 @@ class Scheduler:
         if not self._cached_admin_report_enabled:
             return
 
-        engine = get_engine()
-        with Session(engine) as session:
-            try:
-                instance_settings = session.get(InstanceSettings, 1)
-                if not instance_settings:
-                    return
+        try:
+            # Check if email is enabled and configured
+            if not config.email_enabled or not config.email_from_address:
+                return
 
-                # Check if it's time to send
-                now = utcnow()
-                interval_days = self._cached_admin_report_interval_days or 7
-                last_sent = instance_settings.last_admin_report_sent_at
+            now = utcnow()
+            interval_days = self._cached_admin_report_interval_days or 7
 
-                # If never sent, send now (but only if email is configured)
-                if last_sent is None:
-                    # Check if email is enabled and configured
-                    config = settings()
-                    if not config.email_enabled or not config.email_from_address:
-                        return
-                    # Send first report
-                    await self._send_admin_report_emails(session, instance_settings, now)
-                    return
-
-                # Check if interval has passed
-                time_since_last = (now - last_sent).total_seconds()
+            # Check if it's time to send based on internal tracking
+            if self._last_admin_report_sent is not None:
+                time_since_last = (now - self._last_admin_report_sent).total_seconds()
                 interval_seconds = interval_days * 24 * 60 * 60
+                if time_since_last < interval_seconds:
+                    return
 
-                if time_since_last >= interval_seconds:
-                    await self._send_admin_report_emails(session, instance_settings, now)
+            # Send report
+            engine = get_db_engine()
+            with Session(engine) as session:
+                await self._send_admin_report_emails(session, now)
+                self._last_admin_report_sent = now
 
-            except Exception as e:
-                logger.exception(f"Error checking admin report email schedule: {e}")
+        except Exception as e:
+            logger.exception(f"Error checking admin report email schedule: {e}")
 
-    async def _send_admin_report_emails(
-        self, session: Session, instance_settings: InstanceSettings, report_date: datetime
-    ) -> None:
+    async def _send_admin_report_emails(self, session: Session, report_date: datetime) -> None:
         """Send admin report emails to all admin users."""
         from sqlalchemy import func
         from sqlmodel import select
@@ -459,14 +384,8 @@ class Scheduler:
                 except Exception as e:
                     logger.error(f"Failed to send admin report email to {admin.email}: {e}")
 
-            # Update last sent time
-            instance_settings.last_admin_report_sent_at = report_date
-            session.add(instance_settings)
-            session.commit()
-
         except Exception as e:
             logger.exception(f"Error sending admin report emails: {e}")
-            session.rollback()
 
     async def _process_due_schedules(self) -> None:
         """
@@ -477,7 +396,7 @@ class Scheduler:
         own error handling.
         """
         now = utcnow()
-        engine = get_engine()
+        engine = get_db_engine()
 
         try:
             with Session(engine) as session:
@@ -536,7 +455,7 @@ class Scheduler:
         """
         # Acquire semaphore to limit concurrent executions
         async with self._execution_semaphore:
-            engine = get_engine()
+            engine = get_db_engine()
             with Session(engine) as session:
                 # Reload schedule to ensure we have latest data
                 schedule = session.get(FunctionSchedule, schedule_id)
@@ -566,7 +485,7 @@ class Scheduler:
         )
 
         # Get the function from registry
-        registry = get_global_registry()
+        registry = get_function_registry()
         meta = registry.get(schedule.function_name)
 
         if meta is None:
@@ -588,7 +507,7 @@ class Scheduler:
 
         def _execute_in_thread() -> None:
             """Execute function in thread with its own database session."""
-            engine = get_engine()
+            engine = get_db_engine()
             with Session(engine) as exec_session:
                 execute_function(
                     meta=meta,
@@ -682,7 +601,7 @@ def get_scheduler() -> Scheduler:
 
 async def start_scheduler() -> None:
     """Start the global scheduler."""
-    if settings().scheduler_enabled:
+    if config.scheduler_enabled:
         scheduler = get_scheduler()
         await scheduler.start()
 
