@@ -28,87 +28,97 @@ def clear_settings_cache():
 
 @pytest.fixture(scope="function")
 def client():
-    """Create a test client with a fresh database."""
-    # Create a temporary database file
-    db_fd, db_path = tempfile.mkstemp(suffix=".db")
-    os.close(db_fd)
-
-    # Create a temporary functions directory
-    functions_dir = tempfile.mkdtemp(prefix="tinybase_test_functions_")
-
-    # Set environment variables before importing tinybase modules
-    os.environ["TINYBASE_DB_URL"] = f"sqlite:///{db_path}"
-    os.environ["TINYBASE_FUNCTIONS_PATH"] = functions_dir
-    os.environ["TINYBASE_SCHEDULER_ENABLED"] = "false"
-    os.environ["TINYBASE_RATE_LIMIT_ENABLED"] = "false"
-
-    # Import after setting env vars
-    from tinybase.api.app import create_app
-    from tinybase.auth import hash_password
-    from tinybase.collections.schemas import reset_collection_registry
-    from tinybase.db.core import get_db_engine, init_db, reset_db_engine
-    from tinybase.db.models import User
-    from tinybase.functions.core import reset_function_registry
-    from tinybase.settings import settings
-
-    # Reset everything
-    reset_db_engine()
-    reset_function_registry()
-    reset_collection_registry()
-
-    # Reset static config to pick up new env vars
-    from tinybase.settings.static import _reset_config
-
-    _reset_config()
-
-    # Reset settings cache
-    settings._loaded = False
-    settings._cache = {}
-
-    # Create tables
-    init_db()
-
-    # Create test admin user
-    engine = get_db_engine()
-    with Session(engine) as session:
-        admin = User(
-            email="admin@test.com",
-            password_hash=hash_password("testpassword"),
-            is_admin=True,
-        )
-        session.add(admin)
-        session.commit()
-
-    # Create app
-    app = create_app()
-
-    with TestClient(app) as test_client:
-        yield test_client
-
-    # Cleanup
-    reset_db_engine()
-    reset_function_registry()
-    reset_collection_registry()
-
-    # Remove temp database
-    try:
-        os.unlink(db_path)
-    except Exception:
-        pass
-
-    # Remove temp functions directory
+    """Create a test client with a fresh initialized workspace."""
     import shutil
+    import subprocess
+
+    # Create a temporary workspace directory
+    workspace_dir = tempfile.mkdtemp(prefix="tinybase_test_workspace_")
+    original_cwd = os.getcwd()
 
     try:
-        shutil.rmtree(functions_dir)
-    except Exception:
-        pass
+        # Change to workspace directory (tinybase init uses cwd)
+        os.chdir(workspace_dir)
 
-    # Reset env vars
-    os.environ.pop("TINYBASE_DB_URL", None)
-    os.environ.pop("TINYBASE_FUNCTIONS_PATH", None)
-    os.environ.pop("TINYBASE_SCHEDULER_ENABLED", None)
-    os.environ.pop("TINYBASE_RATE_LIMIT_ENABLED", None)
+        # Run tinybase init to set up workspace properly
+        subprocess.run(
+            ["uv", "run", "tinybase", "init", "."],
+            check=True,
+            capture_output=True,
+        )
+
+        # Set environment variables for the test
+        db_path = os.path.join(workspace_dir, "tinybase.db")
+        functions_dir = os.path.join(workspace_dir, "functions")
+
+        os.environ["TINYBASE_DB_URL"] = f"sqlite:///{db_path}"
+        os.environ["TINYBASE_FUNCTIONS_PATH"] = functions_dir
+        os.environ["TINYBASE_SCHEDULER_ENABLED"] = "false"
+        os.environ["TINYBASE_RATE_LIMIT_ENABLED"] = "false"
+
+        # Import after setting env vars
+        from tinybase.api.app import create_app
+        from tinybase.auth import hash_password
+        from tinybase.collections.schemas import reset_collection_registry
+        from tinybase.db.core import get_db_engine, init_db, reset_db_engine
+        from tinybase.db.models import User
+        from tinybase.functions.core import reset_function_registry
+        from tinybase.settings import settings
+
+        # Reset everything
+        reset_db_engine()
+        reset_function_registry()
+        reset_collection_registry()
+
+        # Reset static config to pick up new env vars
+        from tinybase.settings.static import _reset_config
+
+        _reset_config()
+
+        # Reset settings cache
+        settings._loaded = False
+        settings._cache = {}
+
+        # Create tables
+        init_db()
+
+        # Create test admin user
+        engine = get_db_engine()
+        with Session(engine) as session:
+            admin = User(
+                email="admin@test.com",
+                password_hash=hash_password("testpassword"),
+                is_admin=True,
+            )
+            session.add(admin)
+            session.commit()
+
+        # Create app
+        app = create_app()
+
+        with TestClient(app) as test_client:
+            yield test_client
+
+        # Cleanup
+        reset_db_engine()
+        reset_function_registry()
+        reset_collection_registry()
+
+    finally:
+        # Restore original working directory
+        os.chdir(original_cwd)
+
+        # Remove temp workspace directory
+        try:
+            shutil.rmtree(workspace_dir)
+        except Exception:
+            pass
+
+        # Reset env vars
+        os.environ.pop("TINYBASE_DB_URL", None)
+        os.environ.pop("TINYBASE_FUNCTIONS_PATH", None)
+        os.environ.pop("TINYBASE_SCHEDULER_ENABLED", None)
+        os.environ.pop("TINYBASE_RATE_LIMIT_ENABLED", None)
 
 
 @pytest.fixture
