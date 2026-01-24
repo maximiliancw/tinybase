@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Annotated
 
 import typer
 
-from tinybase.config import settings
+from tinybase.settings import config
 
 from .utils import create_function_boilerplate, snake_to_camel
 
@@ -43,7 +43,6 @@ def functions_new(
 
     # Use config functions_path if available, otherwise use provided dir
     try:
-        config = settings()
         functions_dir = Path(config.functions_path)
     except Exception:
         # If config can't be loaded, use provided dir or default

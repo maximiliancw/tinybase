@@ -6,7 +6,7 @@ import pytest
 from sqlmodel import Session, select
 
 from tinybase.auth import create_auth_token, create_internal_token, hash_password
-from tinybase.db.core import create_db_and_tables, get_engine
+from tinybase.db.core import get_db_engine, init_db
 from tinybase.db.models import AuthToken, User
 
 
@@ -16,8 +16,8 @@ class TestTokenScoping:
     @pytest.fixture
     def session(self):
         """Create a test session with a fresh database."""
-        engine = get_engine()
-        create_db_and_tables()
+        engine = get_db_engine()
+        init_db()
 
         with Session(engine) as session:
             yield session
@@ -124,7 +124,7 @@ class TestTokenScoping:
         # Close session and open new one to ensure persistence
         session.close()
 
-        with Session(get_engine()) as new_session:
+        with Session(get_db_engine()) as new_session:
             token = new_session.exec(select(AuthToken).where(AuthToken.token == token_str)).first()
 
             assert token is not None

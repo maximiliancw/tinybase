@@ -13,9 +13,8 @@ from uuid import uuid4
 import boto3
 from botocore.config import Config as BotoConfig
 from botocore.exceptions import ClientError
-from sqlmodel import Session
 
-from tinybase.db.models import InstanceSettings
+from tinybase.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -31,34 +30,20 @@ class StorageService:
     S3-compatible storage service.
 
     Handles file uploads, downloads, and deletions using boto3.
-    Configuration is read from InstanceSettings.
+    Configuration is read from Settings.
     """
 
-    def __init__(self, session: Session) -> None:
-        """
-        Initialize the storage service.
-
-        Args:
-            session: Database session to read settings from
-        """
-        self.session = session
+    def __init__(self) -> None:
+        """Initialize the storage service."""
         self._client = None
-        self._settings = None
-
-    def _get_settings(self) -> InstanceSettings | None:
-        """Get instance settings from database."""
-        if self._settings is None:
-            self._settings = self.session.get(InstanceSettings, 1)
-        return self._settings
 
     def is_enabled(self) -> bool:
         """Check if storage is enabled and configured."""
-        settings = self._get_settings()
-        if not settings or not settings.storage_enabled:
+        if not settings.storage.enabled:
             return False
-        if not settings.storage_endpoint or not settings.storage_bucket:
+        if not settings.storage.endpoint or not settings.storage.bucket:
             return False
-        if not settings.storage_access_key or not settings.storage_secret_key:
+        if not settings.storage.access_key or not settings.storage.secret_key:
             return False
         return True
 
@@ -67,33 +52,31 @@ class StorageService:
         if self._client is not None:
             return self._client
 
-        settings = self._get_settings()
-        if not settings:
+        if not self.is_enabled():
             raise StorageError("Storage not configured")
 
         # Configure boto3 client
-        config = BotoConfig(
+        boto_config = BotoConfig(
             signature_version="s3v4",
             retries={"max_attempts": 3, "mode": "standard"},
         )
 
         self._client = boto3.client(
             "s3",
-            endpoint_url=settings.storage_endpoint,
-            aws_access_key_id=settings.storage_access_key,
-            aws_secret_access_key=settings.storage_secret_key,
-            region_name=settings.storage_region or "us-east-1",
-            config=config,
+            endpoint_url=settings.storage.endpoint,
+            aws_access_key_id=settings.storage.access_key,
+            aws_secret_access_key=settings.storage.secret_key,
+            region_name=settings.storage.region or "us-east-1",
+            config=boto_config,
         )
 
         return self._client
 
     def _get_bucket(self) -> str:
         """Get the configured bucket name."""
-        settings = self._get_settings()
-        if not settings or not settings.storage_bucket:
+        if not settings.storage.bucket:
             raise StorageError("Storage bucket not configured")
-        return settings.storage_bucket
+        return settings.storage.bucket
 
     def upload_file(
         self,

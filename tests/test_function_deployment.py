@@ -194,10 +194,10 @@ def test_validate_function_file_size_limit():
 
 def test_get_or_create_version_new(client):
     """Test creating a new function version."""
-    from tinybase.db.core import get_engine
+    from tinybase.db.core import get_db_engine
     from tinybase.db.models import User
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         # Get the admin user created by the client fixture
         stmt = select(User).where(User.email == "admin@test.com")
@@ -223,10 +223,10 @@ def test_get_or_create_version_new(client):
 
 def test_get_or_create_version_existing(client):
     """Test getting an existing function version."""
-    from tinybase.db.core import get_engine
+    from tinybase.db.core import get_db_engine
     from tinybase.db.models import User
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         stmt = select(User).where(User.email == "admin@test.com")
         admin = session.exec(stmt).first()
@@ -257,10 +257,10 @@ def test_get_or_create_version_existing(client):
 
 def test_get_or_create_version_different_hash(client):
     """Test creating a new version with different content hash."""
-    from tinybase.db.core import get_engine
+    from tinybase.db.core import get_db_engine
     from tinybase.db.models import User
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         stmt = select(User).where(User.email == "admin@test.com")
         admin = session.exec(stmt).first()

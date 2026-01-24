@@ -10,7 +10,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from tinybase.config import settings
+from tinybase.settings import config
 
 
 def get_app_static_dir() -> Path | None:
@@ -23,7 +23,6 @@ def get_app_static_dir() -> Path | None:
     Returns:
         Path to static files directory, or None if not available.
     """
-    config = settings()
 
     if config.admin_static_dir == "builtin":
         # Look for bundled static/app directory

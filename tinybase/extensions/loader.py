@@ -23,9 +23,8 @@ def get_extensions_directory() -> Path:
     Returns:
         Path to the extensions directory.
     """
-    from tinybase.config import settings
+    from tinybase.settings import config
 
-    config = settings()
     extensions_path = Path(config.extensions_path).expanduser()
     extensions_path.mkdir(parents=True, exist_ok=True)
     return extensions_path
@@ -95,10 +94,8 @@ def load_enabled_extensions(session: "Session") -> int:
     """
     from sqlmodel import select
 
-    from tinybase.config import settings
+    from tinybase.settings import config
     from tinybase.db.models import Extension
-
-    config = settings()
 
     if not config.extensions_enabled:
         logger.info("Extensions are disabled in configuration")

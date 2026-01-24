@@ -209,9 +209,8 @@ def get_pool() -> FunctionProcessPool:
     """Get the global function process pool."""
     global _pool
     if _pool is None:
-        from tinybase.config import settings
+        from tinybase.settings import config
 
-        config = settings()
         _pool = FunctionProcessPool(
             max_pool_size=config.function_cold_start_pool_size,
             ttl_seconds=config.function_cold_start_ttl_seconds,

@@ -11,7 +11,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
-from tinybase.config import settings
+from tinybase.settings import config as app_config
 
 # Import all models so they're registered with SQLModel
 from tinybase.db import models  # noqa: F401
@@ -29,7 +29,7 @@ target_metadata = SQLModel.metadata
 
 def get_url() -> str:
     """Get the database URL from TinyBase config."""
-    return settings().db_url
+    return app_config.db_url
 
 
 def run_migrations_offline() -> None:

@@ -29,7 +29,8 @@ from tinybase.auth import (
     verify_jwt_token,
     verify_password,
 )
-from tinybase.db.models import InstanceSettings, PasswordResetToken, User
+from tinybase.db.models import PasswordResetToken, User
+from tinybase.settings import settings
 from tinybase.email import send_password_reset_email
 from tinybase.extensions.hooks import (
     UserLoginEvent,
@@ -169,8 +170,10 @@ def get_instance_info(session: DBSession) -> InstanceInfoResponse:
     Returns the instance name configured in settings.
     This endpoint does not require authentication.
     """
-    settings = session.get(InstanceSettings, 1)
-    instance_name = settings.instance_name if settings else "TinyBase"
+    try:
+        instance_name = settings.instance_name
+    except Exception:
+        instance_name = "TinyBase"
     return InstanceInfoResponse(instance_name=instance_name)
 
 
@@ -216,8 +219,7 @@ def register(
     Registration may be disabled via instance settings.
     """
     # Check if public registration is allowed
-    instance_settings = session.get(InstanceSettings, 1)
-    if instance_settings and not instance_settings.allow_public_registration:
+    if not settings.auth.allow_public_registration:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Public registration is disabled",
@@ -566,13 +568,6 @@ def get_portal_config(
     When preview=true, requires admin authentication and returns preview values
     if provided, otherwise falls back to saved settings.
     """
-    instance_settings = session.get(InstanceSettings, 1)
-    if not instance_settings:
-        return PortalConfigResponse(
-            instance_name="TinyBase",
-            registration_enabled=True,
-        )
-
     # If preview mode is requested, require admin authentication
     if preview:
         if not user or not user.is_admin:
@@ -585,26 +580,26 @@ def get_portal_config(
         # Note: logo_url, primary_color, background_image_url can be None (not provided)
         # or empty string (explicitly cleared), so we check for None specifically
         return PortalConfigResponse(
-            instance_name=instance_settings.instance_name,
-            logo_url=logo_url if logo_url is not None else instance_settings.auth_portal_logo_url,
+            instance_name=settings.instance_name,
+            logo_url=logo_url if logo_url is not None else settings.auth.portal.logo_url,
             primary_color=primary_color
             if primary_color is not None
-            else instance_settings.auth_portal_primary_color,
+            else settings.auth.portal.primary_color,
             background_image_url=background_image_url
             if background_image_url is not None
-            else instance_settings.auth_portal_background_image_url,
-            registration_enabled=instance_settings.allow_public_registration,
-            login_redirect_url=instance_settings.auth_portal_login_redirect_url,
-            register_redirect_url=instance_settings.auth_portal_register_redirect_url,
+            else settings.auth.portal.background_image_url,
+            registration_enabled=settings.auth.allow_public_registration,
+            login_redirect_url=settings.auth.portal.login_redirect_url,
+            register_redirect_url=settings.auth.portal.register_redirect_url,
         )
 
     # Normal mode: return saved settings (no auth required)
     return PortalConfigResponse(
-        instance_name=instance_settings.instance_name,
-        logo_url=instance_settings.auth_portal_logo_url,
-        primary_color=instance_settings.auth_portal_primary_color,
-        background_image_url=instance_settings.auth_portal_background_image_url,
-        registration_enabled=instance_settings.allow_public_registration,
-        login_redirect_url=instance_settings.auth_portal_login_redirect_url,
-        register_redirect_url=instance_settings.auth_portal_register_redirect_url,
+        instance_name=settings.instance_name,
+        logo_url=settings.auth.portal.logo_url,
+        primary_color=settings.auth.portal.primary_color,
+        background_image_url=settings.auth.portal.background_image_url,
+        registration_enabled=settings.auth.allow_public_registration,
+        login_redirect_url=settings.auth.portal.login_redirect_url,
+        register_redirect_url=settings.auth.portal.register_redirect_url,
     )

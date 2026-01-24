@@ -26,7 +26,7 @@ def extensions_install(
     """
     from sqlmodel import Session
 
-    from tinybase.db.core import create_db_and_tables, get_engine
+    from tinybase.db.core import get_db_engine, init_db
     from tinybase.extensions import InstallError, install_extension
 
     # Security warning
@@ -41,9 +41,9 @@ def extensions_install(
             raise typer.Exit(0)
 
     # Ensure database exists
-    create_db_and_tables()
+    init_db()
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         try:
             typer.echo(f"Installing extension from: {url}")
@@ -71,7 +71,7 @@ def extensions_uninstall(
     """
     from sqlmodel import Session
 
-    from tinybase.db.core import create_db_and_tables, get_engine
+    from tinybase.db.core import get_db_engine, init_db
     from tinybase.extensions import uninstall_extension
 
     if not yes:
@@ -80,9 +80,9 @@ def extensions_uninstall(
             typer.echo("Uninstallation cancelled.")
             raise typer.Exit(0)
 
-    create_db_and_tables()
+    init_db()
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         if uninstall_extension(session, name):
             typer.echo(f"✓ Uninstalled extension: {name}")
@@ -102,12 +102,12 @@ def extensions_list() -> None:
     """
     from sqlmodel import Session, select
 
-    from tinybase.db.core import create_db_and_tables, get_engine
+    from tinybase.db.core import get_db_engine, init_db
     from tinybase.db.models import Extension
 
-    create_db_and_tables()
+    init_db()
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         extensions = session.exec(select(Extension)).all()
 
@@ -145,13 +145,13 @@ def extensions_enable(
     """
     from sqlmodel import Session, select
 
-    from tinybase.db.core import create_db_and_tables, get_engine
+    from tinybase.db.core import get_db_engine, init_db
     from tinybase.db.models import Extension
     from tinybase.utils import utcnow
 
-    create_db_and_tables()
+    init_db()
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         extension = session.exec(select(Extension).where(Extension.name == name)).first()
 
@@ -184,13 +184,13 @@ def extensions_disable(
     """
     from sqlmodel import Session, select
 
-    from tinybase.db.core import create_db_and_tables, get_engine
+    from tinybase.db.core import get_db_engine, init_db
     from tinybase.db.models import Extension
     from tinybase.utils import utcnow
 
-    create_db_and_tables()
+    init_db()
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         extension = session.exec(select(Extension).where(Extension.name == name)).first()
 
@@ -225,13 +225,13 @@ def extensions_check_updates(
     """
     from sqlmodel import Session, select
 
-    from tinybase.db.core import create_db_and_tables, get_engine
+    from tinybase.db.core import get_db_engine, init_db
     from tinybase.db.models import Extension
     from tinybase.extensions import check_for_updates
 
-    create_db_and_tables()
+    init_db()
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         if name:
             extensions = [session.exec(select(Extension).where(Extension.name == name)).first()]

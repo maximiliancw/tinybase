@@ -28,16 +28,9 @@ def get_server_timezone() -> str:
     Falls back to UTC if not configured or on error.
     """
     try:
-        from sqlmodel import Session
+        from tinybase.settings import settings
 
-        from tinybase.db.core import get_engine
-        from tinybase.db.models import InstanceSettings
-
-        engine = get_engine()
-        with Session(engine) as session:
-            settings = session.get(InstanceSettings, 1)
-            if settings and settings.server_timezone:
-                return settings.server_timezone
+        return settings.server_timezone
     except Exception:
         pass
     return "UTC"

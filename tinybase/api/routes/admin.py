@@ -16,11 +16,11 @@ from sqlalchemy import func
 from sqlmodel import select
 
 from tinybase.auth import CurrentAdminUser, DBSession, hash_password
+from tinybase.settings import settings
 from tinybase.db.models import (
     ApplicationToken,
     FunctionCall,
     FunctionVersion,
-    InstanceSettings,
     Metrics,
     User,
 )
@@ -579,62 +579,32 @@ class InstanceSettingsUpdate(BaseModel):
     )
 
 
-def settings_to_response(settings: InstanceSettings) -> InstanceSettingsResponse:
-    """Convert InstanceSettings model to response schema."""
+def settings_to_response() -> InstanceSettingsResponse:
+    """Convert Settings to response schema."""
     return InstanceSettingsResponse(
         instance_name=settings.instance_name,
-        allow_public_registration=settings.allow_public_registration,
+        allow_public_registration=settings.auth.allow_public_registration,
         server_timezone=settings.server_timezone,
-        token_cleanup_interval=settings.token_cleanup_interval,
-        metrics_collection_interval=settings.metrics_collection_interval,
-        scheduler_function_timeout_seconds=settings.scheduler_function_timeout_seconds,
-        scheduler_max_schedules_per_tick=settings.scheduler_max_schedules_per_tick,
-        scheduler_max_concurrent_executions=settings.scheduler_max_concurrent_executions,
-        max_concurrent_functions_per_user=settings.max_concurrent_functions_per_user,
-        storage_enabled=settings.storage_enabled,
-        storage_endpoint=settings.storage_endpoint,
-        storage_bucket=settings.storage_bucket,
-        storage_region=settings.storage_region,
-        auth_portal_enabled=settings.auth_portal_enabled,
-        auth_portal_logo_url=settings.auth_portal_logo_url,
-        auth_portal_primary_color=settings.auth_portal_primary_color,
-        auth_portal_background_image_url=settings.auth_portal_background_image_url,
-        auth_portal_login_redirect_url=settings.auth_portal_login_redirect_url,
-        auth_portal_register_redirect_url=settings.auth_portal_register_redirect_url,
-        admin_report_email_enabled=settings.admin_report_email_enabled,
-        admin_report_email_interval_days=settings.admin_report_email_interval_days,
-        updated_at=settings.updated_at.isoformat(),
+        token_cleanup_interval=settings.jobs.token_cleanup.interval,
+        metrics_collection_interval=settings.jobs.metrics.interval,
+        scheduler_function_timeout_seconds=settings.scheduler.function_timeout_seconds,
+        scheduler_max_schedules_per_tick=settings.scheduler.max_schedules_per_tick,
+        scheduler_max_concurrent_executions=settings.scheduler.max_concurrent_executions,
+        max_concurrent_functions_per_user=settings.limits.max_concurrent_functions_per_user,
+        storage_enabled=settings.storage.enabled,
+        storage_endpoint=settings.storage.endpoint,
+        storage_bucket=settings.storage.bucket,
+        storage_region=settings.storage.region,
+        auth_portal_enabled=settings.auth.portal.enabled,
+        auth_portal_logo_url=settings.auth.portal.logo_url,
+        auth_portal_primary_color=settings.auth.portal.primary_color,
+        auth_portal_background_image_url=settings.auth.portal.background_image_url,
+        auth_portal_login_redirect_url=settings.auth.portal.login_redirect_url,
+        auth_portal_register_redirect_url=settings.auth.portal.register_redirect_url,
+        admin_report_email_enabled=settings.jobs.admin_report.enabled,
+        admin_report_email_interval_days=settings.jobs.admin_report.interval_days,
+        updated_at=utcnow().isoformat(),  # Use current time as approximation
     )
-
-
-def get_or_create_settings(session: DBSession) -> InstanceSettings:
-    """Get the singleton settings instance, creating it if it doesn't exist."""
-    from tinybase.config import settings as app_settings
-
-    settings = session.get(InstanceSettings, 1)
-    if settings is None:
-        # Initialize with defaults from config if available
-        config = app_settings()
-        settings = InstanceSettings(
-            id=1,
-            token_cleanup_interval=getattr(config, "scheduler_token_cleanup_interval", 60),
-            metrics_collection_interval=getattr(
-                config, "scheduler_metrics_collection_interval", 360
-            ),
-            scheduler_function_timeout_seconds=getattr(
-                config, "scheduler_function_timeout_seconds", None
-            ),
-            scheduler_max_schedules_per_tick=getattr(
-                config, "scheduler_max_schedules_per_tick", None
-            ),
-            scheduler_max_concurrent_executions=getattr(
-                config, "scheduler_max_concurrent_executions", None
-            ),
-        )
-        session.add(settings)
-        session.commit()
-        session.refresh(settings)
-    return settings
 
 
 @router.get(
@@ -648,8 +618,7 @@ def get_settings(
     _admin: CurrentAdminUser,
 ) -> InstanceSettingsResponse:
     """Get current instance settings."""
-    settings = get_or_create_settings(session)
-    return settings_to_response(settings)
+    return settings_to_response()
 
 
 @router.patch(
@@ -664,13 +633,11 @@ def update_settings(
     _admin: CurrentAdminUser,
 ) -> InstanceSettingsResponse:
     """Update instance settings."""
-    settings = get_or_create_settings(session)
-
     # Update only provided fields
     if request.instance_name is not None:
-        settings.instance_name = request.instance_name
+        settings.set("core.instance_name", request.instance_name)
     if request.allow_public_registration is not None:
-        settings.allow_public_registration = request.allow_public_registration
+        settings.set("core.auth.allow_public_registration", request.allow_public_registration)
     if request.server_timezone is not None:
         # Validate timezone
         import zoneinfo
@@ -682,77 +649,77 @@ def update_settings(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid timezone: {request.server_timezone}",
             )
-        settings.server_timezone = request.server_timezone
+        settings.set("core.server_timezone", request.server_timezone)
     if request.token_cleanup_interval is not None:
         if request.token_cleanup_interval < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="token_cleanup_interval must be at least 1",
             )
-        settings.token_cleanup_interval = request.token_cleanup_interval
+        settings.set("core.jobs.token_cleanup.interval", request.token_cleanup_interval)
     if request.metrics_collection_interval is not None:
         if request.metrics_collection_interval < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="metrics_collection_interval must be at least 1",
             )
-        settings.metrics_collection_interval = request.metrics_collection_interval
+        settings.set("core.jobs.metrics.interval", request.metrics_collection_interval)
     if request.scheduler_function_timeout_seconds is not None:
         if request.scheduler_function_timeout_seconds < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="scheduler_function_timeout_seconds must be at least 1",
             )
-        settings.scheduler_function_timeout_seconds = request.scheduler_function_timeout_seconds
+        settings.set("core.scheduler.function_timeout_seconds", request.scheduler_function_timeout_seconds)
     if request.scheduler_max_schedules_per_tick is not None:
         if request.scheduler_max_schedules_per_tick < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="scheduler_max_schedules_per_tick must be at least 1",
             )
-        settings.scheduler_max_schedules_per_tick = request.scheduler_max_schedules_per_tick
+        settings.set("core.scheduler.max_schedules_per_tick", request.scheduler_max_schedules_per_tick)
     if request.scheduler_max_concurrent_executions is not None:
         if request.scheduler_max_concurrent_executions < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="scheduler_max_concurrent_executions must be at least 1",
             )
-        settings.scheduler_max_concurrent_executions = request.scheduler_max_concurrent_executions
+        settings.set("core.scheduler.max_concurrent_executions", request.scheduler_max_concurrent_executions)
     if request.max_concurrent_functions_per_user is not None:
         if request.max_concurrent_functions_per_user < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="max_concurrent_functions_per_user must be at least 1",
             )
-        settings.max_concurrent_functions_per_user = request.max_concurrent_functions_per_user
+        settings.set("core.limits.max_concurrent_functions_per_user", request.max_concurrent_functions_per_user)
     if request.storage_enabled is not None:
-        settings.storage_enabled = request.storage_enabled
+        settings.set("core.storage.enabled", request.storage_enabled)
     if request.storage_endpoint is not None:
-        settings.storage_endpoint = request.storage_endpoint
+        settings.set("core.storage.endpoint", request.storage_endpoint)
     if request.storage_bucket is not None:
-        settings.storage_bucket = request.storage_bucket
+        settings.set("core.storage.bucket", request.storage_bucket)
     if request.storage_access_key is not None:
-        settings.storage_access_key = request.storage_access_key
+        settings.set("core.storage.access_key", request.storage_access_key)
     if request.storage_secret_key is not None:
-        settings.storage_secret_key = request.storage_secret_key
+        settings.set("core.storage.secret_key", request.storage_secret_key)
     if request.storage_region is not None:
-        settings.storage_region = request.storage_region
+        settings.set("core.storage.region", request.storage_region)
     # Determine if auth portal will be enabled after this update
     # (either already enabled and not being disabled, or being enabled in this request)
     auth_portal_will_be_enabled = (
         request.auth_portal_enabled
         if request.auth_portal_enabled is not None
-        else settings.auth_portal_enabled
+        else settings.auth.portal.enabled
     )
 
     if request.auth_portal_enabled is not None:
-        settings.auth_portal_enabled = request.auth_portal_enabled
+        settings.set("core.auth.portal.enabled", request.auth_portal_enabled)
     if request.auth_portal_logo_url is not None:
-        settings.auth_portal_logo_url = request.auth_portal_logo_url
+        settings.set("core.auth.portal.logo_url", request.auth_portal_logo_url)
     if request.auth_portal_primary_color is not None:
-        settings.auth_portal_primary_color = request.auth_portal_primary_color
+        settings.set("core.auth.portal.primary_color", request.auth_portal_primary_color)
     if request.auth_portal_background_image_url is not None:
-        settings.auth_portal_background_image_url = request.auth_portal_background_image_url
+        settings.set("core.auth.portal.background_image_url", request.auth_portal_background_image_url)
     if request.auth_portal_login_redirect_url is not None:
         # Only validate redirect URL format if auth portal is (or will be) enabled
         if auth_portal_will_be_enabled:
@@ -768,7 +735,7 @@ def update_settings(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Login redirect URL must not point to /admin URLs. Use your application's URL instead.",
                 )
-        settings.auth_portal_login_redirect_url = request.auth_portal_login_redirect_url
+        settings.set("core.auth.portal.login_redirect_url", request.auth_portal_login_redirect_url)
     if request.auth_portal_register_redirect_url is not None:
         # Only validate redirect URL format if auth portal is (or will be) enabled
         if auth_portal_will_be_enabled:
@@ -784,37 +751,32 @@ def update_settings(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Register redirect URL must not point to /admin URLs. Use your application's URL instead.",
                 )
-        settings.auth_portal_register_redirect_url = request.auth_portal_register_redirect_url
+        settings.set("core.auth.portal.register_redirect_url", request.auth_portal_register_redirect_url)
 
     # If auth portal is enabled, require redirect URLs to be set
-    if settings.auth_portal_enabled:
-        if not settings.auth_portal_login_redirect_url:
+    if settings.auth.portal.enabled:
+        if not settings.auth.portal.login_redirect_url:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Login redirect URL is required when auth portal is enabled",
             )
-        if not settings.auth_portal_register_redirect_url:
+        if not settings.auth.portal.register_redirect_url:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Register redirect URL is required when auth portal is enabled",
             )
 
     if request.admin_report_email_enabled is not None:
-        settings.admin_report_email_enabled = request.admin_report_email_enabled
+        settings.set("core.jobs.admin_report.enabled", request.admin_report_email_enabled)
     if request.admin_report_email_interval_days is not None:
         if request.admin_report_email_interval_days < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="admin_report_email_interval_days must be at least 1",
             )
-        settings.admin_report_email_interval_days = request.admin_report_email_interval_days
+        settings.set("core.jobs.admin_report.interval_days", request.admin_report_email_interval_days)
 
-    settings.updated_at = utcnow()
-    session.add(settings)
-    session.commit()
-    session.refresh(settings)
-
-    return settings_to_response(settings)
+    return settings_to_response()
 
 
 # =============================================================================
@@ -1106,7 +1068,7 @@ def upload_function(
     """
     from pathlib import Path
 
-    from tinybase.config import settings
+    from tinybase.settings import config
     from tinybase.functions.deployment import (
         FunctionValidationError,
         calculate_content_hash,
@@ -1115,8 +1077,6 @@ def upload_function(
         write_function_file,
     )
     from tinybase.functions.loader import extract_function_metadata, reload_single_function
-
-    config = settings()
 
     # Step 1: Validate function file
     try:

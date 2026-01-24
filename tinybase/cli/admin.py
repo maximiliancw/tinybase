@@ -26,13 +26,13 @@ def admin_add(
     from sqlmodel import Session, select
 
     from tinybase.auth import hash_password
-    from tinybase.db.core import create_db_and_tables, get_engine
+    from tinybase.db.core import get_db_engine, init_db
     from tinybase.db.models import User
 
     # Ensure database exists
-    create_db_and_tables()
+    init_db()
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         # Check if user already exists
         existing = session.exec(select(User).where(User.email == email)).first()
@@ -81,14 +81,14 @@ def admin_token(
     from sqlmodel import Session, select
 
     from tinybase.auth import create_application_token, revoke_application_token
-    from tinybase.db.core import create_db_and_tables, get_engine
+    from tinybase.db.core import get_db_engine, init_db
     from tinybase.db.models import ApplicationToken
     from tinybase.utils import utcnow
 
     # Ensure database exists
-    create_db_and_tables()
+    init_db()
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         if action == "create":
             if not name:

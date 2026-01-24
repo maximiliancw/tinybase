@@ -36,12 +36,12 @@ class TestFunctionMetrics:
         """Test that metrics are properly aggregated by function name."""
         from sqlmodel import Session
 
-        from tinybase.db.core import get_engine
+        from tinybase.db.core import get_db_engine
 
         now = utcnow()
 
         # Get database session
-        engine = get_engine()
+        engine = get_db_engine()
         with Session(engine) as session:
             # Create function calls
             calls = [
@@ -114,11 +114,11 @@ class TestFunctionMetrics:
         """Test that metrics respect time range parameter."""
         from sqlmodel import Session
 
-        from tinybase.db.core import get_engine
+        from tinybase.db.core import get_db_engine
 
         now = utcnow()
 
-        engine = get_engine()
+        engine = get_db_engine()
         with Session(engine) as session:
             # Create old call (beyond 24 hours)
             old_call = FunctionCall(
@@ -161,11 +161,11 @@ class TestFunctionMetrics:
         """Test metrics with custom time range parameter."""
         from sqlmodel import Session
 
-        from tinybase.db.core import get_engine
+        from tinybase.db.core import get_db_engine
 
         now = utcnow()
 
-        engine = get_engine()
+        engine = get_db_engine()
         with Session(engine) as session:
             # Create call within 1 hour
             recent_call = FunctionCall(
@@ -195,11 +195,11 @@ class TestFunctionMetrics:
         """Test average duration calculation when no durations exist."""
         from sqlmodel import Session
 
-        from tinybase.db.core import get_engine
+        from tinybase.db.core import get_db_engine
 
         now = utcnow()
 
-        engine = get_engine()
+        engine = get_db_engine()
         with Session(engine) as session:
             # Create call without duration
             call = FunctionCall(

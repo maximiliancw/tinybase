@@ -423,7 +423,7 @@ def test_password_reset_confirm(client):
     """Test confirming password reset with valid token."""
     from sqlmodel import Session, select
 
-    from tinybase.db.core import get_engine
+    from tinybase.db.core import get_db_engine
     from tinybase.db.models import PasswordResetToken, User
 
     # Register a user
@@ -442,7 +442,7 @@ def test_password_reset_confirm(client):
     )
 
     # Get the reset token from database
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         user = session.exec(select(User).where(User.email == "resetconfirm@test.com")).first()
         reset_token = session.exec(

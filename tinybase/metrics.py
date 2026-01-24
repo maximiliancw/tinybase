@@ -12,7 +12,7 @@ from datetime import timedelta
 from sqlalchemy import func
 from sqlmodel import Session, select
 
-from tinybase.config import settings
+from tinybase.settings import config
 from tinybase.db.models import Collection, FunctionCall, Metrics, Record
 from tinybase.utils import FunctionCallStatus, utcnow
 
@@ -25,7 +25,7 @@ def get_function_stats_lookback_hours() -> int:
     This is configurable via settings.
     """
     try:
-        return int(getattr(settings(), "scheduler_function_stats_lookback_hours", 24))
+        return 24  # Fixed value (was configurable)
     except Exception:
         return 24  # Fallback to default
 
@@ -36,7 +36,7 @@ def get_max_metric_snapshots() -> int:
     This is configurable via settings.
     """
     try:
-        return int(getattr(settings(), "scheduler_metrics_max_snapshots", 1000))
+        return 1000  # Fixed value (was configurable)
     except Exception:
         return 1000  # Fallback to default
 

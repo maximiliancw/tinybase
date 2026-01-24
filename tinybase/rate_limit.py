@@ -8,17 +8,13 @@ per user using either DiskCache or Redis.
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
-from typing import Annotated
 
 import diskcache
 import redis
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 
 from tinybase.auth import CurrentUserOptional
-from tinybase.config import Settings
-from tinybase.config import settings as get_settings
-from tinybase.db.core import get_session
-from tinybase.db.models import InstanceSettings
+from tinybase.settings import config, settings
 
 logger = logging.getLogger(__name__)
 
@@ -193,8 +189,6 @@ def get_rate_limit_backend() -> RateLimitBackend:
     if _backend_instance is not None:
         return _backend_instance
 
-    config = get_settings()
-
     if config.rate_limit_backend == "redis":
         if not config.rate_limit_redis_url:
             raise ValueError("rate_limit_redis_url is required when using Redis backend")
@@ -220,7 +214,6 @@ def reset_rate_limit_backend() -> None:
 
 async def check_rate_limit(
     user: CurrentUserOptional,
-    config: Annotated[Settings, Depends(get_settings)],
 ) -> AsyncGenerator[None, None]:
     """
     FastAPI dependency to enforce concurrent function execution limits.
@@ -230,7 +223,6 @@ async def check_rate_limit(
 
     Args:
         user: Current authenticated user (None for anonymous/scheduled functions).
-        config: Application settings.
 
     Yields:
         None (allows request to proceed if rate limit not exceeded).
@@ -246,14 +238,8 @@ async def check_rate_limit(
     backend = get_rate_limit_backend()
     key = f"concurrent_functions:user:{user.id}"
 
-    # Check instance settings for runtime-configurable limit
-    session = next(get_session())
-    instance_settings = session.get(InstanceSettings, 1)
-    max_concurrent = (
-        instance_settings.max_concurrent_functions_per_user
-        if instance_settings and instance_settings.max_concurrent_functions_per_user
-        else config.max_concurrent_functions_per_user
-    )
+    # Get max concurrent from runtime settings
+    max_concurrent = settings.limits.max_concurrent_functions_per_user
 
     # Increment counter
     current = backend.increment(key, ttl=3600)

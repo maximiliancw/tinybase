@@ -491,3 +491,28 @@ class Extension(SQLModel, table=True):
     installed_at: datetime = Field(default_factory=utcnow)
     installed_by_user_id: UUID | None = Field(default=None, foreign_key="user.id")
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+# =============================================================================
+# App Settings Model (Key-Value)
+# =============================================================================
+
+
+class AppSetting(SQLModel, table=True):
+    """
+    Key-value setting stored in database.
+
+    Keys use dot-notation for grouping:
+    - core.instance_name
+    - core.storage.enabled
+    - ext.my_extension.api_key
+    """
+
+    __tablename__ = "app_settings"
+
+    key: str = Field(primary_key=True, max_length=255)
+    value: str | None = Field(default=None)  # JSON-encoded
+    value_type: str = Field(default="str", max_length=20)  # str, int, bool, float, json, datetime
+    description: str | None = Field(default=None, max_length=500)
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)

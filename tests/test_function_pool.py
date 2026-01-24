@@ -216,11 +216,9 @@ class TestFunctionProcessPool:
 
     def test_get_pool_singleton(self):
         """Test that get_pool returns singleton."""
-        with patch("tinybase.config.settings") as mock_settings:
-            mock_config = MagicMock()
+        with patch("tinybase.settings.config.config") as mock_config:
             mock_config.function_cold_start_pool_size = 3
             mock_config.function_cold_start_ttl_seconds = 300
-            mock_settings.return_value = mock_config
 
             # Reset the global pool to test singleton behavior
             import tinybase.functions.pool

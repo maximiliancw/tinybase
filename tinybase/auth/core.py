@@ -15,7 +15,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
 
-from ..db.core import get_session
+from ..db.core import get_db_session
 from ..db.models import AuthToken, User
 from ..utils import utcnow
 from .jwt import create_access_token as jwt_create_access_token
@@ -109,7 +109,7 @@ def get_token_user(session: Session, token_str: str) -> User | None:
 
 def get_current_user_optional(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
-    session: Annotated[Session, Depends(get_session)],
+    session: Annotated[Session, Depends(get_db_session)],
 ) -> User | None:
     """
     Get the current authenticated user, if any.
@@ -185,7 +185,7 @@ def get_current_admin_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 CurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional)]
 CurrentAdminUser = Annotated[User, Depends(get_current_admin_user)]
-DBSession = Annotated[Session, Depends(get_session)]
+DBSession = Annotated[Session, Depends(get_db_session)]
 
 
 # =============================================================================

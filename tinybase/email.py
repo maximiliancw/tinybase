@@ -12,11 +12,11 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from tinybase.config import settings
+from tinybase.settings import config
 
 logger = logging.getLogger(__name__)
 
-_template_dir_suffix = Path("templates" / "emails")
+_template_dir_suffix = Path("templates") / "emails"
 
 # Internal template directory (fallback)
 _internal_template_dir = Path(__file__).parent.parent / _template_dir_suffix
@@ -94,7 +94,6 @@ def send_email(
     Returns:
         True if email was sent successfully, False otherwise
     """
-    config = settings()
 
     # Check if email is enabled
     if not config.email_enabled:
@@ -153,7 +152,6 @@ def send_password_reset_email(to_email: str, reset_token: str, reset_url: str) -
     Returns:
         True if email was sent successfully, False otherwise
     """
-    config = settings()
     instance_name = config.email_from_name
 
     subject = f"[{instance_name}] Password Reset Request"
@@ -179,7 +177,6 @@ def send_account_creation_email(to_email: str, login_url: str | None = None) -> 
     Returns:
         True if email was sent successfully, False otherwise
     """
-    config = settings()
     instance_name = config.email_from_name
 
     subject = f"Welcome to {instance_name}!"
@@ -207,7 +204,6 @@ def send_login_link_email(to_email: str, login_url: str, expiry_minutes: int = 1
     Returns:
         True if email was sent successfully, False otherwise
     """
-    config = settings()
     instance_name = config.email_from_name
 
     subject = f"[{instance_name}] Login Link"
@@ -247,7 +243,6 @@ def send_admin_report_email(
     Returns:
         True if email was sent successfully, False otherwise
     """
-    config = settings()
     instance_name = config.email_from_name
 
     subject = f"[{instance_name}] Admin Report - {report_date}"

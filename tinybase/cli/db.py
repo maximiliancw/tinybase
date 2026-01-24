@@ -32,10 +32,10 @@ def db_migrate(
     # Ensure all tables exist before autogenerate
     # This prevents errors when reflecting tables with foreign keys
     # to tables that don't exist yet
-    from tinybase.db.core import create_db_and_tables
+    from tinybase.db.core import init_db
 
     try:
-        create_db_and_tables()
+        init_db()
     except Exception as e:
         # If tables already exist or there's an issue, continue anyway
         # The autogenerate will handle the comparison

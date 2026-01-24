@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from sqlmodel import Session
 
-from tinybase.db.core import get_engine
+from tinybase.db.core import get_db_engine
 from tinybase.db.models import FunctionCall, FunctionCallStatus
 from tinybase.functions.core import FunctionMeta, execute_function
 from tinybase.utils import AuthLevel, TriggerType
@@ -25,10 +25,10 @@ class TestFunctionExecution:
     @pytest.fixture
     def session(self):
         """Create a test database session."""
-        from tinybase.db.core import create_db_and_tables
+        from tinybase.db.core import init_db
 
-        create_db_and_tables()
-        engine = get_engine()
+        init_db()
+        engine = get_db_engine()
         with Session(engine) as session:
             yield session
 
@@ -73,13 +73,11 @@ if __name__ == "__main__":
 
         payload = {"value": 5}
 
-        with patch("tinybase.config.settings") as mock_settings:
-            mock_config = MagicMock()
+        with patch("tinybase.settings.config.config") as mock_config:
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
             mock_config.max_function_result_bytes = 10_485_760  # 10 MB
-            mock_settings.return_value = mock_config
 
             with patch("tinybase.auth.create_internal_token") as mock_token:
                 mock_token.return_value = "internal-token-123"
@@ -145,12 +143,10 @@ if __name__ == "__main__":
 
             payload = {}
 
-            with patch("tinybase.config.settings") as mock_settings:
-                mock_config = MagicMock()
+            with patch("tinybase.settings.config.config") as mock_config:
                 mock_config.server_port = 8000
                 mock_config.function_logging_enabled = False
                 mock_config.scheduler_function_timeout_seconds = 30
-                mock_settings.return_value = mock_config
 
                 with patch("tinybase.auth.create_internal_token") as mock_token:
                     mock_token.return_value = "internal-token-123"
@@ -200,13 +196,11 @@ if __name__ == "__main__":
 
         payload = {"value": 3}
 
-        with patch("tinybase.config.settings") as mock_settings:
-            mock_config = MagicMock()
+        with patch("tinybase.settings.config.config") as mock_config:
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
             mock_config.max_function_result_bytes = 10_485_760  # 10 MB
-            mock_settings.return_value = mock_config
 
             with patch("tinybase.auth.create_internal_token") as mock_token:
                 mock_token.return_value = "internal-token-123"
@@ -259,13 +253,11 @@ if __name__ == "__main__":
 
         payload = {"value": 1}
 
-        with patch("tinybase.config.settings") as mock_settings:
-            mock_config = MagicMock()
+        with patch("tinybase.settings.config.config") as mock_config:
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
             mock_config.max_function_result_bytes = 10_485_760  # 10 MB
-            mock_settings.return_value = mock_config
 
             with patch("tinybase.auth.create_internal_token") as mock_token:
                 mock_token.return_value = "internal-token-456"
@@ -308,15 +300,13 @@ if __name__ == "__main__":
 
         payload = {"value": 2}
 
-        with patch("tinybase.config.settings") as mock_settings:
-            mock_config = MagicMock()
+        with patch("tinybase.settings.config.config") as mock_config:
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = True
             mock_config.function_logging_level = "INFO"
             mock_config.function_logging_format = "json"
             mock_config.scheduler_function_timeout_seconds = 30
             mock_config.max_function_result_bytes = 10_485_760  # 10 MB
-            mock_settings.return_value = mock_config
 
             with patch("tinybase.auth.create_internal_token") as mock_token:
                 mock_token.return_value = "internal-token-123"
@@ -382,13 +372,11 @@ if __name__ == "__main__":
 
             payload = {}
 
-            with patch("tinybase.config.settings") as mock_settings:
-                mock_config = MagicMock()
+            with patch("tinybase.settings.config.config") as mock_config:
                 mock_config.server_port = 8000
                 mock_config.function_logging_enabled = False
                 mock_config.scheduler_function_timeout_seconds = 1  # Short timeout
                 mock_config.max_function_result_bytes = 10_485_760  # 10 MB
-                mock_settings.return_value = mock_config
 
                 with patch("tinybase.auth.create_internal_token") as mock_token:
                     mock_token.return_value = "internal-token-123"
@@ -449,13 +437,11 @@ if __name__ == "__main__":
 
         payload = {"value": 4}
 
-        with patch("tinybase.config.settings") as mock_settings:
-            mock_config = MagicMock()
+        with patch("tinybase.settings.config.config") as mock_config:
             mock_config.server_port = 8000
             mock_config.function_logging_enabled = False
             mock_config.scheduler_function_timeout_seconds = 30
             mock_config.max_function_result_bytes = 10_485_760  # 10 MB
-            mock_settings.return_value = mock_config
 
             with patch("tinybase.auth.create_internal_token") as mock_token:
                 mock_token.return_value = "internal-token-123"

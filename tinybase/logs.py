@@ -35,9 +35,7 @@ class TinyBaseFormatter(logging.Formatter):
 
 def setup_logging() -> None:
     """Configure logging for all TinyBase modules and Uvicorn."""
-    from tinybase.config import settings
-
-    config = settings()
+    from tinybase.settings import config
 
     # Create formatter
     formatter = TinyBaseFormatter()

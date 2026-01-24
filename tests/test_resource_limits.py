@@ -47,10 +47,10 @@ class TestPayloadSizeValidation:
         # Set a small limit (must be >= 1024)
         monkeypatch.setenv("TINYBASE_MAX_FUNCTION_PAYLOAD_BYTES", "2048")
 
-        # Reload settings to pick up new env var
-        from tinybase.config import reload_settings
+        # Reload config to pick up new env var
+        from tinybase.settings.static import _reset_config
 
-        reload_settings()
+        _reset_config()
 
         # Get a fresh user token after reloading settings
         from tests.utils import get_user_token
@@ -116,9 +116,8 @@ class TestResultSizeValidation:
     def test_result_size_limit_boundary(self, client, mock_functions, user_token):
         """Test result size validation at the boundary."""
         with patch("tinybase.functions.core.subprocess.run") as mock_exec:
-            from tinybase.config import settings
+            from tinybase.settings import config
 
-            config = settings()
             # Create result exactly at the limit
             max_size = config.max_function_result_bytes
             # Account for JSON overhead
@@ -145,21 +144,18 @@ class TestResourceLimitDefaults:
 
     def test_default_payload_limit(self):
         """Test default payload limit is 10MB."""
-        from tinybase.config import settings
+        from tinybase.settings import config
 
-        config = settings()
         assert config.max_function_payload_bytes == 10_485_760
 
     def test_default_result_limit(self):
         """Test default result limit is 10MB."""
-        from tinybase.config import settings
+        from tinybase.settings import config
 
-        config = settings()
         assert config.max_function_result_bytes == 10_485_760
 
     def test_default_concurrent_limit(self):
-        """Test default concurrent executions limit."""
-        from tinybase.config import settings
+        """Test default concurrent executions limit (runtime setting)."""
+        from tinybase.settings import settings
 
-        config = settings()
-        assert config.max_concurrent_functions_per_user == 10
+        assert settings.limits.max_concurrent_functions_per_user == 10

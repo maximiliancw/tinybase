@@ -61,7 +61,7 @@ def get_storage_status(
     _user: CurrentUser,
 ) -> StorageStatusResponse:
     """Check if storage is enabled."""
-    service = StorageService(session)
+    service = StorageService()
     return StorageStatusResponse(enabled=service.is_enabled())
 
 
@@ -78,7 +78,7 @@ async def upload_file(
     path_prefix: str = Query(default="", description="Optional path prefix"),
 ) -> FileUploadResponse:
     """Upload a file to storage."""
-    service = StorageService(session)
+    service = StorageService()
 
     if not service.is_enabled():
         raise HTTPException(
@@ -122,7 +122,7 @@ def download_file(
     _user: CurrentUser,
 ) -> Response:
     """Download a file from storage."""
-    service = StorageService(session)
+    service = StorageService()
 
     if not service.is_enabled():
         raise HTTPException(
@@ -185,7 +185,7 @@ def delete_file(
     _user: CurrentUser,
 ) -> None:
     """Delete a file from storage."""
-    service = StorageService(session)
+    service = StorageService()
 
     if not service.is_enabled():
         raise HTTPException(
@@ -215,7 +215,7 @@ def get_presigned_url(
     expires_in: int = Query(default=3600, ge=60, le=86400, description="Expiration in seconds"),
 ) -> PresignedUrlResponse:
     """Generate a presigned URL for a file."""
-    service = StorageService(session)
+    service = StorageService()
 
     if not service.is_enabled():
         raise HTTPException(

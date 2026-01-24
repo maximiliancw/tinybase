@@ -10,7 +10,7 @@ import pytest
 from sqlmodel import Session, select
 
 from tinybase.auth import create_internal_token
-from tinybase.db.core import create_db_and_tables, get_engine
+from tinybase.db.core import get_db_engine, init_db
 from tinybase.db.models import AuthToken
 from tinybase.utils import utcnow
 
@@ -21,8 +21,8 @@ class TestInternalTokens:
     @pytest.fixture
     def session(self):
         """Create a test database session."""
-        create_db_and_tables()
-        engine = get_engine()
+        init_db()
+        engine = get_db_engine()
         with Session(engine) as session:
             yield session
 

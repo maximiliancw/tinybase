@@ -12,7 +12,7 @@ from uuid import UUID, uuid4
 import jwt
 from sqlmodel import Session
 
-from tinybase.config import settings
+from tinybase.settings import config
 from tinybase.db.models import AuthToken, User
 from tinybase.utils import utcnow
 
@@ -44,8 +44,6 @@ def create_jwt_token(
     Returns:
         Tuple of (jwt_string, jti) where jti is the unique token ID.
     """
-    config = settings()
-
     # Set default expiration based on token type
     if expires_delta is None:
         if token_type == "refresh":
@@ -92,8 +90,6 @@ def decode_jwt_token(token: str) -> dict:
         jwt.InvalidTokenError: If token is invalid or expired.
         jwt.ExpiredSignatureError: If token is expired.
     """
-    config = settings()
-
     # Decode and verify JWT signature
     payload = jwt.decode(
         token,
@@ -127,7 +123,6 @@ def create_access_token(session: Session, user: User) -> tuple[AuthToken, str]:
         scope="user",
     )
 
-    config = settings()
     expires_at = utcnow() + timedelta(minutes=config.jwt_access_token_expire_minutes)
 
     token = AuthToken(
@@ -163,7 +158,6 @@ def create_refresh_token(session: Session, user: User) -> tuple[AuthToken, str]:
         scope="user",
     )
 
-    config = settings()
     expires_at = utcnow() + timedelta(days=config.jwt_refresh_token_expire_days)
 
     token = AuthToken(

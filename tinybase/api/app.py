@@ -19,12 +19,12 @@ from tinybase.api.routes import admin, auth, collections, extensions, files, fun
 from tinybase.api.routes.static_admin import mount_admin_ui
 from tinybase.api.routes.static_auth import mount_auth_portal
 from tinybase.collections.service import load_collections_into_registry
-from tinybase.config import settings
-from tinybase.db.core import create_db_and_tables, get_engine
+from tinybase.db.core import get_db_engine, init_db
 from tinybase.extensions import load_enabled_extensions, run_shutdown_hooks, run_startup_hooks
 from tinybase.functions.loader import load_functions_from_settings
 from tinybase.logs import setup_logging
 from tinybase.schedule import start_scheduler, stop_scheduler
+from tinybase.settings import config
 from tinybase.utils import generate_operation_id
 from tinybase.version import __version__
 
@@ -50,13 +50,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Initialize database tables
     logger.info("Initializing database...")
-    create_db_and_tables()
+    init_db()
 
     # Load collections into registry
     logger.info("Loading collections...")
     from sqlmodel import Session
 
-    engine = get_engine()
+    engine = get_db_engine()
     with Session(engine) as session:
         load_collections_into_registry(session)
 
@@ -124,8 +124,6 @@ def create_app() -> FastAPI:
     Returns:
         Configured FastAPI application instance.
     """
-    config = settings()
-
     # Reset the operation ID tracker for this app instance
     if hasattr(generate_operation_id, "_seen_ids"):
         generate_operation_id._seen_ids = set()  # type: ignore

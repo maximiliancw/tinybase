@@ -6,7 +6,7 @@ from typing import Annotated, Optional
 
 import typer
 
-from tinybase.config import settings
+from tinybase.settings import config
 from tinybase.version import __version__
 
 from .utils import create_default_toml, get_example_functions
@@ -90,9 +90,9 @@ def init(
 
     # Initialize database
     typer.echo("  Initializing database...")
-    from tinybase.db.core import create_db_and_tables
+    from tinybase.db.core import init_db
 
-    create_db_and_tables()
+    init_db()
     typer.echo("  Database initialized")
 
     # Create admin user if credentials provided
@@ -103,10 +103,10 @@ def init(
         from sqlmodel import Session, select
 
         from tinybase.auth import hash_password
-        from tinybase.db.core import get_engine
+        from tinybase.db.core import get_db_engine
         from tinybase.db.models import User
 
-        engine = get_engine()
+        engine = get_db_engine()
         with Session(engine) as session:
             # Check if admin already exists
             existing = session.exec(select(User).where(User.email == admin_email)).first()
@@ -149,8 +149,6 @@ def serve(
     Runs the FastAPI application with Uvicorn.
     """
     import uvicorn
-
-    config = settings()
 
     # Validate workspace is initialized
     toml_path = Path.cwd() / "tinybase.toml"
