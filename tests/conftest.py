@@ -14,16 +14,32 @@ from tests.utils import create_collection, create_record, get_admin_token, get_u
 
 @pytest.fixture(autouse=True)
 def clear_settings_cache():
-    """Clear settings cache before and after each test."""
-    # Just clear the cache without trying to load from DB
-    # The client fixture will properly initialize the database
+    """Clear settings cache and reset config before and after each test.
+    
+    This prevents state leakage between tests, especially when one test
+    uses the `client` fixture (which sets a temp DB path) and another test
+    uses its own `session` fixture.
+    """
+    from tinybase.db.core import reset_db_engine
+    from tinybase.rate_limit import reset_rate_limit_backend
     from tinybase.settings import settings
+    from tinybase.settings.static import _reset_config
 
+    # Reset everything before the test
     settings._cache = {}
     settings._loaded = False
+    reset_db_engine()
+    reset_rate_limit_backend()
+    _reset_config()
+    
     yield
+    
+    # Reset everything after the test
     settings._cache = {}
     settings._loaded = False
+    reset_db_engine()
+    reset_rate_limit_backend()
+    _reset_config()
 
 
 @pytest.fixture(scope="function")
@@ -50,11 +66,13 @@ def client():
         # Set environment variables for the test
         db_path = os.path.join(workspace_dir, "tinybase.db")
         functions_dir = os.path.join(workspace_dir, "functions")
+        rate_limit_cache_dir = os.path.join(workspace_dir, ".tinybase", "rate_limit_cache")
 
         os.environ["TINYBASE_DB_URL"] = f"sqlite:///{db_path}"
         os.environ["TINYBASE_FUNCTIONS_PATH"] = functions_dir
         os.environ["TINYBASE_SCHEDULER_ENABLED"] = "false"
         os.environ["TINYBASE_RATE_LIMIT_ENABLED"] = "false"
+        os.environ["TINYBASE_RATE_LIMIT_CACHE_DIR"] = rate_limit_cache_dir
 
         # Import after setting env vars
         from tinybase.api.app import create_app
@@ -63,12 +81,14 @@ def client():
         from tinybase.db.core import get_db_engine, init_db, reset_db_engine
         from tinybase.db.models import User
         from tinybase.functions.core import reset_function_registry
+        from tinybase.rate_limit import reset_rate_limit_backend
         from tinybase.settings import settings
 
         # Reset everything
         reset_db_engine()
         reset_function_registry()
         reset_collection_registry()
+        reset_rate_limit_backend()
 
         # Reset static config to pick up new env vars
         from tinybase.settings.static import _reset_config
@@ -103,6 +123,7 @@ def client():
         reset_db_engine()
         reset_function_registry()
         reset_collection_registry()
+        reset_rate_limit_backend()
 
     finally:
         # Restore original working directory
@@ -119,6 +140,7 @@ def client():
         os.environ.pop("TINYBASE_FUNCTIONS_PATH", None)
         os.environ.pop("TINYBASE_SCHEDULER_ENABLED", None)
         os.environ.pop("TINYBASE_RATE_LIMIT_ENABLED", None)
+        os.environ.pop("TINYBASE_RATE_LIMIT_CACHE_DIR", None)
 
 
 @pytest.fixture
