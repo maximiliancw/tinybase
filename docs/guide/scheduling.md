@@ -186,9 +186,31 @@ curl -X DELETE http://localhost:8000/api/admin/schedules/$SCHEDULE_ID \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
-## Schedule Structure
+## Schedule Configuration Models
 
-A schedule record contains:
+The schedule configuration uses Pydantic models for validation:
+
+::: tinybase.schedule.utils.OnceScheduleConfig
+    options:
+      show_source: false
+      show_bases: false
+      heading_level: 4
+
+::: tinybase.schedule.utils.IntervalScheduleConfig
+    options:
+      show_source: false
+      show_bases: false
+      heading_level: 4
+
+::: tinybase.schedule.utils.CronScheduleConfig
+    options:
+      show_source: false
+      show_bases: false
+      heading_level: 4
+
+### Schedule Record Example
+
+A full schedule record from the API:
 
 ```json
 {

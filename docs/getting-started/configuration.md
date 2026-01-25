@@ -29,12 +29,9 @@ log_level = "info"
 [database]
 url = "sqlite:///./tinybase.db"
 
-[auth]
-token_ttl_hours = 24
-
 [jwt]
 algorithm = "HS256"
-access_token_expire_minutes = 1440  # 24 hours
+access_token_expire_minutes = 1440
 refresh_token_expire_days = 30
 # secret_key = "your-secret-key"  # Auto-generated if not set
 
@@ -42,18 +39,16 @@ refresh_token_expire_days = 30
 path = "./functions"
 logging_enabled = true
 logging_level = "INFO"
-logging_format = "json"  # or "text"
 cold_start_pool_size = 3
-cold_start_ttl_seconds = 300
 
 [scheduler]
 enabled = true
 interval_seconds = 5
 
 [rate_limit]
-backend = "diskcache"  # or "redis"
+backend = "diskcache"
 cache_dir = "./.tinybase/rate_limit_cache"
-# redis_url = "redis://localhost:6379/0"  # Required when backend=redis
+# redis_url = "redis://localhost:6379/0"  # Required for redis backend
 
 [cors]
 allow_origins = ["*"]
@@ -69,174 +64,30 @@ path = "~/.tinybase/extensions"
 enabled = false
 # smtp_host = "smtp.example.com"
 # smtp_port = 587
-# smtp_user = "username"
-# smtp_password = "password"
-# from_address = "noreply@example.com"
-# from_name = "TinyBase"
 ```
 
-### Environment Variables
+### All Configuration Options
 
-All settings can be overridden with environment variables using the `TINYBASE_` prefix:
+All static configuration options with their types, defaults, and descriptions:
 
-| Environment Variable | Configuration Key | Default |
-|---------------------|-------------------|---------|
-| `TINYBASE_SERVER_HOST` | `server.host` | `0.0.0.0` |
-| `TINYBASE_SERVER_PORT` | `server.port` | `8000` |
-| `TINYBASE_DEBUG` | `server.debug` | `false` |
-| `TINYBASE_LOG_LEVEL` | `server.log_level` | `info` |
-| `TINYBASE_DB_URL` | `database.url` | `sqlite:///./tinybase.db` |
-| `TINYBASE_AUTH_TOKEN_TTL_HOURS` | `auth.token_ttl_hours` | `24` |
-| `TINYBASE_JWT_SECRET_KEY` | `jwt.secret_key` | Auto-generated |
-| `TINYBASE_JWT_ALGORITHM` | `jwt.algorithm` | `HS256` |
-| `TINYBASE_JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | `jwt.access_token_expire_minutes` | `1440` |
-| `TINYBASE_JWT_REFRESH_TOKEN_EXPIRE_DAYS` | `jwt.refresh_token_expire_days` | `30` |
-| `TINYBASE_FUNCTIONS_PATH` | `functions.path` | `./functions` |
-| `TINYBASE_FUNCTION_LOGGING_ENABLED` | `functions.logging_enabled` | `true` |
-| `TINYBASE_FUNCTION_LOGGING_LEVEL` | `functions.logging_level` | `INFO` |
-| `TINYBASE_FUNCTION_COLD_START_POOL_SIZE` | `functions.cold_start_pool_size` | `3` |
-| `TINYBASE_SCHEDULER_ENABLED` | `scheduler.enabled` | `true` |
-| `TINYBASE_SCHEDULER_INTERVAL_SECONDS` | `scheduler.interval_seconds` | `5` |
-| `TINYBASE_RATE_LIMIT_BACKEND` | `rate_limit.backend` | `diskcache` |
-| `TINYBASE_RATE_LIMIT_CACHE_DIR` | `rate_limit.cache_dir` | `./.tinybase/rate_limit_cache` |
-| `TINYBASE_RATE_LIMIT_REDIS_URL` | `rate_limit.redis_url` | — |
-| `TINYBASE_CORS_ALLOW_ORIGINS` | `cors.allow_origins` | `["*"]` |
-| `TINYBASE_ADMIN_STATIC_DIR` | `admin.static_dir` | `builtin` |
-| `TINYBASE_EXTENSIONS_ENABLED` | `extensions.enabled` | `true` |
-| `TINYBASE_EXTENSIONS_PATH` | `extensions.path` | `~/.tinybase/extensions` |
-| `TINYBASE_EMAIL_ENABLED` | `email.enabled` | `false` |
-| `TINYBASE_MAX_FUNCTION_PAYLOAD_BYTES` | — | `10485760` (10MB) |
-| `TINYBASE_MAX_FUNCTION_RESULT_BYTES` | — | `10485760` (10MB) |
+::: tinybase.settings.static.Config
+    options:
+      show_root_heading: false
+      show_source: false
+      show_bases: false
+      members_order: source
+      show_docstring_description: false
+      show_docstring_attributes: true
+      heading_level: 4
 
-#### Bootstrap Variables
+### Bootstrap Variables
 
-These variables are used during initialization (`tinybase init`):
+These environment variables are used during `tinybase init`:
 
 | Environment Variable | Purpose |
 |---------------------|---------|
 | `TINYBASE_ADMIN_EMAIL` | Admin user email for bootstrap |
 | `TINYBASE_ADMIN_PASSWORD` | Admin user password for bootstrap |
-
-### Configuration Sections
-
-#### Server Settings
-
-```toml
-[server]
-host = "0.0.0.0"      # Bind address
-port = 8000           # Port number
-debug = false         # Enable debug mode
-log_level = "info"    # Logging level: debug, info, warning, error, critical
-```
-
-!!! warning "Production Settings"
-    In production, set `debug = false` and consider binding to `127.0.0.1` if behind a reverse proxy.
-
-#### Database Settings
-
-```toml
-[database]
-url = "sqlite:///./tinybase.db"
-```
-
-TinyBase uses SQLite by default. The URL format is:
-
-- **Relative path**: `sqlite:///./tinybase.db`
-- **Absolute path**: `sqlite:////var/data/tinybase.db`
-- **In-memory**: `sqlite:///:memory:` (for testing)
-
-#### JWT Settings
-
-```toml
-[jwt]
-algorithm = "HS256"                    # Signing algorithm
-access_token_expire_minutes = 1440     # Access token TTL (24 hours)
-refresh_token_expire_days = 30         # Refresh token TTL
-# secret_key = "your-secret-key"       # Auto-generated if not provided
-```
-
-!!! tip "JWT Secret Key"
-    If not provided, TinyBase auto-generates a secure secret key. For multi-instance deployments, set this explicitly to ensure tokens work across all instances.
-
-#### Functions Settings
-
-```toml
-[functions]
-path = "./functions"              # Directory containing function files
-logging_enabled = true            # Enable structured logging in functions
-logging_level = "INFO"            # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
-logging_format = "json"           # Format: "json" or "text"
-cold_start_pool_size = 3          # Warm processes to keep ready
-cold_start_ttl_seconds = 300      # Time to keep warm processes alive
-```
-
-#### Rate Limiting Settings
-
-```toml
-[rate_limit]
-backend = "diskcache"                         # Backend: "diskcache" or "redis"
-cache_dir = "./.tinybase/rate_limit_cache"    # DiskCache directory
-# redis_url = "redis://localhost:6379/0"      # Required when backend=redis
-```
-
-Use Redis for multi-instance deployments to share rate limit state.
-
-#### Scheduler Settings
-
-```toml
-[scheduler]
-enabled = true          # Enable/disable the scheduler
-interval_seconds = 5    # How often to check for scheduled tasks
-```
-
-#### CORS Settings
-
-```toml
-[cors]
-allow_origins = ["*"]   # Allowed origins for CORS
-```
-
-For production, specify exact origins:
-
-```toml
-[cors]
-allow_origins = ["https://myapp.com", "https://admin.myapp.com"]
-```
-
-#### Admin UI Settings
-
-```toml
-[admin]
-static_dir = "builtin"  # Use built-in admin UI
-```
-
-Options:
-
-- `"builtin"` - Use the packaged admin UI
-- `"/path/to/custom"` - Use custom static files
-
-#### Extensions Settings
-
-```toml
-[extensions]
-enabled = true
-path = "~/.tinybase/extensions"
-```
-
-#### Email Settings
-
-```toml
-[email]
-enabled = false
-smtp_host = "smtp.example.com"
-smtp_port = 587
-smtp_user = "username"
-smtp_password = "password"
-from_address = "noreply@example.com"
-from_name = "TinyBase"
-```
-
-Email is used for password reset flows and admin report notifications.
 
 ---
 
@@ -244,7 +95,7 @@ Email is used for password reset flows and admin report notifications.
 
 Runtime settings are stored in the database and can be changed without restarting the server. Manage them via the Admin UI Settings page or programmatically.
 
-### Accessing Settings in Code
+### Accessing Settings
 
 ```python
 from tinybase.settings import settings
@@ -311,7 +162,7 @@ settings.set("ext.my_extension.config", {"timeout": 30})
 
 ---
 
-## Deployment Environment Configuration
+## Deployment Environments
 
 Use the `[environments]` section to define deployment targets for the CLI:
 
@@ -348,8 +199,7 @@ log_level = "debug"
 url = "sqlite:///./dev.db"
 
 [scheduler]
-enabled = true
-interval_seconds = 1    # Faster checks for testing
+interval_seconds = 1  # Faster checks for testing
 
 [cors]
 allow_origins = ["*"]
@@ -359,8 +209,7 @@ allow_origins = ["*"]
 
 ```toml title="tinybase.toml"
 [server]
-host = "127.0.0.1"    # Behind nginx/caddy
-port = 8000
+host = "127.0.0.1"  # Behind nginx/caddy
 debug = false
 log_level = "warning"
 
@@ -368,13 +217,9 @@ log_level = "warning"
 url = "sqlite:////var/lib/tinybase/production.db"
 
 [jwt]
-secret_key = "${JWT_SECRET}"  # Set via environment variable
-
-[auth]
-token_ttl_hours = 8    # Shorter tokens
+secret_key = "${JWT_SECRET}"
 
 [scheduler]
-enabled = true
 interval_seconds = 10
 
 [rate_limit]
@@ -388,10 +233,6 @@ allow_origins = ["https://myapp.com"]
 enabled = true
 smtp_host = "smtp.example.com"
 smtp_port = 587
-smtp_user = "noreply@myapp.com"
-smtp_password = "${SMTP_PASSWORD}"
-from_address = "noreply@myapp.com"
-from_name = "My App"
 ```
 
 ### Docker
@@ -400,7 +241,6 @@ When using Docker, prefer environment variables:
 
 ```dockerfile
 ENV TINYBASE_SERVER_HOST=0.0.0.0
-ENV TINYBASE_SERVER_PORT=8000
 ENV TINYBASE_DB_URL=sqlite:////data/tinybase.db
 ENV TINYBASE_JWT_SECRET_KEY=your-secret-key
 ENV TINYBASE_RATE_LIMIT_BACKEND=redis
@@ -409,18 +249,8 @@ ENV TINYBASE_RATE_LIMIT_REDIS_URL=redis://redis:6379/0
 
 ---
 
-## Validating Configuration
-
-TinyBase validates configuration at startup. If there are errors, you'll see messages like:
-
-```
-Error: Invalid configuration
-  - log_level: must be one of {'debug', 'info', 'warning', 'error', 'critical'}
-  - port: must be between 1 and 65535
-```
-
 ## See Also
 
-- [CLI Reference](../reference/cli.md) - Command-line options
+- [Python API Reference](../reference/python-api.md) - Full API documentation
 - [Deployment Guide](../deployment/index.md) - Production configuration
 - [Docker Guide](../deployment/docker.md) - Container configuration

@@ -1,718 +1,423 @@
 # Python API Reference
 
-Reference documentation for TinyBase Python modules.
-
-!!! info "Two Function APIs"
-    TinyBase provides two ways to define functions:
-    
-    1. **TinyBase SDK** (`tinybase_sdk`) - For user functions that run in isolated subprocesses
-        - Recommended for most use cases
-        - Automatic dependency management with inline script dependencies
-        - Full isolation and security
-        - See [Functions Guide](../guide/functions.md)
-    
-    2. **Internal API** (`tinybase.functions`) - For extensions and internal code
-        - Direct access to TinyBase internals
-        - Runs in the main process
-        - Used by extensions and system integrations
-        - Documented below
-
-## SDK Module (User Functions)
-
-### tinybase_sdk
-
-The SDK for writing user functions with isolated execution.
-
-```python
-# /// script
-# dependencies = ["tinybase-sdk"]
-# ///
-
-from tinybase_sdk import register
-from tinybase_sdk.cli import run
-from pydantic import BaseModel
-
-class MyInput(BaseModel):
-    value: str
-
-class MyOutput(BaseModel):
-    result: str
-
-@register(
-    name="my_function",
-    description="My function",
-    auth="auth",  # "public", "auth", "admin"
-    tags=["category"]
-)
-def my_function(client, payload: MyInput) -> MyOutput:
-    # client provides authenticated access to TinyBase API
-    # payload is automatically validated against MyInput
-    return MyOutput(result=f"Processed: {payload.value}")
-
-if __name__ == "__main__":
-    run()
-```
-
-**The `client` Object:**
-
-The `client` parameter provides authenticated HTTP access to the TinyBase API:
-
-```python
-# GET request
-response = client.get("/api/collections/tasks/records")
-data = response.json()
-
-# POST request
-response = client.post(
-    "/api/collections/tasks/records",
-    json={"data": {"title": "New task"}}
-)
-
-# Other HTTP methods
-response = client.patch(url, json=data)
-response = client.delete(url)
-response = client.put(url, json=data)
-```
+This reference documents TinyBase's Python API for building extensions, custom integrations, and advanced use cases.
 
 ---
 
-## Internal Functions Module (Extensions)
+## Settings
 
-### tinybase.functions
+The settings module provides both static configuration (environment/TOML) and runtime settings (database).
 
-The main module for defining server-side functions.
+### Module Overview
 
-#### register
+::: tinybase.settings
+    options:
+      show_root_heading: false
+      show_source: false
+      members: false
 
-Decorator to register a function with TinyBase.
+### Static Configuration
 
-```python
-from tinybase.functions import register
+File-based configuration loaded at startup from environment variables and `tinybase.toml`.
 
-@register(
-    name: str,
-    description: str | None = None,
-    auth: str = "auth",  # "public", "auth", "admin"
-    input_model: type[BaseModel] | None = None,
-    output_model: type[BaseModel] | None = None,
-    tags: list[str] | None = None,
-)
-def my_function(ctx: Context, payload: InputModel) -> OutputModel:
-    ...
-```
+::: tinybase.settings.static.Config
+    options:
+      show_source: false
+      members_order: source
+      show_docstring_attributes: true
+      show_root_heading: true
+      heading_level: 4
 
-**Parameters:**
+### Runtime Settings
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `name` | `str` | Unique function identifier |
-| `description` | `str \| None` | Human-readable description |
-| `auth` | `str` | Auth level: `"public"`, `"auth"`, `"admin"` |
-| `input_model` | `type[BaseModel]` | Pydantic input model |
-| `output_model` | `type[BaseModel]` | Pydantic output model |
-| `tags` | `list[str]` | Categorization tags |
+Database-backed settings that can be changed at runtime without restarting.
 
-#### Context
-
-Execution context passed to all functions.
-
-```python
-from tinybase.functions import Context
-
-class Context(BaseModel):
-    # Execution metadata
-    function_name: str
-    trigger_type: Literal["manual", "schedule"]
-    trigger_id: UUID | None
-    request_id: UUID
-    
-    # User information
-    user_id: UUID | None
-    is_admin: bool
-    
-    # Utilities
-    now: datetime
-    db: Session
-    request: Request | None
-```
-
-**Attributes:**
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `function_name` | `str` | Name of executing function |
-| `trigger_type` | `str` | `"manual"` or `"schedule"` |
-| `trigger_id` | `UUID \| None` | Schedule ID if scheduled |
-| `request_id` | `UUID` | Unique execution ID |
-| `user_id` | `UUID \| None` | Calling user's ID |
-| `is_admin` | `bool` | User's admin status |
-| `now` | `datetime` | Current UTC time |
-| `db` | `Session` | Database session |
-| `request` | `Request \| None` | FastAPI request object |
+::: tinybase.settings.core.Settings
+    options:
+      show_source: false
+      members:
+        - load
+        - reload
+        - get
+        - set
+        - delete
+        - get_all
+        - instance_name
+        - server_timezone
+        - auth
+        - storage
+        - scheduler
+        - jobs
+        - limits
 
 ---
 
-## Collections Module
+## Authentication
 
-### tinybase.collections.service
+The auth module provides password hashing, JWT tokens, and FastAPI dependencies.
 
-Service class for collection operations.
+### Module Exports
 
-#### CollectionService
+::: tinybase.auth
+    options:
+      show_root_heading: false
+      show_source: false
+      members: false
 
-```python
-from tinybase.collections.service import CollectionService
+### Password Utilities
 
-service = CollectionService(session: Session)
-```
+::: tinybase.auth.core.hash_password
+    options:
+      show_source: false
 
-**Methods:**
+::: tinybase.auth.core.verify_password
+    options:
+      show_source: false
 
-##### list_collections
+### Token Creation
 
-```python
-def list_collections(self) -> list[Collection]:
-    """List all collections."""
-```
+::: tinybase.auth.core.create_auth_token
+    options:
+      show_source: false
 
-##### get_collection_by_name
+::: tinybase.auth.core.create_internal_token
+    options:
+      show_source: false
 
-```python
-def get_collection_by_name(self, name: str) -> Collection | None:
-    """Get a collection by name."""
-```
+::: tinybase.auth.core.create_application_token
+    options:
+      show_source: false
 
-##### create_collection
+::: tinybase.auth.jwt.create_refresh_token
+    options:
+      show_source: false
 
-```python
-def create_collection(
-    self,
-    name: str,
-    label: str,
-    schema: dict[str, Any],
-    options: dict[str, Any] | None = None,
-) -> Collection:
-    """Create a new collection."""
-```
+### Token Verification
 
-##### update_collection
+::: tinybase.auth.jwt.verify_jwt_token
+    options:
+      show_source: false
 
-```python
-def update_collection(
-    self,
-    collection: Collection,
-    label: str | None = None,
-    schema: dict[str, Any] | None = None,
-    options: dict[str, Any] | None = None,
-) -> Collection:
-    """Update an existing collection."""
-```
+::: tinybase.auth.core.get_token_user
+    options:
+      show_source: false
 
-##### delete_collection
+### Token Revocation
 
-```python
-def delete_collection(self, collection: Collection) -> None:
-    """Delete a collection and all its records."""
-```
+::: tinybase.auth.jwt.revoke_token
+    options:
+      show_source: false
 
-##### list_records
+::: tinybase.auth.jwt.revoke_all_user_tokens
+    options:
+      show_source: false
 
-```python
-def list_records(
-    self,
-    collection: Collection,
-    owner_id: UUID | None = None,
-    limit: int = 100,
-    offset: int = 0,
-    filters: dict[str, Any] | None = None,
-    sort_by: str | None = None,
-    sort_order: str = "desc",
-) -> tuple[list[Record], int]:
-    """List records with filtering and pagination."""
-```
+::: tinybase.auth.core.revoke_application_token
+    options:
+      show_source: false
 
-##### create_record
+### FastAPI Dependencies
+
+Use these as FastAPI `Depends()` for authentication:
 
 ```python
-def create_record(
-    self,
-    collection: Collection,
-    data: dict[str, Any],
-    owner_id: UUID | None = None,
-) -> Record:
-    """Create a new record."""
+from fastapi import Depends
+from tinybase.auth import CurrentUser, CurrentUserOptional, CurrentAdminUser, DBSession
+
+@app.get("/me")
+def get_me(user: CurrentUser):
+    return {"email": user.email}
+
+@app.get("/public")
+def public_endpoint(user: CurrentUserOptional):
+    if user:
+        return {"message": f"Hello {user.email}"}
+    return {"message": "Hello anonymous"}
+
+@app.get("/admin-only")
+def admin_only(user: CurrentAdminUser):
+    return {"admin": True}
 ```
 
-##### update_record
-
-```python
-def update_record(
-    self,
-    collection: Collection,
-    record: Record,
-    data: dict[str, Any],
-    partial: bool = True,
-) -> Record:
-    """Update an existing record."""
-```
-
-##### delete_record
-
-```python
-def delete_record(self, record: Record) -> None:
-    """Delete a record."""
-```
+| Type Alias | Description |
+|------------|-------------|
+| `CurrentUser` | Requires authentication, returns `User` |
+| `CurrentUserOptional` | Optional auth, returns `User \| None` |
+| `CurrentAdminUser` | Requires admin user |
+| `DBSession` | Database session dependency |
 
 ---
 
-## Extensions Module
+## Functions
 
-### tinybase.extensions
+The functions module handles serverless function registration, metadata, and execution.
 
-Module for extension hooks and events.
+### FunctionMeta
 
-#### Lifecycle Hooks
+::: tinybase.functions.core.FunctionMeta
+    options:
+      show_source: false
+      members_order: source
 
-##### on_startup
+### FunctionRegistry
 
-```python
-from tinybase.extensions import on_startup
+::: tinybase.functions.core.FunctionRegistry
+    options:
+      show_source: false
+      members:
+        - register
+        - get
+        - all
+        - names
+        - unregister
+        - clear
 
-@on_startup
-def my_startup_handler() -> None:
-    """Called when TinyBase starts."""
-```
+### Registry Access
 
-##### on_shutdown
+::: tinybase.functions.core.get_function_registry
+    options:
+      show_source: false
 
-```python
-from tinybase.extensions import on_shutdown
+::: tinybase.functions.core.reset_function_registry
+    options:
+      show_source: false
 
-@on_shutdown
-def my_shutdown_handler() -> None:
-    """Called when TinyBase shuts down."""
-```
+### Function Execution
 
-#### Authentication Hooks
+::: tinybase.functions.core.execute_function
+    options:
+      show_source: false
 
-##### on_user_login
-
-```python
-from tinybase.extensions import on_user_login, UserLoginEvent
-
-@on_user_login
-def handle_login(event: UserLoginEvent) -> None:
-    """Called when a user logs in."""
-```
-
-##### on_user_register
-
-```python
-from tinybase.extensions import on_user_register, UserRegisterEvent
-
-@on_user_register
-def handle_register(event: UserRegisterEvent) -> None:
-    """Called when a user registers."""
-```
-
-#### Data Hooks
-
-##### on_record_create
-
-```python
-from tinybase.extensions import on_record_create, RecordCreateEvent
-
-@on_record_create(collection="orders")  # or collection=None for all
-def handle_create(event: RecordCreateEvent) -> None:
-    """Called when a record is created."""
-```
-
-##### on_record_update
-
-```python
-from tinybase.extensions import on_record_update, RecordUpdateEvent
-
-@on_record_update(collection="orders")
-def handle_update(event: RecordUpdateEvent) -> None:
-    """Called when a record is updated."""
-```
-
-##### on_record_delete
-
-```python
-from tinybase.extensions import on_record_delete, RecordDeleteEvent
-
-@on_record_delete(collection="orders")
-def handle_delete(event: RecordDeleteEvent) -> None:
-    """Called when a record is deleted."""
-```
-
-#### Function Hooks
-
-##### on_function_call
-
-```python
-from tinybase.extensions import on_function_call, FunctionCallEvent
-
-@on_function_call(name="process_payment")  # or name=None for all
-def before_function(event: FunctionCallEvent) -> None:
-    """Called before a function executes."""
-```
-
-##### on_function_complete
-
-```python
-from tinybase.extensions import on_function_complete, FunctionCompleteEvent
-
-@on_function_complete(name="process_payment")
-def after_function(event: FunctionCompleteEvent) -> None:
-    """Called after a function completes."""
-```
-
-#### Event Classes
-
-##### UserLoginEvent
-
-```python
-@dataclass
-class UserLoginEvent:
-    user_id: UUID
-    email: str
-    is_admin: bool
-```
-
-##### UserRegisterEvent
-
-```python
-@dataclass
-class UserRegisterEvent:
-    user_id: UUID
-    email: str
-```
-
-##### RecordCreateEvent
-
-```python
-@dataclass
-class RecordCreateEvent:
-    collection: str
-    record_id: UUID
-    data: dict
-    owner_id: UUID | None
-```
-
-##### RecordUpdateEvent
-
-```python
-@dataclass
-class RecordUpdateEvent:
-    collection: str
-    record_id: UUID
-    old_data: dict
-    new_data: dict
-    owner_id: UUID | None
-```
-
-##### RecordDeleteEvent
-
-```python
-@dataclass
-class RecordDeleteEvent:
-    collection: str
-    record_id: UUID
-    data: dict
-    owner_id: UUID | None
-```
-
-##### FunctionCallEvent
-
-```python
-@dataclass
-class FunctionCallEvent:
-    function_name: str
-    user_id: UUID | None
-    payload: dict
-```
-
-##### FunctionCompleteEvent
-
-```python
-@dataclass
-class FunctionCompleteEvent:
-    function_name: str
-    user_id: UUID | None
-    status: str  # "succeeded" or "failed"
-    duration_ms: int
-    error_message: str | None
-    error_type: str | None
-```
+::: tinybase.functions.core.FunctionCallResult
+    options:
+      show_source: false
 
 ---
 
-## Database Models
+## Database
 
-### tinybase.db.models
+### Engine & Session Management
 
-SQLModel database models.
+::: tinybase.db.core
+    options:
+      show_source: false
+      members:
+        - get_db_engine
+        - get_db_session
+        - init_db
+        - reset_db_engine
+
+### Models
+
+All database models are SQLModel classes that can be used directly with SQLAlchemy queries.
 
 #### User
 
-```python
-class User(SQLModel, table=True):
-    id: UUID
-    email: str
-    password_hash: str
-    is_admin: bool
-    created_at: datetime
-    updated_at: datetime
-```
+::: tinybase.db.models.User
+    options:
+      show_source: false
+      members: false
+
+#### AuthToken
+
+::: tinybase.db.models.AuthToken
+    options:
+      show_source: false
+      members:
+        - is_expired
 
 #### Collection
 
-```python
-class Collection(SQLModel, table=True):
-    id: UUID
-    name: str
-    label: str
-    schema_: dict  # JSON schema
-    options: dict  # Access rules, etc.
-    created_at: datetime
-    updated_at: datetime
-```
+::: tinybase.db.models.Collection
+    options:
+      show_source: false
+      members: false
 
 #### Record
 
-```python
-class Record(SQLModel, table=True):
-    id: UUID
-    collection_id: UUID
-    owner_id: UUID | None
-    data: dict
-    created_at: datetime
-    updated_at: datetime
-```
+::: tinybase.db.models.Record
+    options:
+      show_source: false
+      members: false
 
 #### FunctionCall
 
-```python
-class FunctionCall(SQLModel, table=True):
-    id: UUID
-    function_name: str
-    user_id: UUID | None
-    trigger_type: str
-    trigger_id: UUID | None
-    status: str
-    duration_ms: int
-    error_message: str | None
-    error_type: str | None
-    created_at: datetime
-```
+::: tinybase.db.models.FunctionCall
+    options:
+      show_source: false
+      members: false
 
 #### FunctionSchedule
 
-```python
-class FunctionSchedule(SQLModel, table=True):
-    id: UUID
-    function_name: str
-    payload: dict
-    schedule: dict
-    enabled: bool
-    last_run_at: datetime | None
-    next_run_at: datetime | None
-    created_at: datetime
-    updated_at: datetime
-```
+::: tinybase.db.models.FunctionSchedule
+    options:
+      show_source: false
+      members:
+        - is_active
+        - should_run
+        - calculate_next_run_time
+
+#### AppSetting
+
+::: tinybase.db.models.AppSetting
+    options:
+      show_source: false
+      members: false
+
+#### Extension
+
+::: tinybase.db.models.Extension
+    options:
+      show_source: false
+      members: false
 
 ---
 
-## Configuration
+## Collections
 
-### tinybase.settings
+### Collection Service
 
-Configuration management with static config (environment variables) and runtime settings (database).
+::: tinybase.collections.service
+    options:
+      show_source: false
+      members:
+        - get_collection_by_name
+        - load_collections_into_registry
 
-#### Config (Static)
+### Schema Management
 
-```python
-from tinybase.settings import config
+::: tinybase.collections.schemas.get_collection_registry
+    options:
+      show_source: false
 
-# Access static configuration (from env vars / TOML)
-print(config.server_host)
-print(config.db_url)
-```
-
-#### Settings (Runtime)
-
-```python
-from tinybase.settings import settings
-
-# Access runtime settings (from database)
-print(settings.instance_name)
-print(settings.storage.enabled)
-print(settings.auth.allow_public_registration)
-print(settings.limits.max_concurrent_functions_per_user)
-
-# Get/set any setting
-settings.get("ext.my_extension.api_key")  # Returns AppSetting | None
-settings.set("ext.my_extension.api_key", "xxx")
-```
-
-See [Configuration - Runtime Settings](../getting-started/configuration.md#runtime-settings) for the full list of runtime settings.
-
-**Static Config Properties (`config`):**
-
-| Property | Type | Default |
-|----------|------|---------|
-| `server_host` | `str` | `"0.0.0.0"` |
-| `server_port` | `int` | `8000` |
-| `debug` | `bool` | `False` |
-| `log_level` | `str` | `"info"` |
-| `db_url` | `str` | `"sqlite:///./tinybase.db"` |
-| `auth_token_ttl_hours` | `int` | `24` |
-| `jwt_secret_key` | `str \| None` | Auto-generated |
-| `jwt_algorithm` | `str` | `"HS256"` |
-| `jwt_access_token_expire_minutes` | `int` | `1440` |
-| `jwt_refresh_token_expire_days` | `int` | `30` |
-| `functions_path` | `str` | `"./functions"` |
-| `function_logging_enabled` | `bool` | `True` |
-| `function_logging_level` | `str` | `"INFO"` |
-| `function_logging_format` | `str` | `"json"` |
-| `function_cold_start_pool_size` | `int` | `3` |
-| `function_cold_start_ttl_seconds` | `int` | `300` |
-| `max_function_payload_bytes` | `int` | `10485760` |
-| `max_function_result_bytes` | `int` | `10485760` |
-| `rate_limit_backend` | `str` | `"diskcache"` |
-| `rate_limit_cache_dir` | `str` | `"./.tinybase/rate_limit_cache"` |
-| `rate_limit_redis_url` | `str \| None` | `None` |
-| `scheduler_enabled` | `bool` | `True` |
-| `scheduler_interval_seconds` | `int` | `5` |
-| `cors_allow_origins` | `list[str]` | `["*"]` |
-| `admin_static_dir` | `str` | `"builtin"` |
-| `extensions_enabled` | `bool` | `True` |
-| `extensions_path` | `str` | `"~/.tinybase/extensions"` |
-| `email_enabled` | `bool` | `False` |
-| `email_smtp_host` | `str \| None` | `None` |
-| `email_smtp_port` | `int` | `587` |
-| `email_from_address` | `str \| None` | `None` |
-| `email_from_name` | `str` | `"TinyBase"` |
+::: tinybase.collections.schemas.reset_collection_registry
+    options:
+      show_source: false
 
 ---
 
 ## Utilities
 
-### tinybase.utils
+### Enums
 
-Utility functions and enums.
+::: tinybase.utils.AuthLevel
+    options:
+      show_source: false
 
-#### AuthLevel
+::: tinybase.utils.AccessRule
+    options:
+      show_source: false
 
-```python
-from tinybase.utils import AuthLevel
+::: tinybase.utils.FunctionCallStatus
+    options:
+      show_source: false
 
-class AuthLevel(str, Enum):
-    PUBLIC = "public"
-    AUTH = "auth"
-    ADMIN = "admin"
-```
+::: tinybase.utils.TriggerType
+    options:
+      show_source: false
 
-#### AccessRule
+::: tinybase.utils.ScheduleMethod
+    options:
+      show_source: false
 
-```python
-from tinybase.utils import AccessRule
+::: tinybase.utils.IntervalUnit
+    options:
+      show_source: false
 
-class AccessRule(str, Enum):
-    PUBLIC = "public"
-    AUTH = "auth"
-    OWNER = "owner"
-    ADMIN = "admin"
-```
+### Helper Functions
 
-#### utcnow
-
-```python
-from tinybase.utils import utcnow
-
-now = utcnow()  # Returns datetime in UTC
-```
+::: tinybase.utils.utcnow
+    options:
+      show_source: false
 
 ---
 
-## Example: Complete Function
+## Extensions
 
-```python
-from pydantic import BaseModel, Field
-from sqlmodel import select
+### Loading Extensions
 
-from tinybase.collections.service import CollectionService
-from tinybase.db.models import Record
-from tinybase.extensions import on_function_complete, FunctionCompleteEvent
-from tinybase.functions import Context, register
+::: tinybase.extensions.loader.load_enabled_extensions
+    options:
+      show_source: false
 
+### Extension Hook Decorators
 
-class OrderInput(BaseModel):
-    product_id: str
-    quantity: int = Field(ge=1, le=100)
+::: tinybase.extensions.hooks.on_startup
+    options:
+      show_source: false
 
+::: tinybase.extensions.hooks.on_shutdown
+    options:
+      show_source: false
 
-class OrderOutput(BaseModel):
-    order_id: str
-    total: float
+### Hook Runners (Internal)
 
+::: tinybase.extensions.hooks.run_startup_hooks
+    options:
+      show_source: false
 
-@register(
-    name="create_order",
-    description="Create a new order",
-    auth="auth",
-    input_model=OrderInput,
-    output_model=OrderOutput,
-    tags=["orders"],
-)
-def create_order(ctx: Context, payload: OrderInput) -> OrderOutput:
-    """Create an order for the authenticated user."""
-    # Get product from collection
-    service = CollectionService(ctx.db)
-    products = service.get_collection_by_name("products")
-    
-    product = ctx.db.exec(
-        select(Record).where(
-            Record.collection_id == products.id,
-            Record.id == payload.product_id
-        )
-    ).first()
-    
-    if not product:
-        raise ValueError("Product not found")
-    
-    # Calculate total
-    price = product.data["price"]
-    total = price * payload.quantity
-    
-    # Create order record
-    orders = service.get_collection_by_name("orders")
-    order = service.create_record(
-        orders,
-        data={
-            "product_id": payload.product_id,
-            "quantity": payload.quantity,
-            "total": total,
-            "status": "pending",
-        },
-        owner_id=ctx.user_id,
-    )
-    
-    return OrderOutput(order_id=str(order.id), total=total)
+::: tinybase.extensions.hooks.run_shutdown_hooks
+    options:
+      show_source: false
 
+---
 
-@on_function_complete(name="create_order")
-def notify_order_created(event: FunctionCompleteEvent):
-    """Send notification when order is created."""
-    if event.status == "succeeded":
-        print(f"Order created successfully in {event.duration_ms}ms")
-```
+## Scheduler
 
-## See Also
+### Starting/Stopping
 
-- [Functions Guide](../guide/functions.md)
-- [Collections Guide](../guide/collections.md)
-- [Extensions Guide](../guide/extensions.md)
+::: tinybase.schedule.start_scheduler
+    options:
+      show_source: false
 
+::: tinybase.schedule.stop_scheduler
+    options:
+      show_source: false
+
+### Schedule Utilities
+
+::: tinybase.schedule.utils.parse_schedule_config
+    options:
+      show_source: false
+
+::: tinybase.schedule.utils.validate_cron_expression
+    options:
+      show_source: false
+
+::: tinybase.schedule.utils.validate_timezone
+    options:
+      show_source: false
+
+---
+
+## Rate Limiting
+
+::: tinybase.rate_limit.get_rate_limit_backend
+    options:
+      show_source: false
+
+::: tinybase.rate_limit.reset_rate_limit_backend
+    options:
+      show_source: false
+
+::: tinybase.rate_limit.check_rate_limit
+    options:
+      show_source: false
+
+---
+
+## Logging
+
+::: tinybase.logs.setup_logging
+    options:
+      show_source: false
+
+---
+
+## Version
+
+::: tinybase.version
+    options:
+      show_source: false
+      members:
+        - __version__

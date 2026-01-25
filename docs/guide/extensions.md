@@ -23,248 +23,121 @@ tinybase extensions install https://github.com/user/tinybase-extension
 !!! warning "Security Notice"
     Extensions execute arbitrary Python code. Only install extensions from trusted sources.
 
-### Listing Extensions
+### Managing Extensions
 
 ```bash
+# List installed extensions
 tinybase extensions list
-```
 
-### Enable/Disable Extensions
-
-```bash
 # Disable an extension
 tinybase extensions disable my-extension
 
 # Enable an extension
 tinybase extensions enable my-extension
-```
 
-### Uninstalling Extensions
-
-```bash
+# Uninstall an extension
 tinybase extensions uninstall my-extension
 ```
 
-## Extension Hooks
+---
+
+## Hook Decorators
 
 ### Lifecycle Hooks
 
-React to TinyBase starting and stopping:
+::: tinybase.extensions.hooks.on_startup
+    options:
+      show_source: false
+      heading_level: 4
 
-```python
-from tinybase.extensions import on_startup, on_shutdown
-
-
-@on_startup
-def initialize():
-    """Called when TinyBase starts."""
-    print("Extension initialized!")
-    # Connect to external services
-    # Load configuration
-    # Initialize caches
-
-
-@on_shutdown
-def cleanup():
-    """Called when TinyBase shuts down."""
-    print("Extension shutting down!")
-    # Close connections
-    # Flush buffers
-    # Save state
-```
+::: tinybase.extensions.hooks.on_shutdown
+    options:
+      show_source: false
+      heading_level: 4
 
 ### Authentication Hooks
 
-React to user authentication events:
+::: tinybase.extensions.hooks.on_user_login
+    options:
+      show_source: false
+      heading_level: 4
 
-```python
-from tinybase.extensions import (
-    on_user_login,
-    on_user_register,
-    UserLoginEvent,
-    UserRegisterEvent,
-)
-
-
-@on_user_login
-def handle_login(event: UserLoginEvent):
-    """Called when a user logs in."""
-    print(f"User logged in: {event.email}")
-    
-    if event.is_admin:
-        send_admin_login_alert(event.email)
-    
-    track_analytics("user_login", {"user_id": str(event.user_id)})
-
-
-@on_user_register
-def handle_registration(event: UserRegisterEvent):
-    """Called when a new user registers."""
-    print(f"New user: {event.email}")
-    
-    send_welcome_email(event.email)
-    create_default_data(event.user_id)
-```
-
-#### Event Data
-
-```python
-@dataclass
-class UserLoginEvent:
-    user_id: UUID
-    email: str
-    is_admin: bool
-
-
-@dataclass
-class UserRegisterEvent:
-    user_id: UUID
-    email: str
-```
+::: tinybase.extensions.hooks.on_user_register
+    options:
+      show_source: false
+      heading_level: 4
 
 ### Data Hooks
 
-React to record CRUD operations:
+::: tinybase.extensions.hooks.on_record_create
+    options:
+      show_source: false
+      heading_level: 4
 
-```python
-from tinybase.extensions import (
-    on_record_create,
-    on_record_update,
-    on_record_delete,
-    RecordCreateEvent,
-    RecordUpdateEvent,
-    RecordDeleteEvent,
-)
+::: tinybase.extensions.hooks.on_record_update
+    options:
+      show_source: false
+      heading_level: 4
 
-
-@on_record_create(collection="orders")
-def handle_new_order(event: RecordCreateEvent):
-    """Called when an order is created."""
-    print(f"New order: {event.record_id}")
-    
-    send_order_confirmation(event.data["email"], event.record_id)
-    update_inventory(event.data["items"])
-
-
-@on_record_update(collection="orders")
-def handle_order_update(event: RecordUpdateEvent):
-    """Called when an order is updated."""
-    old_status = event.old_data.get("status")
-    new_status = event.new_data.get("status")
-    
-    if old_status != new_status:
-        notify_status_change(event.record_id, new_status)
-
-
-@on_record_delete(collection="files")
-def handle_file_delete(event: RecordDeleteEvent):
-    """Called when a file record is deleted."""
-    file_path = event.data.get("path")
-    if file_path:
-        delete_from_storage(file_path)
-```
-
-#### Collection Filtering
-
-```python
-# Specific collection
-@on_record_create(collection="orders")
-def orders_only(event):
-    ...
-
-# All collections
-@on_record_create()
-def all_collections(event):
-    print(f"Record created in {event.collection}")
-```
-
-#### Event Data
-
-```python
-@dataclass
-class RecordCreateEvent:
-    collection: str
-    record_id: UUID
-    data: dict
-    owner_id: UUID | None
-
-
-@dataclass
-class RecordUpdateEvent:
-    collection: str
-    record_id: UUID
-    old_data: dict
-    new_data: dict
-    owner_id: UUID | None
-
-
-@dataclass
-class RecordDeleteEvent:
-    collection: str
-    record_id: UUID
-    data: dict
-    owner_id: UUID | None
-```
+::: tinybase.extensions.hooks.on_record_delete
+    options:
+      show_source: false
+      heading_level: 4
 
 ### Function Hooks
 
-Intercept function calls:
+::: tinybase.extensions.hooks.on_function_call
+    options:
+      show_source: false
+      heading_level: 4
 
-```python
-from tinybase.extensions import (
-    on_function_call,
-    on_function_complete,
-    FunctionCallEvent,
-    FunctionCompleteEvent,
-)
+::: tinybase.extensions.hooks.on_function_complete
+    options:
+      show_source: false
+      heading_level: 4
 
+---
 
-@on_function_call(name="process_payment")
-def before_payment(event: FunctionCallEvent):
-    """Called before payment processing."""
-    print(f"Payment attempt by {event.user_id}")
-    audit_log("payment_attempt", event.payload)
+## Event Data Classes
 
+These dataclasses are passed to hook functions:
 
-@on_function_complete()
-def track_all_functions(event: FunctionCompleteEvent):
-    """Called after any function completes."""
-    metrics.record(
-        function=event.function_name,
-        duration_ms=event.duration_ms,
-        success=event.status == "succeeded"
-    )
+::: tinybase.extensions.hooks.UserLoginEvent
+    options:
+      show_source: false
+      heading_level: 4
 
+::: tinybase.extensions.hooks.UserRegisterEvent
+    options:
+      show_source: false
+      heading_level: 4
 
-@on_function_complete(name="critical_task")
-def alert_on_failure(event: FunctionCompleteEvent):
-    """Alert when critical task fails."""
-    if event.status == "failed":
-        send_alert(
-            f"Critical task failed: {event.error_message}",
-            error_type=event.error_type
-        )
-```
+::: tinybase.extensions.hooks.RecordCreateEvent
+    options:
+      show_source: false
+      heading_level: 4
 
-#### Event Data
+::: tinybase.extensions.hooks.RecordUpdateEvent
+    options:
+      show_source: false
+      heading_level: 4
 
-```python
-@dataclass
-class FunctionCallEvent:
-    function_name: str
-    user_id: UUID | None
-    payload: dict
+::: tinybase.extensions.hooks.RecordDeleteEvent
+    options:
+      show_source: false
+      heading_level: 4
 
+::: tinybase.extensions.hooks.FunctionCallEvent
+    options:
+      show_source: false
+      heading_level: 4
 
-@dataclass
-class FunctionCompleteEvent:
-    function_name: str
-    user_id: UUID | None
-    status: str  # "succeeded" or "failed"
-    duration_ms: int
-    error_message: str | None
-    error_type: str | None
-```
+::: tinybase.extensions.hooks.FunctionCompleteEvent
+    options:
+      show_source: false
+      heading_level: 4
+
+---
 
 ## Creating Extensions
 
@@ -310,7 +183,7 @@ __version__ = "1.0.0"
 ### Example Extension
 
 ```python title="hooks.py"
-from tinybase.extensions import (
+from tinybase.extensions.hooks import (
     on_startup,
     on_shutdown,
     on_record_create,
@@ -346,7 +219,8 @@ def sync_to_external(event: RecordCreateEvent):
 
 ```python title="functions.py"
 from pydantic import BaseModel
-from tinybase.functions import Context, register
+from tinybase_sdk import register
+from tinybase_sdk.cli import run
 
 
 class SyncInput(BaseModel):
@@ -362,48 +236,58 @@ class SyncOutput(BaseModel):
     name="ext_sync_all",
     description="Sync all records to external service",
     auth="admin",
-    input_model=SyncInput,
-    output_model=SyncOutput,
-    tags=["my-extension", "sync"],
 )
-def sync_all_records(ctx: Context, payload: SyncInput) -> SyncOutput:
+def sync_all_records(client, payload: SyncInput) -> SyncOutput:
     """Sync all records to external service."""
-    from sqlmodel import select
-    from tinybase.db.models import Record
-    
-    records = ctx.db.exec(select(Record)).all()
+    # Use client.collections to access data
+    records = client.collections.list_records("my_collection")
     synced = 0
     errors = []
     
     for record in records:
         try:
-            send_to_external(record.data)
+            send_to_external(record["data"])
             synced += 1
         except Exception as e:
-            errors.append(f"{record.id}: {e}")
+            errors.append(f"{record['id']}: {e}")
     
     return SyncOutput(synced_count=synced, errors=errors)
+
+
+if __name__ == "__main__":
+    run()
 ```
+
+---
 
 ## Extension Configuration
 
-Extensions can read configuration from environment variables:
+Extensions can use runtime settings for configuration:
 
 ```python
-import os
+from tinybase.settings import settings
 
-# In your extension
-EXTERNAL_API_KEY = os.environ.get("MY_EXT_API_KEY")
-EXTERNAL_API_URL = os.environ.get("MY_EXT_API_URL", "https://api.example.com")
+# In your extension - read settings
+api_key = settings.get("ext.my_extension.api_key")
+if api_key:
+    configure_client(api_key.value)
+
+# Set default values on startup
+@on_startup
+def setup_defaults():
+    if not settings.get("ext.my_extension.enabled"):
+        settings.set("ext.my_extension.enabled", True)
+        settings.set("ext.my_extension.timeout", 30)
 ```
 
-Users configure via environment:
+Users configure via Admin UI or API, or environment variables:
 
 ```bash
 export MY_EXT_API_KEY=secret123
-export MY_EXT_API_URL=https://custom.api.com
 tinybase serve
 ```
+
+---
 
 ## Publishing Extensions
 
@@ -411,7 +295,7 @@ tinybase serve
 
 1. Create a public GitHub repository
 2. Include `extension.toml` manifest
-3. Include installation instructions
+3. Include installation instructions in README
 4. Tag releases with semantic versions
 
 ### Best Practices
@@ -421,6 +305,8 @@ tinybase serve
 3. **Handle errors** - Don't crash TinyBase
 4. **Test thoroughly** - Include tests
 5. **Minimize dependencies** - Keep it lightweight
+
+---
 
 ## Extension Security
 
@@ -434,9 +320,11 @@ tinybase serve
 ### For Developers
 
 - **Never store secrets in code**
-- **Use environment variables** for configuration
+- **Use settings** for configuration
 - **Handle errors gracefully**
 - **Document permissions needed**
+
+---
 
 ## Debugging Extensions
 
@@ -468,7 +356,9 @@ def initialize():
     logger.info("Extension ready")
 ```
 
-## Built-in Hooks Summary
+---
+
+## Hook Summary
 
 | Hook | Event Type | When |
 |------|------------|------|
@@ -482,9 +372,10 @@ def initialize():
 | `@on_function_call` | `FunctionCallEvent` | Before function |
 | `@on_function_complete` | `FunctionCompleteEvent` | After function |
 
+---
+
 ## See Also
 
 - [Functions Guide](functions.md) - Creating functions
-- [Python API Reference](../reference/python-api.md) - API documentation
-- [Contributing Guide](../contributing/index.md) - Extension development
-
+- [Python API Reference](../reference/python-api.md) - Full API documentation
+- [Configuration](../getting-started/configuration.md) - Settings and config
