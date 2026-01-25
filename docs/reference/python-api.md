@@ -549,9 +549,17 @@ from tinybase.settings import settings
 # Access runtime settings (from database)
 print(settings.instance_name)
 print(settings.storage.enabled)
+print(settings.auth.allow_public_registration)
+print(settings.limits.max_concurrent_functions_per_user)
+
+# Get/set any setting
+settings.get("ext.my_extension.api_key")  # Returns AppSetting | None
+settings.set("ext.my_extension.api_key", "xxx")
 ```
 
-**Properties:**
+See [Configuration - Runtime Settings](../getting-started/configuration.md#runtime-settings) for the full list of runtime settings.
+
+**Static Config Properties (`config`):**
 
 | Property | Type | Default |
 |----------|------|---------|
@@ -561,14 +569,32 @@ print(settings.storage.enabled)
 | `log_level` | `str` | `"info"` |
 | `db_url` | `str` | `"sqlite:///./tinybase.db"` |
 | `auth_token_ttl_hours` | `int` | `24` |
+| `jwt_secret_key` | `str \| None` | Auto-generated |
+| `jwt_algorithm` | `str` | `"HS256"` |
+| `jwt_access_token_expire_minutes` | `int` | `1440` |
+| `jwt_refresh_token_expire_days` | `int` | `30` |
 | `functions_path` | `str` | `"./functions"` |
+| `function_logging_enabled` | `bool` | `True` |
+| `function_logging_level` | `str` | `"INFO"` |
+| `function_logging_format` | `str` | `"json"` |
+| `function_cold_start_pool_size` | `int` | `3` |
+| `function_cold_start_ttl_seconds` | `int` | `300` |
+| `max_function_payload_bytes` | `int` | `10485760` |
+| `max_function_result_bytes` | `int` | `10485760` |
+| `rate_limit_backend` | `str` | `"diskcache"` |
+| `rate_limit_cache_dir` | `str` | `"./.tinybase/rate_limit_cache"` |
+| `rate_limit_redis_url` | `str \| None` | `None` |
 | `scheduler_enabled` | `bool` | `True` |
 | `scheduler_interval_seconds` | `int` | `5` |
-| `scheduler_token_cleanup_interval` | `int` | `60` |
 | `cors_allow_origins` | `list[str]` | `["*"]` |
 | `admin_static_dir` | `str` | `"builtin"` |
 | `extensions_enabled` | `bool` | `True` |
 | `extensions_path` | `str` | `"~/.tinybase/extensions"` |
+| `email_enabled` | `bool` | `False` |
+| `email_smtp_host` | `str \| None` | `None` |
+| `email_smtp_port` | `int` | `587` |
+| `email_from_address` | `str \| None` | `None` |
+| `email_from_name` | `str` | `"TinyBase"` |
 
 ---
 

@@ -320,10 +320,18 @@ Configure the scheduler in `tinybase.toml`:
 [scheduler]
 enabled = true           # Enable/disable scheduler
 interval_seconds = 5     # How often to check for due tasks
-token_cleanup_interval = 60  # Token cleanup interval in scheduler ticks
 ```
 
-**Token Cleanup Interval**: Controls how often expired authentication tokens are cleaned up. The value is in scheduler ticks - for example, with `interval_seconds = 5` and `token_cleanup_interval = 60`, cleanup runs every 5 minutes (60 × 5s). This can also be configured via the Admin UI Settings page.
+Additional scheduler settings are available as **runtime settings** (configurable via Admin UI or API):
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `core.scheduler.function_timeout_seconds` | `1800` | Max execution time for scheduled functions |
+| `core.scheduler.max_schedules_per_tick` | `100` | Max schedules processed per interval |
+| `core.scheduler.max_concurrent_executions` | `10` | Max concurrent scheduled executions |
+| `core.jobs.token_cleanup.interval` | `60` | Token cleanup job interval (seconds) |
+
+See [Configuration](../getting-started/configuration.md#runtime-settings) for more on runtime settings.
 
 ### Disabling the Scheduler
 

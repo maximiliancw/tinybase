@@ -129,13 +129,16 @@ That's it! You now have a fully functional backend with authentication, database
 
 ## Configuration
 
-TinyBase reads configuration from:
+TinyBase uses a **two-layer configuration system**:
 
-1. Environment variables.
-2. `tinybase.toml` in the current directory.
-3. Internal defaults.
+### Static Config (`config`)
 
-Typical configuration options:
+File-based configuration loaded once at startup. Changes require a server restart.
+
+**Sources** (in order of precedence):
+1. Environment variables (`TINYBASE_*`)
+2. `tinybase.toml` in the current directory
+3. Internal defaults
 
 ```toml
 [server]
@@ -150,42 +153,100 @@ url = "sqlite:///./tinybase.db"
 [auth]
 token_ttl_hours = 24
 
+[jwt]
+algorithm = "HS256"
+access_token_expire_minutes = 1440  # 24 hours
+refresh_token_expire_days = 30
+
 [functions]
 path = "./functions"
+logging_enabled = true
+logging_level = "INFO"
+logging_format = "json"
+cold_start_pool_size = 3
+cold_start_ttl_seconds = 300
 
 [scheduler]
 enabled = true
 interval_seconds = 5
-token_cleanup_interval = 60
+
+[rate_limit]
+backend = "diskcache"  # or "redis"
+cache_dir = "./.tinybase/rate_limit_cache"
+# redis_url = "redis://localhost:6379/0"  # required when backend=redis
 
 [cors]
 allow_origins = ["*"]
 
 [admin]
-static_dir = "builtin"   # or path to custom admin static files
+static_dir = "builtin"
 
-[environments.production]
-url = "https://tinybase.example.com"
-api_token = "ADMIN_TOKEN"
+[extensions]
+enabled = true
+path = "~/.tinybase/extensions"
+
+[email]
+enabled = false
+# smtp_host = "smtp.example.com"
+# smtp_port = 587
+# smtp_user = "user"
+# smtp_password = "password"
+# from_address = "noreply@example.com"
+# from_name = "TinyBase"
 ```
 
-Corresponding environment variables (examples):
+**Environment variables** (override TOML values):
 
-- `TINYBASE_SERVER_HOST`
-- `TINYBASE_SERVER_PORT`
-- `TINYBASE_DB_URL`
-- `TINYBASE_AUTH_TOKEN_TTL_HOURS`
-- `TINYBASE_FUNCTIONS_PATH`
-- `TINYBASE_SCHEDULER_ENABLED`
-- `TINYBASE_SCHEDULER_INTERVAL_SECONDS`
-- `TINYBASE_SCHEDULER_TOKEN_CLEANUP_INTERVAL`
-- `TINYBASE_CORS_ALLOW_ORIGINS`
-- `TINYBASE_ADMIN_STATIC_DIR`
+| Variable | Description |
+| -------- | ----------- |
+| `TINYBASE_SERVER_HOST` | Server bind host |
+| `TINYBASE_SERVER_PORT` | Server bind port |
+| `TINYBASE_DEBUG` | Enable debug mode |
+| `TINYBASE_LOG_LEVEL` | Logging level |
+| `TINYBASE_DB_URL` | Database connection URL |
+| `TINYBASE_JWT_SECRET_KEY` | JWT signing secret (auto-generated if not set) |
+| `TINYBASE_FUNCTIONS_PATH` | Path to functions directory |
+| `TINYBASE_SCHEDULER_ENABLED` | Enable/disable scheduler |
+| `TINYBASE_RATE_LIMIT_BACKEND` | Rate limit backend (`diskcache` or `redis`) |
+| `TINYBASE_CORS_ALLOW_ORIGINS` | Comma-separated list of allowed origins |
+| `TINYBASE_ADMIN_EMAIL` | Admin email for bootstrap |
+| `TINYBASE_ADMIN_PASSWORD` | Admin password for bootstrap |
 
-Admin bootstrap (used by `tinybase init` if present):
+### Runtime Settings (`settings`)
 
-- `TINYBASE_ADMIN_EMAIL`
-- `TINYBASE_ADMIN_PASSWORD`
+Database-backed settings that can be changed at runtime via the Admin UI or API. No restart required.
+
+**Access in code:**
+
+```python
+from tinybase.settings import settings
+
+# Core settings (typed properties)
+settings.instance_name              # "TinyBase"
+settings.auth.allow_public_registration  # True
+settings.auth.portal.enabled        # False
+settings.storage.enabled            # False
+settings.scheduler.function_timeout_seconds  # 1800
+settings.limits.max_concurrent_functions_per_user  # 10
+
+# Extension settings (via get/set)
+settings.get("ext.my_extension.api_key")  # Returns AppSetting | None
+settings.set("ext.my_extension.api_key", "xxx")
+```
+
+**Core runtime settings:**
+
+| Setting | Default | Description |
+| ------- | ------- | ----------- |
+| `core.instance_name` | `"TinyBase"` | Instance display name |
+| `core.auth.allow_public_registration` | `true` | Allow public user registration |
+| `core.auth.portal.*` | — | Auth portal customization (logo, colors, redirects) |
+| `core.storage.*` | — | S3-compatible storage configuration |
+| `core.scheduler.function_timeout_seconds` | `1800` | Max function execution time |
+| `core.limits.max_concurrent_functions_per_user` | `10` | Concurrent function limit per user |
+| `core.jobs.admin_report.enabled` | `true` | Enable periodic admin report emails |
+
+Extensions can register their own settings under the `ext.*` namespace.
 
 ## Defining Functions
 
