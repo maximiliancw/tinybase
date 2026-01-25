@@ -1869,6 +1869,7 @@ dev = [
 dev = [
     { name = "djlint" },
     { name = "httpx" },
+    { name = "mkdocstrings" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -1915,6 +1916,7 @@ provides-extras = ["dev"]
 dev = [
     { name = "djlint", specifier = ">=1.36.4" },
     { name = "httpx", specifier = ">=0.27.0" },
+    { name = "mkdocstrings", specifier = ">=1.0.0" },
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "pytest-cov", specifier = ">=4.1.0" },
