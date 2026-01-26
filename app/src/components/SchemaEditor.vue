@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useToast } from '../composables/useToast';
+import { useCollectionsStore } from '../stores/collections';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,13 @@ interface SchemaField {
   required: boolean;
   unique?: boolean;
   description?: string;
+  default?: any;
+  min?: number;
+  max?: number;
+  min_length?: number;
+  max_length?: number;
+  pattern?: string;
+  collection?: string;
 }
 
 interface Schema {
@@ -40,11 +48,19 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
+const collectionsStore = useCollectionsStore();
 const editorMode = ref<'json' | 'visual'>('visual');
 const jsonText = ref(props.modelValue);
 const jsonError = ref('');
 const visualFields = ref<SchemaField[]>([]);
 const fieldErrors = ref<Record<number, string>>({});
+
+// Fetch collections for reference dropdown
+onMounted(async () => {
+  if (collectionsStore.collections.length === 0) {
+    await collectionsStore.fetchCollections();
+  }
+});
 
 // Parse JSON to visual fields
 function parseJsonToVisual() {
@@ -57,6 +73,13 @@ function parseJsonToVisual() {
         required: field.required ?? false,
         unique: field.unique ?? false,
         description: field.description || '',
+        default: field.default,
+        min: field.min,
+        max: field.max,
+        min_length: field.min_length,
+        max_length: field.max_length,
+        pattern: field.pattern || '',
+        collection: field.collection || '',
       }));
       jsonError.value = '';
     } else {
@@ -77,11 +100,48 @@ function parseJsonToVisual() {
   }
 }
 
-// Parse visual fields to JSON
+// Parse visual fields to JSON - only include non-empty/relevant properties
 function parseVisualToJson() {
-  const schema: Schema = {
-    fields: visualFields.value.filter((f) => f.name.trim() !== ''),
-  };
+  const cleanedFields: SchemaField[] = visualFields.value
+    .filter((f) => f.name.trim() !== '')
+    .map((f) => {
+      const field: SchemaField = {
+        name: f.name,
+        type: f.type,
+        required: f.required,
+      };
+
+      // Only include properties that are set
+      if (f.unique) field.unique = f.unique;
+      if (f.description?.trim()) field.description = f.description;
+      if (f.default !== undefined && f.default !== null && f.default !== '') {
+        field.default = f.default;
+      }
+
+      // Type-specific properties
+      if (f.type === 'number' || f.type === 'integer' || f.type === 'float') {
+        if (f.min !== undefined && f.min !== null) field.min = Number(f.min);
+        if (f.max !== undefined && f.max !== null) field.max = Number(f.max);
+      }
+
+      if (f.type === 'string') {
+        if (f.min_length !== undefined && f.min_length !== null) {
+          field.min_length = Number(f.min_length);
+        }
+        if (f.max_length !== undefined && f.max_length !== null) {
+          field.max_length = Number(f.max_length);
+        }
+        if (f.pattern?.trim()) field.pattern = f.pattern;
+      }
+
+      if (f.type === 'reference' && f.collection?.trim()) {
+        field.collection = f.collection;
+      }
+
+      return field;
+    });
+
+  const schema: Schema = { fields: cleanedFields };
   jsonText.value = JSON.stringify(schema, null, 2);
   jsonError.value = '';
 }
@@ -202,7 +262,40 @@ function updateField() {
   emit('update:modelValue', jsonText.value);
 }
 
-const fieldTypes = ['string', 'number', 'boolean', 'object', 'array', 'date'];
+// Handle type change - clear type-specific properties
+function onTypeChange(field: SchemaField) {
+  // Clear properties not valid for new type
+  if (field.type !== 'string') {
+    field.min_length = undefined;
+    field.max_length = undefined;
+    field.pattern = '';
+  }
+  if (field.type !== 'number' && field.type !== 'integer' && field.type !== 'float') {
+    field.min = undefined;
+    field.max = undefined;
+  }
+  if (field.type !== 'reference') {
+    field.collection = '';
+  }
+  // Can't have unique on complex types
+  if (field.type === 'object' || field.type === 'array') {
+    field.unique = false;
+  }
+  updateField();
+}
+
+// Field types
+const fieldTypes = ['string', 'number', 'boolean', 'object', 'array', 'date', 'reference'];
+
+// Check if field type supports unique
+function supportsUnique(type: string): boolean {
+  return !['object', 'array'].includes(type);
+}
+
+// Check if field type is numeric
+function isNumericType(type: string): boolean {
+  return ['number', 'integer', 'float'].includes(type);
+}
 
 const isValid = computed(() => jsonError.value === '');
 </script>
@@ -246,6 +339,7 @@ const isValid = computed(() => jsonError.value === '');
           <Card v-for="(field, index) in visualFields" :key="index" class="p-4">
             <CardContent class="p-0">
               <div class="space-y-3">
+                <!-- Name and Type Row -->
                 <div class="flex items-start justify-between gap-2">
                   <div class="flex-1 grid gap-3 sm:grid-cols-2">
                     <div class="space-y-2">
@@ -263,7 +357,7 @@ const isValid = computed(() => jsonError.value === '');
                     </div>
                     <div class="space-y-2">
                       <Label :for="`field-type-${index}`">Type</Label>
-                      <Select v-model="field.type" @update:model-value="updateField">
+                      <Select v-model="field.type" @update:model-value="onTypeChange(field)">
                         <SelectTrigger :id="`field-type-${index}`">
                           <SelectValue />
                         </SelectTrigger>
@@ -285,6 +379,29 @@ const isValid = computed(() => jsonError.value === '');
                   </Button>
                 </div>
 
+                <!-- Collection Dropdown (for reference type) -->
+                <div v-if="field.type === 'reference'" class="space-y-2">
+                  <Label :for="`field-collection-${index}`">Target Collection</Label>
+                  <Select v-model="field.collection" @update:model-value="updateField">
+                    <SelectTrigger :id="`field-collection-${index}`">
+                      <SelectValue placeholder="Select a collection" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem
+                        v-for="col in collectionsStore.collections"
+                        :key="col.name"
+                        :value="col.name"
+                      >
+                        {{ col.label }} ({{ col.name }})
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p class="text-xs text-muted-foreground">
+                    Records will store a reference (UUID) to a record in this collection
+                  </p>
+                </div>
+
+                <!-- Checkboxes Row -->
                 <div class="flex flex-wrap gap-4">
                   <div class="flex items-center space-x-2">
                     <Checkbox
@@ -301,7 +418,7 @@ const isValid = computed(() => jsonError.value === '');
                       Required
                     </Label>
                   </div>
-                  <div class="flex items-center space-x-2">
+                  <div v-if="supportsUnique(field.type)" class="flex items-center space-x-2">
                     <Checkbox
                       :id="`field-unique-${index}`"
                       :model-value="field.unique"
@@ -318,6 +435,127 @@ const isValid = computed(() => jsonError.value === '');
                   </div>
                 </div>
 
+                <!-- String-specific constraints -->
+                <div v-if="field.type === 'string'" class="grid gap-3 sm:grid-cols-3">
+                  <div class="space-y-2">
+                    <Label :for="`field-min-length-${index}`" class="text-xs text-muted-foreground">
+                      Min Length
+                    </Label>
+                    <Input
+                      :id="`field-min-length-${index}`"
+                      v-model.number="field.min_length"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      class="text-sm"
+                      @input="updateField"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <Label :for="`field-max-length-${index}`" class="text-xs text-muted-foreground">
+                      Max Length
+                    </Label>
+                    <Input
+                      :id="`field-max-length-${index}`"
+                      v-model.number="field.max_length"
+                      type="number"
+                      min="0"
+                      placeholder="255"
+                      class="text-sm"
+                      @input="updateField"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <Label :for="`field-pattern-${index}`" class="text-xs text-muted-foreground">
+                      Pattern (Regex)
+                    </Label>
+                    <Input
+                      :id="`field-pattern-${index}`"
+                      v-model="field.pattern"
+                      placeholder="^[a-z]+$"
+                      class="text-sm font-mono"
+                      @input="updateField"
+                    />
+                  </div>
+                </div>
+
+                <!-- Numeric constraints -->
+                <div v-if="isNumericType(field.type)" class="grid gap-3 sm:grid-cols-2">
+                  <div class="space-y-2">
+                    <Label :for="`field-min-${index}`" class="text-xs text-muted-foreground">
+                      Min Value
+                    </Label>
+                    <Input
+                      :id="`field-min-${index}`"
+                      v-model.number="field.min"
+                      type="number"
+                      placeholder="0"
+                      class="text-sm"
+                      @input="updateField"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <Label :for="`field-max-${index}`" class="text-xs text-muted-foreground">
+                      Max Value
+                    </Label>
+                    <Input
+                      :id="`field-max-${index}`"
+                      v-model.number="field.max"
+                      type="number"
+                      placeholder="100"
+                      class="text-sm"
+                      @input="updateField"
+                    />
+                  </div>
+                </div>
+
+                <!-- Default value -->
+                <div class="space-y-2">
+                  <Label :for="`field-default-${index}`" class="text-xs text-muted-foreground">
+                    Default Value (optional)
+                  </Label>
+                  <Input
+                    v-if="field.type === 'string' || field.type === 'reference'"
+                    :id="`field-default-${index}`"
+                    v-model="field.default"
+                    placeholder="Default text value"
+                    class="text-sm"
+                    @input="updateField"
+                  />
+                  <Input
+                    v-else-if="isNumericType(field.type)"
+                    :id="`field-default-${index}`"
+                    v-model.number="field.default"
+                    type="number"
+                    placeholder="0"
+                    class="text-sm"
+                    @input="updateField"
+                  />
+                  <Select
+                    v-else-if="field.type === 'boolean'"
+                    :model-value="field.default === true ? 'true' : field.default === false ? 'false' : ''"
+                    @update:model-value="
+                      (v) => {
+                        field.default = v === 'true' ? true : v === 'false' ? false : undefined;
+                        updateField();
+                      }
+                    "
+                  >
+                    <SelectTrigger :id="`field-default-${index}`">
+                      <SelectValue placeholder="No default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No default</SelectItem>
+                      <SelectItem value="true">true</SelectItem>
+                      <SelectItem value="false">false</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p v-else class="text-xs text-muted-foreground italic">
+                    Default values for {{ field.type }} type should be set in JSON mode
+                  </p>
+                </div>
+
+                <!-- Description -->
                 <div class="space-y-2">
                   <Label :for="`field-description-${index}`" class="text-xs text-muted-foreground">
                     Description (optional)

@@ -9,7 +9,9 @@ import { useToast } from '../composables/useToast';
 import { useRoute } from 'vue-router';
 import { RouterLink } from 'vue-router';
 import { useInfiniteScroll } from '@vueuse/core';
-import { useCollectionsStore, type Record } from '../stores/collections';
+import { useCollectionsStore } from '../stores/collections';
+import { api } from '@/api';
+import type { RecordResponse } from '@/client';
 import { useAuthStore } from '../stores/auth';
 import DataTable from '../components/DataTable.vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +34,46 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { FileText, Database, Calendar, Hash } from 'lucide-vue-next';
+import { FileText, Database, Calendar, Hash, ShieldCheck, Link2 } from 'lucide-vue-next';
+
+// Health status types
+interface IndexInfo {
+  field: string;
+  index_name: string;
+  has_index: boolean;
+  status: string;
+}
+
+interface ReferenceInfo {
+  field: string;
+  target_collection: string;
+  target_exists: boolean;
+}
+
+interface CollectionStatus {
+  collection: string;
+  label: string;
+  record_count: number;
+  schema_fields: number;
+  unique_fields: string[];
+  indexes: IndexInfo[];
+  references: ReferenceInfo[];
+  last_updated: string;
+  health_status: string;
+}
+
+// Type for schema fields (since SDK types may not include this)
+interface SchemaField {
+  name: string;
+  type: string;
+  required?: boolean;
+  unique?: boolean;
+  description?: string;
+}
+
+interface CollectionSchema {
+  fields: SchemaField[];
+}
 
 const toast = useToast();
 const route = useRoute();
@@ -40,20 +81,47 @@ const collectionsStore = useCollectionsStore();
 const authStore = useAuthStore();
 
 const collectionName = computed(() => route.params.name as string);
-const records = ref<Record[]>([]);
+const records = ref<RecordResponse[]>([]);
 const total = ref(0);
 const page = ref(1);
 const pageSize = 20;
 const loadingMore = ref(false);
+
+// Typed schema access
+const schemaFields = computed<SchemaField[]>(() => {
+  const schema = collectionsStore.currentCollection?.schema as CollectionSchema | undefined;
+  return schema?.fields || [];
+});
 
 const showCreateModal = ref(false);
 const newRecordData = ref('{}');
 
 const scrollContainer = ref<HTMLElement>();
 
+// Health status (admin only)
+const healthStatus = ref<CollectionStatus | null>(null);
+const loadingHealth = ref(false);
+
+async function fetchCollectionHealth() {
+  if (!authStore.isAdmin) return;
+  
+  loadingHealth.value = true;
+  try {
+    const response = await api.admin.getCollectionStatus({
+      path: { collection_name: collectionName.value },
+    });
+    healthStatus.value = response.data as CollectionStatus;
+  } catch (err) {
+    console.error('Failed to fetch collection health:', err);
+  } finally {
+    loadingHealth.value = false;
+  }
+}
+
 onMounted(async () => {
   await collectionsStore.fetchCollection(collectionName.value);
   await loadRecords(true); // Reset on initial load
+  await fetchCollectionHealth(); // Fetch health for admins
 });
 
 async function loadRecords(reset = false) {
@@ -121,8 +189,9 @@ async function handleDeleteRecord(recordId: string) {
   }
 }
 
-function getFieldNames() {
-  return collectionsStore.currentCollection?.schema?.fields?.map((f) => f.name) || [];
+function getFieldNames(): string[] {
+  const schema = collectionsStore.currentCollection?.schema as CollectionSchema | undefined;
+  return schema?.fields?.map((f: SchemaField) => f.name) || [];
 }
 
 const recordColumns = computed(() => {
@@ -222,7 +291,7 @@ const recordColumns = computed(() => {
             <div>
               <p class="text-sm font-medium text-muted-foreground">Fields</p>
               <p class="text-2xl font-bold">
-                {{ collectionsStore.currentCollection?.schema?.fields?.length || 0 }}
+                {{ schemaFields.length }}
               </p>
             </div>
             <div class="rounded-full bg-primary/10 p-3">
@@ -260,7 +329,7 @@ const recordColumns = computed(() => {
       <CardContent>
         <div v-if="collectionsStore.currentCollection" class="flex flex-wrap gap-2">
           <Badge
-            v-for="field in collectionsStore.currentCollection.schema?.fields || []"
+            v-for="field in schemaFields"
             :key="field.name"
             variant="outline"
             class="gap-1"
@@ -268,7 +337,85 @@ const recordColumns = computed(() => {
             {{ field.name }}
             <span class="text-xs text-muted-foreground">({{ field.type }})</span>
             <span v-if="field.required" class="text-yellow-500">*</span>
+            <span v-if="field.unique" class="text-blue-500" title="Unique constraint">⚡</span>
           </Badge>
+        </div>
+      </CardContent>
+    </Card>
+
+    <!-- Health Status (Admin Only) -->
+    <Card v-if="authStore.isAdmin && healthStatus">
+      <CardHeader>
+        <div class="flex items-center justify-between">
+          <CardTitle class="flex items-center gap-2">
+            <ShieldCheck class="h-5 w-5" />
+            Collection Health
+          </CardTitle>
+          <Badge
+            :variant="healthStatus.health_status === 'healthy' ? 'success' : healthStatus.health_status === 'warning' ? 'secondary' : 'destructive'"
+          >
+            {{ healthStatus.health_status }}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent class="space-y-4">
+        <!-- Unique Constraints / Indexes -->
+        <div v-if="healthStatus.indexes.length > 0">
+          <h4 class="text-sm font-medium mb-2">Unique Constraints & Indexes</h4>
+          <div class="space-y-2">
+            <div
+              v-for="index in healthStatus.indexes"
+              :key="index.field"
+              class="flex items-center justify-between p-2 rounded-md bg-muted/50"
+            >
+              <div class="flex items-center gap-2">
+                <code class="text-sm">{{ index.field }}</code>
+                <Badge variant="outline" class="text-xs">unique</Badge>
+              </div>
+              <div class="flex items-center gap-2">
+                <Badge :variant="index.has_index ? 'success' : 'secondary'">
+                  {{ index.has_index ? 'Index Active' : 'Index Missing' }}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- References -->
+        <div v-if="healthStatus.references.length > 0">
+          <h4 class="text-sm font-medium mb-2 flex items-center gap-2">
+            <Link2 class="h-4 w-4" />
+            Reference Fields
+          </h4>
+          <div class="space-y-2">
+            <div
+              v-for="ref in healthStatus.references"
+              :key="ref.field"
+              class="flex items-center justify-between p-2 rounded-md bg-muted/50"
+            >
+              <div class="flex items-center gap-2">
+                <code class="text-sm">{{ ref.field }}</code>
+                <span class="text-muted-foreground">→</span>
+                <code class="text-sm">{{ ref.target_collection }}</code>
+              </div>
+              <Badge :variant="ref.target_exists ? 'success' : 'destructive'">
+                {{ ref.target_exists ? 'Target Exists' : 'Target Missing' }}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        <!-- No constraints -->
+        <div
+          v-if="healthStatus.indexes.length === 0 && healthStatus.references.length === 0"
+          class="text-sm text-muted-foreground"
+        >
+          No unique constraints or reference fields configured.
+        </div>
+
+        <!-- Last Updated -->
+        <div class="pt-2 border-t text-xs text-muted-foreground">
+          Last schema update: {{ new Date(healthStatus.last_updated).toLocaleString() }}
         </div>
       </CardContent>
     </Card>
