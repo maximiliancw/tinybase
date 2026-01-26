@@ -24,6 +24,8 @@ Build and deploy production-ready APIs in minutes with:
 
 - **Dynamic Collections** – Create schema-driven collections with JSON schemas, no migrations needed
 - **Pydantic Validation** – Automatic validation for all records with detailed error messages
+- **Unique Constraints** – Enforce unique values with automatic index management
+- **Collection References** – Foreign key-like relationships between collections
 - **SQLite Backend** – Simple, reliable, and portable – your entire database in a single file
 - **REST API** – Auto-generated CRUD endpoints for all collections
 
@@ -391,6 +393,12 @@ TinyBase collections are **dynamic, schema-driven tables** stored in SQLite.
 - Collections are defined with a JSON schema describing their fields and constraints.
 - Pydantic models are generated at startup to validate records.
 - CRUD endpoints are provided for each collection.
+- Unique constraints are enforced with automatic index management.
+- Foreign key-like references between collections are supported.
+
+**Supported field types:** `string`, `number`, `boolean`, `array`, `object`, `date`, `reference`
+
+**Field options:** `required`, `unique`, `default`, `min`, `max`, `min_length`, `max_length`, `pattern`, `collection`
 
 Example schema (`Collection.schema`):
 
@@ -398,16 +406,27 @@ Example schema (`Collection.schema`):
 {
   "fields": [
     {
-      "name": "title",
+      "name": "email",
       "type": "string",
       "required": true,
-      "max_length": 200
+      "unique": true,
+      "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
     },
     {
-      "name": "published",
-      "type": "boolean",
-      "required": false,
-      "default": false
+      "name": "score",
+      "type": "number",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "tags",
+      "type": "array",
+      "default": []
+    },
+    {
+      "name": "author_id",
+      "type": "reference",
+      "collection": "users"
     }
   ]
 }
@@ -423,6 +442,8 @@ Associated endpoints:
 - `GET /api/collections/{collection_name}/records/{id}`
 - `PATCH /api/collections/{collection_name}/records/{id}`
 - `DELETE /api/collections/{collection_name}/records/{id}`
+- `GET /api/admin/collections/status` (admin - health monitoring)
+- `GET /api/admin/collections/{collection_name}/status` (admin - detailed status)
 
 ## Admin UI
 

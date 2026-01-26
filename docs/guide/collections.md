@@ -49,23 +49,35 @@ The schema defines the structure and validation rules for records.
 | Type | Description | Additional Options |
 |------|-------------|-------------------|
 | `string` | Text data | `max_length`, `min_length`, `pattern` |
-| `integer` | Whole numbers | `min`, `max` |
-| `float` | Decimal numbers | `min`, `max` |
+| `number` | Decimal numbers | `min`, `max` |
 | `boolean` | True/false | - |
-| `list` | Array of values | `items` (for typed arrays) |
-| `dict` | Nested object | `properties` |
+| `array` | Array of values | - |
+| `object` | Nested object | - |
+| `date` | Date/time values | Stored as ISO 8601 strings |
+| `reference` | Foreign key to another collection | `collection` (required) |
 
 ### Field Options
 
-| Option | Description |
-|--------|-------------|
-| `required` | Field must be provided (default: `false`) |
-| `default` | Default value if not provided |
-| `max_length` | Maximum string length |
-| `min_length` | Minimum string length |
-| `pattern` | Regex pattern for validation |
-| `min` | Minimum numeric value |
-| `max` | Maximum numeric value |
+| Option | Type | Description |
+|--------|------|-------------|
+| `required` | boolean | Field must be provided (default: `false`) |
+| `unique` | boolean | Values must be unique within the collection (default: `false`) |
+| `default` | any | Default value if not provided |
+| `description` | string | Human-readable field description |
+| `max_length` | integer | Maximum string length (string only) |
+| `min_length` | integer | Minimum string length (string only) |
+| `pattern` | string | Regex pattern for validation (string only) |
+| `min` | number | Minimum numeric value (number only) |
+| `max` | number | Maximum numeric value (number only) |
+| `collection` | string | Target collection name (reference only) |
+
+!!! note "Type-Specific Options"
+    Field options are validated based on the field type:
+    
+    - `min`/`max` can only be used with `number` type
+    - `min_length`/`max_length`/`pattern` can only be used with `string` type
+    - `unique` cannot be used with `array` or `object` types
+    - `collection` is required when type is `reference`
 
 ### Example Schema
 
@@ -76,24 +88,94 @@ The schema defines the structure and validation rules for records.
       "name": "email",
       "type": "string",
       "required": true,
+      "unique": true,
       "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
     },
     {
       "name": "age",
-      "type": "integer",
+      "type": "number",
       "min": 0,
       "max": 150
     },
     {
       "name": "preferences",
-      "type": "dict",
+      "type": "object",
       "default": {}
     },
     {
-      "name": "roles",
-      "type": "list",
-      "default": ["user"]
+      "name": "tags",
+      "type": "array",
+      "default": []
+    },
+    {
+      "name": "created_date",
+      "type": "date",
+      "description": "When this record was created"
     }
+  ]
+}
+```
+
+### Unique Constraints
+
+Fields marked as `unique: true` enforce that no two records in the collection can have the same value for that field.
+
+```json
+{
+  "fields": [
+    {
+      "name": "sku",
+      "type": "string",
+      "required": true,
+      "unique": true
+    }
+  ]
+}
+```
+
+- Unique constraints are checked on both create and update operations
+- Database indexes are automatically created for unique fields to ensure fast lookups
+- Attempting to create a duplicate value returns a `400 Bad Request` error
+
+### Collection References (Foreign Keys)
+
+The `reference` type allows you to create relationships between collections:
+
+```json
+{
+  "fields": [
+    {
+      "name": "author_id",
+      "type": "reference",
+      "collection": "users",
+      "required": true
+    }
+  ]
+}
+```
+
+- Reference fields store a UUID pointing to a record in the target collection
+- TinyBase validates that the referenced record exists on create/update
+- Invalid references (non-existent records) return a `400 Bad Request` error
+
+**Example: Blog with Posts and Authors**
+
+```json
+// users collection schema
+{
+  "fields": [
+    {"name": "name", "type": "string", "required": true},
+    {"name": "email", "type": "string", "required": true, "unique": true}
+  ]
+}
+
+// posts collection schema
+{
+  "fields": [
+    {"name": "title", "type": "string", "required": true},
+    {"name": "content", "type": "string"},
+    {"name": "author_id", "type": "reference", "collection": "users", "required": true},
+    {"name": "published_at", "type": "date"}
   ]
 }
 ```
@@ -304,27 +386,92 @@ When you update a collection's schema:
 1. **Adding fields**: New fields get default values for existing records
 2. **Removing fields**: Old data is preserved but ignored
 3. **Changing types**: May cause validation errors for existing records
+4. **Adding unique constraints**: Indexes are automatically created
+5. **Removing unique constraints**: Indexes are automatically dropped
+
+!!! info "Automatic Index Management"
+    TinyBase automatically manages database indexes for unique fields. When you add or remove the `unique` property from a field, the corresponding index is created or dropped without any manual intervention.
+    
+    - Adding `unique: true` to a field with duplicate values will fail with an error
+    - All index operations are logged for debugging purposes
 
 !!! warning "Schema Changes"
     Changing field types or adding required fields without defaults may break existing records. Always backup your database before schema changes.
 
 ### Safe Schema Updates
 
-```python
-# Add optional field with default
+```json
+// Add optional field with default
 {
   "name": "discount",
-  "type": "float",
+  "type": "number",
   "required": false,
   "default": 0
 }
 
-# Add required field with default
+// Add required field with default
 {
   "name": "status",
   "type": "string",
   "required": true,
   "default": "active"
+}
+
+// Add unique constraint (ensure no duplicates exist first)
+{
+  "name": "slug",
+  "type": "string",
+  "unique": true
+}
+```
+
+## Collection Health Monitoring
+
+Administrators can monitor collection health and index status via the Admin API:
+
+### Get All Collections Status
+
+```http
+GET /api/admin/collections/status
+```
+
+Returns a summary of all collections including record counts and health status.
+
+### Get Single Collection Status
+
+```http
+GET /api/admin/collections/{name}/status
+```
+
+Returns detailed status including:
+
+- Record count and schema field count
+- Unique field index status (active/missing)
+- Reference field validation status
+- Overall health status (healthy/warning/error)
+
+```json
+{
+  "collection": "posts",
+  "record_count": 1542,
+  "schema_fields": 5,
+  "unique_fields": ["slug"],
+  "indexes": [
+    {
+      "field": "slug",
+      "index_name": "idx_posts_slug_unique",
+      "has_index": true,
+      "status": "active"
+    }
+  ],
+  "references": [
+    {
+      "field": "author_id",
+      "target_collection": "users",
+      "target_exists": true
+    }
+  ],
+  "health_status": "healthy"
 }
 ```
 
