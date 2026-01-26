@@ -1271,3 +1271,213 @@ def list_function_versions(
         )
 
     return result
+
+
+# =============================================================================
+# Collection Status Routes
+# =============================================================================
+
+
+class CollectionIndexInfo(BaseModel):
+    """Information about a collection index."""
+
+    field: str = Field(description="Field name")
+    index_name: str = Field(description="Index name in database")
+    has_index: bool = Field(description="Whether the index exists")
+    status: str = Field(description="Index status (active/missing)")
+
+
+class CollectionReferenceInfo(BaseModel):
+    """Information about a collection reference field."""
+
+    field: str = Field(description="Field name")
+    target_collection: str = Field(description="Target collection name")
+    target_exists: bool = Field(description="Whether target collection exists")
+
+
+class CollectionStatusResponse(BaseModel):
+    """Detailed status information for a collection."""
+
+    collection: str = Field(description="Collection name")
+    label: str = Field(description="Collection label")
+    record_count: int = Field(description="Number of records")
+    schema_fields: int = Field(description="Number of schema fields")
+    unique_fields: list[str] = Field(description="Fields with unique constraint")
+    indexes: list[CollectionIndexInfo] = Field(description="Index status for unique fields")
+    references: list[CollectionReferenceInfo] = Field(description="Reference field status")
+    last_updated: str = Field(description="Last schema update timestamp")
+    health_status: str = Field(description="Overall health status")
+
+
+class CollectionStatusSummary(BaseModel):
+    """Summary status for a collection."""
+
+    name: str = Field(description="Collection name")
+    label: str = Field(description="Collection label")
+    record_count: int = Field(description="Number of records")
+    health_status: str = Field(description="Overall health status")
+
+
+class AllCollectionsStatusResponse(BaseModel):
+    """Status summary for all collections."""
+
+    collections: list[CollectionStatusSummary] = Field(description="Collection summaries")
+    total_collections: int = Field(description="Total number of collections")
+    total_records: int = Field(description="Total number of records across all collections")
+
+
+@router.get(
+    "/collections/status",
+    response_model=AllCollectionsStatusResponse,
+    summary="Get status summary for all collections",
+    description="Get health and status summary for all collections. Admin only.",
+)
+def get_all_collections_status(
+    session: DBSession,
+    _admin: CurrentAdminUser,
+) -> AllCollectionsStatusResponse:
+    """Get status summary for all collections."""
+    from tinybase.collections.schemas import CollectionSchema
+    from tinybase.collections.service import CollectionService
+    from tinybase.db.models import Collection, Record
+
+    service = CollectionService(session)
+    collections = service.list_collections()
+
+    summaries = []
+    total_records = 0
+
+    for collection in collections:
+        # Get record count
+        record_count = session.exec(
+            select(func.count(Record.id)).where(Record.collection_id == collection.id)
+        ).one()
+        total_records += record_count
+
+        # Determine health status
+        health_status = "healthy"
+        try:
+            schema = CollectionSchema.model_validate(collection.schema_)
+            unique_fields = [f.name for f in schema.fields if f.unique]
+            if unique_fields:
+                index_status = service.get_collection_index_status(collection)
+                for idx in index_status.get("indexes", []):
+                    if not idx.get("has_index"):
+                        health_status = "warning"
+                        break
+        except Exception:
+            health_status = "error"
+
+        summaries.append(
+            CollectionStatusSummary(
+                name=collection.name,
+                label=collection.label,
+                record_count=record_count,
+                health_status=health_status,
+            )
+        )
+
+    return AllCollectionsStatusResponse(
+        collections=summaries,
+        total_collections=len(collections),
+        total_records=total_records,
+    )
+
+
+@router.get(
+    "/collections/{collection_name}/status",
+    response_model=CollectionStatusResponse,
+    summary="Get detailed status for a collection",
+    description="Get detailed health and index status for a specific collection. Admin only.",
+)
+def get_collection_status(
+    collection_name: str,
+    session: DBSession,
+    _admin: CurrentAdminUser,
+) -> CollectionStatusResponse:
+    """Get detailed status for a specific collection."""
+    from tinybase.collections.schemas import CollectionSchema
+    from tinybase.collections.service import CollectionService
+    from tinybase.db.models import Collection, Record
+
+    service = CollectionService(session)
+    collection = service.get_collection_by_name(collection_name)
+
+    if not collection:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Collection '{collection_name}' not found",
+        )
+
+    # Get record count
+    record_count = session.exec(
+        select(func.count(Record.id)).where(Record.collection_id == collection.id)
+    ).one()
+
+    # Parse schema
+    try:
+        schema = CollectionSchema.model_validate(collection.schema_)
+    except Exception:
+        # Return minimal info if schema is invalid
+        return CollectionStatusResponse(
+            collection=collection.name,
+            label=collection.label,
+            record_count=record_count,
+            schema_fields=0,
+            unique_fields=[],
+            indexes=[],
+            references=[],
+            last_updated=collection.updated_at.isoformat(),
+            health_status="error",
+        )
+
+    # Get unique fields and index status
+    unique_fields = [f.name for f in schema.fields if f.unique]
+    index_status = service.get_collection_index_status(collection)
+
+    indexes = []
+    for idx_info in index_status.get("indexes", []):
+        indexes.append(
+            CollectionIndexInfo(
+                field=idx_info["field"],
+                index_name=idx_info["index_name"],
+                has_index=idx_info["has_index"],
+                status=idx_info["status"],
+            )
+        )
+
+    # Get reference fields and their status
+    references = []
+    for field_def in schema.fields:
+        if field_def.type.lower() == "reference" and field_def.collection:
+            target_collection = service.get_collection_by_name(field_def.collection)
+            references.append(
+                CollectionReferenceInfo(
+                    field=field_def.name,
+                    target_collection=field_def.collection,
+                    target_exists=target_collection is not None,
+                )
+            )
+
+    # Determine overall health status
+    health_status = "healthy"
+    for idx in indexes:
+        if not idx.has_index:
+            health_status = "warning"
+            break
+    for ref in references:
+        if not ref.target_exists:
+            health_status = "warning"
+            break
+
+    return CollectionStatusResponse(
+        collection=collection.name,
+        label=collection.label,
+        record_count=record_count,
+        schema_fields=len(schema.fields),
+        unique_fields=unique_fields,
+        indexes=indexes,
+        references=references,
+        last_updated=collection.updated_at.isoformat(),
+        health_status=health_status,
+    )

@@ -377,6 +377,11 @@ def create_record(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Validation error: {e}",
         )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
     # Run record create hooks in background
     event = RecordCreateEvent(
@@ -495,6 +500,11 @@ def update_record(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Validation error: {e}",
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
         )
 
     # Run record update hooks in background
