@@ -7,9 +7,10 @@ This module handles:
 - Managing a registry of collection models
 """
 
+from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, create_model, model_validator
 from pydantic.fields import FieldInfo
 
 # =============================================================================
@@ -25,12 +26,17 @@ TYPE_MAPPING: dict[str, type] = {
     "number": float,
     "bool": bool,
     "boolean": bool,
+    "list": list,
+    "array": list,
     "list[string]": list[str],
     "list[int]": list[int],
     "list[float]": list[float],
     "list[bool]": list[bool],
     "dict": dict,
     "object": dict,
+    "date": datetime,
+    "datetime": datetime,
+    "reference": str,  # Stores UUID string pointing to another collection's record
 }
 
 
@@ -45,20 +51,23 @@ class FieldDefinition(BaseModel):
 
     Attributes:
         name: Field name (must be valid Python identifier)
-        type: Field type (string, int, float, bool, list[string], etc.)
+        type: Field type (string, number, boolean, object, array, date, reference)
         required: Whether the field is required
+        unique: Whether field values must be unique within the collection
         default: Default value if not provided
-        min_length: Minimum string length
-        max_length: Maximum string length
-        min: Minimum numeric value
-        max: Maximum numeric value
-        pattern: Regex pattern for string validation
+        min_length: Minimum string length (string type only)
+        max_length: Maximum string length (string type only)
+        min: Minimum numeric value (number type only)
+        max: Maximum numeric value (number type only)
+        pattern: Regex pattern for string validation (string type only)
         description: Human-readable field description
+        collection: Target collection name for reference fields (reference type only)
     """
 
     name: str = Field(description="Field name")
     type: str = Field(default="string", description="Field type")
     required: bool = Field(default=False, description="Whether field is required")
+    unique: bool = Field(default=False, description="Whether field values must be unique")
     default: Any = Field(default=None, description="Default value")
     min_length: int | None = Field(default=None, description="Min string length")
     max_length: int | None = Field(default=None, description="Max string length")
@@ -66,6 +75,51 @@ class FieldDefinition(BaseModel):
     max: float | int | None = Field(default=None, description="Max numeric value")
     pattern: str | None = Field(default=None, description="Regex pattern")
     description: str | None = Field(default=None, description="Field description")
+    collection: str | None = Field(
+        default=None, description="Target collection name for reference fields"
+    )
+
+    @model_validator(mode="after")
+    def validate_type_specific_properties(self) -> "FieldDefinition":
+        """Validate that field properties are appropriate for the field type."""
+        numeric_types = {"int", "integer", "float", "number"}
+        string_types = {"string"}
+        complex_types = {"object", "array", "dict", "list"}
+
+        # min/max only for numeric types
+        if self.min is not None or self.max is not None:
+            if self.type.lower() not in numeric_types:
+                raise ValueError(
+                    f"min/max can only be used with numeric types "
+                    f"(int, integer, float, number), not '{self.type}'"
+                )
+
+        # min_length/max_length/pattern only for string type
+        if self.min_length is not None or self.max_length is not None or self.pattern:
+            if self.type.lower() not in string_types:
+                raise ValueError(
+                    f"min_length/max_length/pattern can only be used with "
+                    f"string type, not '{self.type}'"
+                )
+
+        # unique cannot be used with complex types
+        if self.unique and self.type.lower() in complex_types:
+            raise ValueError(
+                f"unique cannot be used with '{self.type}' type "
+                f"(complex types require deep comparison)"
+            )
+
+        # reference type requires collection property
+        if self.type.lower() == "reference" and not self.collection:
+            raise ValueError("reference type requires 'collection' property specifying target collection")
+
+        # collection property only valid for reference type
+        if self.collection and self.type.lower() != "reference":
+            raise ValueError(
+                f"'collection' property can only be used with reference type, not '{self.type}'"
+            )
+
+        return self
 
 
 class CollectionSchema(BaseModel):
@@ -95,11 +149,20 @@ def build_field_info(field_def: FieldDefinition) -> tuple[type, FieldInfo]:
 
     Returns:
         Tuple of (python_type, FieldInfo) for use with create_model.
-    """
-    # Get the Python type
-    python_type = TYPE_MAPPING.get(field_def.type.lower(), str)
 
-    # Build field constraints
+    Note:
+        Pydantic handles all validation via Field() constraints:
+        - ge/le for min/max (numeric)
+        - min_length/max_length for string length
+        - pattern for regex validation
+        - default/default_factory for defaults
+    """
+    field_type_lower = field_def.type.lower()
+
+    # Get the Python type from mapping
+    python_type = TYPE_MAPPING.get(field_type_lower, str)
+
+    # Build field constraints - Pydantic does the heavy lifting
     field_kwargs: dict[str, Any] = {}
 
     if field_def.description:
@@ -111,16 +174,16 @@ def build_field_info(field_def: FieldDefinition) -> tuple[type, FieldInfo]:
             field_kwargs["default"] = field_def.default
         else:
             # Set appropriate default based on type
-            if field_def.type.startswith("list"):
+            if field_type_lower in ("list", "array") or field_type_lower.startswith("list["):
                 field_kwargs["default_factory"] = list
-            elif field_def.type in ("dict", "object"):
+            elif field_type_lower in ("dict", "object"):
                 field_kwargs["default_factory"] = dict
             else:
                 field_kwargs["default"] = None
                 # Make the type optional
                 python_type = python_type | None  # type: ignore
 
-    # String constraints
+    # String constraints - Pydantic validates these automatically
     if field_def.min_length is not None:
         field_kwargs["min_length"] = field_def.min_length
     if field_def.max_length is not None:
@@ -128,7 +191,7 @@ def build_field_info(field_def: FieldDefinition) -> tuple[type, FieldInfo]:
     if field_def.pattern is not None:
         field_kwargs["pattern"] = field_def.pattern
 
-    # Numeric constraints
+    # Numeric constraints - Pydantic validates these automatically
     if field_def.min is not None:
         field_kwargs["ge"] = field_def.min
     if field_def.max is not None:
