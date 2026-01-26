@@ -5,19 +5,23 @@ Provides CRUD operations for collections and records, with validation
 against dynamic Pydantic models.
 """
 
+import logging
 from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ValidationError
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlmodel import Session, select
 
 from tinybase.collections.schemas import (
+    CollectionSchema,
     build_pydantic_model_from_schema,
     get_collection_registry,
 )
 from tinybase.db.models import Collection, Record
 from tinybase.utils import AccessRule, utcnow
+
+logger = logging.getLogger(__name__)
 
 
 def check_access(
@@ -97,6 +101,9 @@ class CollectionService:
     - Collection CRUD
     - Record CRUD with schema validation
     - Registry management
+    - Unique constraint validation
+    - Reference/relationship validation
+    - Automatic index management
     """
 
     def __init__(self, session: Session) -> None:
@@ -108,6 +115,320 @@ class CollectionService:
         """
         self.session = session
         self.registry = get_collection_registry()
+
+    # =========================================================================
+    # Validation Helpers
+    # =========================================================================
+
+    def _check_unique_constraints(
+        self,
+        collection: Collection,
+        data: dict[str, Any],
+        exclude_record_id: UUID | None = None,
+    ) -> None:
+        """
+        Check unique constraints using SQLite JSON functions.
+
+        Args:
+            collection: The collection to check
+            data: Record data to validate
+            exclude_record_id: Record ID to exclude (for updates)
+
+        Raises:
+            ValueError: If a unique constraint is violated.
+        """
+        try:
+            schema = CollectionSchema.model_validate(collection.schema_)
+        except Exception:
+            # If schema is invalid, skip unique checks
+            return
+
+        unique_fields = [f for f in schema.fields if f.unique]
+
+        for field_def in unique_fields:
+            value = data.get(field_def.name)
+            if value is None:
+                continue
+
+            # Use SQLite json_extract for efficient querying
+            stmt = select(Record.id).where(
+                Record.collection_id == collection.id,
+                func.json_extract(Record.data, f"$.{field_def.name}") == value,
+            )
+
+            if exclude_record_id:
+                stmt = stmt.where(Record.id != exclude_record_id)
+
+            existing = self.session.exec(stmt).first()
+            if existing:
+                raise ValueError(
+                    f"Field '{field_def.name}' must be unique. "
+                    f"A record with value '{value}' already exists."
+                )
+
+    def _validate_references(
+        self,
+        collection: Collection,
+        data: dict[str, Any],
+    ) -> None:
+        """
+        Validate that reference fields point to existing records.
+
+        Args:
+            collection: The collection containing the schema
+            data: Record data to validate
+
+        Raises:
+            ValueError: If a reference is invalid.
+        """
+        try:
+            schema = CollectionSchema.model_validate(collection.schema_)
+        except Exception:
+            return
+
+        reference_fields = [f for f in schema.fields if f.type.lower() == "reference"]
+
+        for field_def in reference_fields:
+            value = data.get(field_def.name)
+            if value is None:
+                continue
+
+            # Get target collection
+            target_collection = self.get_collection_by_name(field_def.collection)
+            if not target_collection:
+                raise ValueError(
+                    f"Referenced collection '{field_def.collection}' does not exist"
+                )
+
+            # Check if record exists
+            try:
+                record_id = UUID(value) if isinstance(value, str) else value
+            except (ValueError, TypeError):
+                raise ValueError(
+                    f"Invalid reference value for '{field_def.name}': "
+                    f"'{value}' is not a valid UUID"
+                )
+
+            record = self.get_record_in_collection(target_collection, record_id)
+            if not record:
+                raise ValueError(
+                    f"Referenced record '{value}' does not exist "
+                    f"in collection '{field_def.collection}'"
+                )
+
+    # =========================================================================
+    # Index Management
+    # =========================================================================
+
+    def _get_index_name(self, collection_name: str, field_name: str) -> str:
+        """Generate index name for a unique field."""
+        return f"idx_{collection_name}_{field_name}_unique"
+
+    def _get_existing_indexes(self, collection: Collection) -> set[str]:
+        """Get existing indexes for a collection's unique fields."""
+        # Query SQLite for indexes matching our naming convention
+        result = self.session.exec(
+            text(
+                "SELECT name FROM sqlite_master WHERE type='index' "
+                f"AND name LIKE 'idx_{collection.name}_%_unique'"
+            )
+        )
+        return {row[0] for row in result}
+
+    def _sync_collection_indexes(
+        self,
+        collection: Collection,
+        old_schema: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Synchronize database indexes with collection schema.
+
+        Creates indexes for new unique fields, drops indexes for removed ones.
+        This runs automatically when collections are created/updated.
+
+        Args:
+            collection: The collection to sync indexes for
+            old_schema: Previous schema (for updates) to diff against
+        """
+        try:
+            new_schema = CollectionSchema.model_validate(collection.schema_)
+        except Exception as e:
+            logger.warning(
+                "Cannot sync indexes - invalid schema",
+                extra={"collection": collection.name, "error": str(e)},
+            )
+            return
+
+        # Get unique fields from new schema
+        new_unique_fields = {f.name for f in new_schema.fields if f.unique}
+
+        # Get unique fields from old schema (if updating)
+        old_unique_fields: set[str] = set()
+        if old_schema:
+            try:
+                old_parsed = CollectionSchema.model_validate(old_schema)
+                old_unique_fields = {f.name for f in old_parsed.fields if f.unique}
+            except Exception:
+                pass
+
+        # Calculate indexes to create and drop
+        fields_to_index = new_unique_fields - old_unique_fields
+        fields_to_unindex = old_unique_fields - new_unique_fields
+
+        # Create new indexes
+        for field_name in fields_to_index:
+            self._create_unique_index(collection, field_name)
+
+        # Drop removed indexes
+        for field_name in fields_to_unindex:
+            self._drop_unique_index(collection, field_name)
+
+    def _create_unique_index(self, collection: Collection, field_name: str) -> None:
+        """
+        Create an expression index for a unique field.
+
+        Args:
+            collection: The collection
+            field_name: The field to index
+        """
+        index_name = self._get_index_name(collection.name, field_name)
+
+        # Check for duplicates before creating index
+        duplicate_check = self.session.exec(
+            text(
+                f"""
+                SELECT json_extract(data, '$.{field_name}') as val, COUNT(*) as cnt
+                FROM record
+                WHERE collection_id = :collection_id
+                AND json_extract(data, '$.{field_name}') IS NOT NULL
+                GROUP BY val
+                HAVING cnt > 1
+                LIMIT 1
+                """
+            ).bindparams(collection_id=str(collection.id))
+        ).first()
+
+        if duplicate_check:
+            logger.error(
+                "Failed to create unique index - duplicates exist",
+                extra={
+                    "collection": collection.name,
+                    "field": field_name,
+                    "index_name": index_name,
+                    "operation": "create_index",
+                    "duplicate_value": duplicate_check[0],
+                    "duplicate_count": duplicate_check[1],
+                },
+            )
+            raise ValueError(
+                f"Cannot add unique constraint to field '{field_name}': "
+                f"duplicate values exist. Please remove duplicates first."
+            )
+
+        # Create the index
+        try:
+            self.session.exec(
+                text(
+                    f"""
+                    CREATE INDEX IF NOT EXISTS "{index_name}"
+                    ON record (json_extract(data, '$.{field_name}'))
+                    WHERE collection_id = :collection_id
+                    """
+                ).bindparams(collection_id=str(collection.id))
+            )
+            self.session.commit()
+
+            logger.info(
+                "Created index for unique field",
+                extra={
+                    "collection": collection.name,
+                    "field": field_name,
+                    "index_name": index_name,
+                    "operation": "create_index",
+                },
+            )
+        except Exception as e:
+            logger.error(
+                "Failed to create index",
+                extra={
+                    "collection": collection.name,
+                    "field": field_name,
+                    "index_name": index_name,
+                    "operation": "create_index",
+                    "error": str(e),
+                },
+            )
+
+    def _drop_unique_index(self, collection: Collection, field_name: str) -> None:
+        """
+        Drop an expression index for a unique field.
+
+        Args:
+            collection: The collection
+            field_name: The field whose index to drop
+        """
+        index_name = self._get_index_name(collection.name, field_name)
+
+        try:
+            self.session.exec(text(f'DROP INDEX IF EXISTS "{index_name}"'))
+            self.session.commit()
+
+            logger.info(
+                "Dropped index for removed unique field",
+                extra={
+                    "collection": collection.name,
+                    "field": field_name,
+                    "index_name": index_name,
+                    "operation": "drop_index",
+                },
+            )
+        except Exception as e:
+            logger.warning(
+                "Failed to drop index",
+                extra={
+                    "collection": collection.name,
+                    "field": field_name,
+                    "index_name": index_name,
+                    "operation": "drop_index",
+                    "error": str(e),
+                },
+            )
+
+    def get_collection_index_status(self, collection: Collection) -> dict[str, Any]:
+        """
+        Get the status of indexes for a collection.
+
+        Args:
+            collection: The collection to check
+
+        Returns:
+            Dictionary with index status information.
+        """
+        try:
+            schema = CollectionSchema.model_validate(collection.schema_)
+        except Exception:
+            return {"error": "Invalid schema"}
+
+        unique_fields = [f.name for f in schema.fields if f.unique]
+        existing_indexes = self._get_existing_indexes(collection)
+
+        indexes = []
+        for field_name in unique_fields:
+            index_name = self._get_index_name(collection.name, field_name)
+            indexes.append(
+                {
+                    "field": field_name,
+                    "index_name": index_name,
+                    "has_index": index_name in existing_indexes,
+                    "status": "active" if index_name in existing_indexes else "missing",
+                }
+            )
+
+        return {
+            "collection": collection.name,
+            "unique_fields": unique_fields,
+            "indexes": indexes,
+        }
 
     # =========================================================================
     # Collection Operations
@@ -174,10 +495,29 @@ class CollectionService:
             raise ValueError(f"Collection '{name}' already exists")
 
         # Validate schema by attempting to build a model
+        # This also validates type-specific field properties via Pydantic
         try:
             model = build_pydantic_model_from_schema(name, schema)
         except Exception as e:
             raise ValueError(f"Invalid schema: {e}")
+
+        # Validate reference fields point to existing collections
+        try:
+            parsed_schema = CollectionSchema.model_validate(schema)
+            for field_def in parsed_schema.fields:
+                if field_def.type.lower() == "reference" and field_def.collection:
+                    target = self.get_collection_by_name(field_def.collection)
+                    if not target:
+                        logger.warning(
+                            "Reference field points to non-existent collection",
+                            extra={
+                                "collection": name,
+                                "field": field_def.name,
+                                "target_collection": field_def.collection,
+                            },
+                        )
+        except Exception:
+            pass
 
         # Create collection
         collection = Collection(
@@ -192,6 +532,9 @@ class CollectionService:
 
         # Register the model
         self.registry.register(name, model)
+
+        # Sync indexes for unique fields (automatic, no user intervention needed)
+        self._sync_collection_indexes(collection)
 
         return collection
 
@@ -213,16 +556,39 @@ class CollectionService:
 
         Returns:
             The updated Collection object.
+
+        Raises:
+            ValueError: If schema is invalid or unique constraint cannot be added.
         """
+        old_schema = collection.schema_ if schema is not None else None
+
         if label is not None:
             collection.label = label
 
         if schema is not None:
-            # Validate new schema
+            # Validate new schema (includes type-specific property validation via Pydantic)
             try:
                 model = build_pydantic_model_from_schema(collection.name, schema)
             except Exception as e:
                 raise ValueError(f"Invalid schema: {e}")
+
+            # Validate reference fields point to existing collections
+            try:
+                parsed_schema = CollectionSchema.model_validate(schema)
+                for field_def in parsed_schema.fields:
+                    if field_def.type.lower() == "reference" and field_def.collection:
+                        target = self.get_collection_by_name(field_def.collection)
+                        if not target:
+                            logger.warning(
+                                "Reference field points to non-existent collection",
+                                extra={
+                                    "collection": collection.name,
+                                    "field": field_def.name,
+                                    "target_collection": field_def.collection,
+                                },
+                            )
+            except Exception:
+                pass
 
             collection.schema_ = schema
             self.registry.register(collection.name, model)
@@ -235,6 +601,10 @@ class CollectionService:
         self.session.commit()
         self.session.refresh(collection)
 
+        # Sync indexes if schema changed (automatic, no user intervention needed)
+        if schema is not None:
+            self._sync_collection_indexes(collection, old_schema)
+
         return collection
 
     def delete_collection(self, collection: Collection) -> None:
@@ -244,6 +614,15 @@ class CollectionService:
         Args:
             collection: Collection to delete
         """
+        # Drop all indexes for this collection first
+        try:
+            schema = CollectionSchema.model_validate(collection.schema_)
+            for field_def in schema.fields:
+                if field_def.unique:
+                    self._drop_unique_index(collection, field_def.name)
+        except Exception:
+            pass
+
         # Delete all records in the collection
         records = self.session.exec(
             select(Record).where(Record.collection_id == collection.id)
@@ -296,8 +675,8 @@ class CollectionService:
             owner_id: Filter by owner user ID
             limit: Maximum records to return
             offset: Number of records to skip
-            filters: Simple field filters (field_name: value)
-            sort_by: Field to sort by (created_at, updated_at, or None)
+            filters: Simple field filters (field_name: value) - uses SQLite JSON functions
+            sort_by: Field to sort by (created_at, updated_at, or JSON field name)
             sort_order: Sort order (asc or desc)
 
         Returns:
@@ -305,14 +684,20 @@ class CollectionService:
         """
         # Base query
         query = select(Record).where(Record.collection_id == collection.id)
+        count_stmt = select(func.count(Record.id)).where(Record.collection_id == collection.id)
 
         if owner_id is not None:
             query = query.where(Record.owner_id == owner_id)
+            count_stmt = count_stmt.where(Record.owner_id == owner_id)
+
+        # Apply filters using SQLite JSON functions (much more efficient than in-memory)
+        if filters:
+            for key, value in filters.items():
+                json_expr = func.json_extract(Record.data, f"$.{key}")
+                query = query.where(json_expr == value)
+                count_stmt = count_stmt.where(json_expr == value)
 
         # Get total count efficiently using SQL COUNT
-        count_stmt = select(func.count(Record.id)).where(Record.collection_id == collection.id)
-        if owner_id is not None:
-            count_stmt = count_stmt.where(Record.owner_id == owner_id)
         total = self.session.exec(count_stmt).one()
 
         # Apply sorting
@@ -326,6 +711,13 @@ class CollectionService:
                 Record.updated_at.desc() if sort_order == "desc" else Record.updated_at.asc()
             )
             query = query.order_by(order_col)
+        elif sort_by:
+            # Sort by JSON field using json_extract
+            json_sort = func.json_extract(Record.data, f"$.{sort_by}")
+            if sort_order == "desc":
+                query = query.order_by(json_sort.desc())
+            else:
+                query = query.order_by(json_sort.asc())
         else:
             # Default to created_at desc
             query = query.order_by(Record.created_at.desc())
@@ -334,20 +726,6 @@ class CollectionService:
         query = query.offset(offset).limit(limit)
 
         records = list(self.session.exec(query).all())
-
-        # Apply in-memory filters if specified
-        # Note: For production, this should be done in SQL for large datasets
-        if filters:
-            filtered_records = []
-            for record in records:
-                match = True
-                for key, value in filters.items():
-                    if record.data.get(key) != value:
-                        match = False
-                        break
-                if match:
-                    filtered_records.append(record)
-            records = filtered_records
 
         return records, total
 
@@ -398,14 +776,22 @@ class CollectionService:
 
         Raises:
             ValidationError: If data doesn't match the collection schema.
+            ValueError: If unique constraint is violated or reference is invalid.
         """
-        # Get and validate against schema
+        # Get and validate against schema (Pydantic handles all field validation)
         model = self.get_or_build_model(collection)
         try:
             validated = model.model_validate(data)
-            validated_data = validated.model_dump()
+            # Use mode='json' to ensure datetime and other types are JSON-serializable
+            validated_data = validated.model_dump(mode="json")
         except ValidationError as e:
             raise e
+
+        # Check unique constraints using SQLite JSON functions
+        self._check_unique_constraints(collection, validated_data)
+
+        # Validate reference fields
+        self._validate_references(collection, validated_data)
 
         # Create record
         record = Record(
@@ -440,6 +826,7 @@ class CollectionService:
 
         Raises:
             ValidationError: If data doesn't match the collection schema.
+            ValueError: If unique constraint is violated or reference is invalid.
         """
         # Merge or replace data
         if partial:
@@ -447,13 +834,20 @@ class CollectionService:
         else:
             merged_data = data
 
-        # Validate against schema
+        # Validate against schema (Pydantic handles all field validation)
         model = self.get_or_build_model(collection)
         try:
             validated = model.model_validate(merged_data)
-            validated_data = validated.model_dump()
+            # Use mode='json' to ensure datetime and other types are JSON-serializable
+            validated_data = validated.model_dump(mode="json")
         except ValidationError as e:
             raise e
+
+        # Check unique constraints (exclude current record)
+        self._check_unique_constraints(collection, validated_data, exclude_record_id=record.id)
+
+        # Validate reference fields
+        self._validate_references(collection, validated_data)
 
         # Update record
         record.data = validated_data
