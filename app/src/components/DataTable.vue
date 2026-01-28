@@ -11,6 +11,7 @@ import { refDebounced, useBreakpoints } from '@vueuse/core';
 import Icon from './Icon.vue';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -43,6 +44,13 @@ interface HeaderAction {
   icon?: string;
 }
 
+interface BulkAction {
+  label: string;
+  action: (selectedIds: string[]) => void | Promise<void>;
+  variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost';
+  icon?: string;
+}
+
 interface Props {
   data: any[];
   columns: Column[];
@@ -52,6 +60,12 @@ interface Props {
   searchPlaceholder?: string;
   emptyMessage?: string;
   headerAction?: HeaderAction;
+  /** Enable row selection with checkboxes */
+  selectable?: boolean;
+  /** Bulk actions to show when rows are selected */
+  bulkActions?: BulkAction[];
+  /** Key to use for row ID (default: 'id') */
+  rowKey?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -60,11 +74,80 @@ const props = withDefaults(defineProps<Props>(), {
   pageSize: 10,
   searchPlaceholder: 'Search...',
   emptyMessage: 'No data available',
+  selectable: false,
+  rowKey: 'id',
 });
+
+const emit = defineEmits<{
+  (e: 'selection-change', selectedIds: string[]): void;
+}>();
 
 const searchQuery = ref('');
 const debouncedSearchQuery = refDebounced(searchQuery, 300);
 const currentPage = ref(1);
+
+// Selection state
+const selectedIds = ref<Set<string>>(new Set());
+
+// Computed selection states
+const allSelected = computed(() => {
+  if (paginatedData.value.length === 0) return false;
+  return paginatedData.value.every((row) => selectedIds.value.has(getRowId(row)));
+});
+
+const someSelected = computed(() => {
+  return selectedIds.value.size > 0;
+});
+
+const indeterminate = computed(() => {
+  return someSelected.value && !allSelected.value;
+});
+
+function getRowId(row: any): string {
+  return String(row[props.rowKey]);
+}
+
+function isSelected(row: any): boolean {
+  return selectedIds.value.has(getRowId(row));
+}
+
+function toggleSelect(row: any) {
+  const id = getRowId(row);
+  if (selectedIds.value.has(id)) {
+    selectedIds.value.delete(id);
+  } else {
+    selectedIds.value.add(id);
+  }
+  selectedIds.value = new Set(selectedIds.value); // Trigger reactivity
+  emit('selection-change', Array.from(selectedIds.value));
+}
+
+function toggleSelectAll() {
+  if (allSelected.value) {
+    // Deselect all on current page
+    paginatedData.value.forEach((row) => {
+      selectedIds.value.delete(getRowId(row));
+    });
+  } else {
+    // Select all on current page
+    paginatedData.value.forEach((row) => {
+      selectedIds.value.add(getRowId(row));
+    });
+  }
+  selectedIds.value = new Set(selectedIds.value); // Trigger reactivity
+  emit('selection-change', Array.from(selectedIds.value));
+}
+
+function clearSelection() {
+  selectedIds.value = new Set();
+  emit('selection-change', []);
+}
+
+async function handleBulkAction(action: BulkAction) {
+  const ids = Array.from(selectedIds.value);
+  await action.action(ids);
+  clearSelection();
+}
 
 // Responsive breakpoints
 const breakpoints = useBreakpoints({
@@ -191,6 +274,28 @@ function isVNode(value: any): value is VNode {
 
 <template>
   <div class="space-y-4">
+    <!-- Bulk Actions Bar -->
+    <div
+      v-if="selectable && selectedIds.size > 0"
+      class="flex items-center gap-3 rounded-md bg-muted p-3 mx-6"
+    >
+      <span class="text-sm font-medium">{{ selectedIds.size }} selected</span>
+      <div class="flex-1" />
+      <Button
+        v-for="action in bulkActions"
+        :key="action.label"
+        size="sm"
+        :variant="action.variant || 'secondary'"
+        @click="handleBulkAction(action)"
+      >
+        <Icon v-if="action.icon" :name="action.icon" :size="14" />
+        {{ action.label }}
+      </Button>
+      <Button size="sm" variant="ghost" @click="clearSelection">
+        Clear
+      </Button>
+    </div>
+
     <!-- Search Bar and Header Action -->
     <div
       v-if="searchable || headerAction || $slots.headerAction"
@@ -223,6 +328,13 @@ function isVNode(value: any): value is VNode {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead v-if="selectable" class="w-12">
+              <Checkbox
+                :checked="allSelected"
+                :indeterminate="indeterminate"
+                @update:checked="toggleSelectAll"
+              />
+            </TableHead>
             <TableHead v-for="column in columns" :key="column.key">
               {{ column.label }}
             </TableHead>
@@ -230,11 +342,17 @@ function isVNode(value: any): value is VNode {
         </TableHeader>
         <TableBody>
           <TableRow v-if="paginatedData.length === 0">
-            <TableCell :colspan="columns.length" class="h-24 text-center">
+            <TableCell :colspan="selectable ? columns.length + 1 : columns.length" class="h-24 text-center">
               {{ emptyMessage }}
             </TableCell>
           </TableRow>
           <TableRow v-for="(row, index) in paginatedData" :key="index">
+            <TableCell v-if="selectable">
+              <Checkbox
+                :checked="isSelected(row)"
+                @update:checked="toggleSelect(row)"
+              />
+            </TableCell>
             <TableCell v-for="column in columns" :key="column.key">
               <!-- Actions Column -->
               <div v-if="isActionsColumn(column)" class="flex gap-2">
@@ -275,7 +393,17 @@ function isVNode(value: any): value is VNode {
         v-for="(row, index) in paginatedData"
         :key="index"
         class="rounded-lg border p-4 space-y-2"
+        :class="{ 'ring-2 ring-primary': selectable && isSelected(row) }"
       >
+        <div v-if="selectable" class="flex items-center gap-2 pb-2 border-b">
+          <Checkbox
+            :checked="isSelected(row)"
+            @update:checked="toggleSelect(row)"
+          />
+          <span class="text-xs text-muted-foreground">
+            {{ isSelected(row) ? 'Selected' : 'Select' }}
+          </span>
+        </div>
         <div v-for="column in columns" :key="column.key" class="flex justify-between gap-4">
           <!-- Actions Column -->
           <template v-if="isActionsColumn(column)">
