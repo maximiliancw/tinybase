@@ -37,7 +37,7 @@ def upgrade() -> None:
                 "resource_id", sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True
             ),
             sa.Column("user_id", sa.UUID(), nullable=True),
-            sa.Column("metadata", sa.JSON(), nullable=False),
+            sa.Column("meta_data", sa.JSON(), nullable=False),
             sa.Column(
                 "ip_address", sqlmodel.sql.sqltypes.AutoString(length=45), nullable=True
             ),

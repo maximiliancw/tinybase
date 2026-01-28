@@ -486,7 +486,7 @@ class ActivityLog(SQLModel, table=True):
     user_id: UUID | None = Field(default=None, foreign_key="user.id", index=True)
 
     # Additional context as JSON (e.g., old/new values, request details)
-    metadata: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    meta_data: dict = Field(default_factory=dict, sa_column=Column(JSON))
 
     # Client IP address (for security auditing)
     ip_address: str | None = Field(default=None, max_length=45)

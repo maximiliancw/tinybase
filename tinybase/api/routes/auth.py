@@ -339,7 +339,7 @@ def login(
         resource_id=str(user.id),
         user_id=user.id,
         ip_address=request.client.host if request.client else None,
-        metadata={"admin_created": admin_created} if admin_created else None,
+        meta_data={"admin_created": admin_created} if admin_created else None,
     )
 
     return LoginResponse(

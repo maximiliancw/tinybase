@@ -57,7 +57,7 @@ def log_activity(
     resource_type: str | None = None,
     resource_id: str | None = None,
     user_id: UUID | None = None,
-    metadata: dict | None = None,
+    meta_data: dict | None = None,
     ip_address: str | None = None,
 ) -> None:
     """
@@ -71,7 +71,7 @@ def log_activity(
         resource_type: Type of resource being acted upon (e.g., "user", "record")
         resource_id: Identifier of the resource (e.g., user ID, record ID)
         user_id: User who performed the action (None for system actions)
-        metadata: Additional context as a dictionary
+        meta_data: Additional context as a dictionary
         ip_address: Client IP address
 
     Example:
@@ -91,7 +91,7 @@ def log_activity(
                 resource_type=resource_type,
                 resource_id=resource_id,
                 user_id=user_id,
-                metadata=metadata or {},
+                meta_data=meta_data or {},
                 ip_address=ip_address,
             )
             session.add(activity)
@@ -106,7 +106,7 @@ def log_activity_background(
     resource_type: str | None = None,
     resource_id: str | None = None,
     user_id: UUID | None = None,
-    metadata: dict | None = None,
+    meta_data: dict | None = None,
     ip_address: str | None = None,
 ) -> None:
     """
@@ -120,6 +120,6 @@ def log_activity_background(
         resource_type=resource_type,
         resource_id=resource_id,
         user_id=user_id,
-        metadata=metadata,
+        meta_data=meta_data,
         ip_address=ip_address,
     )

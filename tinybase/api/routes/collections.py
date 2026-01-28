@@ -399,7 +399,7 @@ def create_record(
         resource_type="record",
         resource_id=str(record.id),
         user_id=user.id,
-        metadata={"collection": collection_name},
+        meta_data={"collection": collection_name},
     )
 
     return record_to_response(record)
@@ -533,7 +533,7 @@ def update_record(
         resource_type="record",
         resource_id=str(updated.id),
         user_id=user.id,
-        metadata={"collection": collection_name},
+        meta_data={"collection": collection_name},
     )
 
     return record_to_response(updated)
@@ -604,5 +604,5 @@ def delete_record(
         resource_type="record",
         resource_id=str(record_id),
         user_id=user.id,
-        metadata={"collection": collection_name},
+        meta_data={"collection": collection_name},
     )

@@ -200,7 +200,7 @@ def activity_to_response(activity: ActivityLog, user: User | None = None) -> Act
         resource_id=activity.resource_id,
         user_id=str(activity.user_id) if activity.user_id else None,
         user_email=user.email if user else None,
-        metadata=activity.metadata,
+        metadata=activity.meta_data,
         ip_address=activity.ip_address,
         created_at=activity.created_at.isoformat(),
     )
