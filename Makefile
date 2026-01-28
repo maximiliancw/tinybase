@@ -1,4 +1,4 @@
-.PHONY: build build-admin export-openapi test dev clean repo
+.PHONY: build build-admin export-openapi test dev clean repo lint format
 
 # Build admin UI and copy to backend static folder
 build-admin:
@@ -27,6 +27,25 @@ clean:
 	rm -rf packages/tinybase/tinybase/static/app
 	rm -rf apps/admin/dist
 	rm -rf dist build *.egg-info
+
+# Lint all files (Python + Markdown)
+lint:
+	uv run ruff check .
+	uv run pre-commit run markdownlint --all-files
+
+# Format all files (Python + Markdown)
+format:
+	uv run ruff format .
+	uv run ruff check --fix .
+	uv run pre-commit run mdformat --all-files
+
+# Install pre-commit hooks
+install-hooks:
+	uv run pre-commit install
+
+# Run all pre-commit hooks
+pre-commit:
+	uv run pre-commit run --all-files
 
 # Repo management CLI passthrough
 # Usage: make repo version bump patch
