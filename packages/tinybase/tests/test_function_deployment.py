@@ -330,9 +330,9 @@ def api_test(client, payload: TestInput) -> TestOutput:
         headers={"Authorization": f"Bearer {admin_token}"},
     )
 
-    assert (
-        response.status_code == 200
-    ), f"Expected 200, got {response.status_code}: {response.json()}"
+    assert response.status_code == 200, (
+        f"Expected 200, got {response.status_code}: {response.json()}"
+    )
     data = response.json()
     assert data["function_name"] == "api_test"
     assert data["is_new_version"] is True

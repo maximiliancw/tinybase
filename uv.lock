@@ -2176,7 +2176,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "pytest-testmon", specifier = ">=2.1.0" },
     { name = "pytest-xdist", specifier = ">=3.5.0" },
-    { name = "ruff", specifier = ">=0.7.0" },
+    { name = "ruff", specifier = ">=0.14.0" },
 ]
 docs = [
     { name = "mike", specifier = ">=2.1.3" },

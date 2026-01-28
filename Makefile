@@ -12,7 +12,7 @@ export-openapi:
 
 # Run all tests
 test:
-	uv run pytest
+	uv run pytest -n auto
 
 # Start development server (backend)
 dev:
@@ -29,14 +29,16 @@ clean:
 	rm -rf dist build *.egg-info
 
 # Lint all files (Python + Markdown)
+# Uses pre-commit to ensure consistent tool versions
 lint:
-	uv run ruff check .
+	uv run pre-commit run ruff --all-files
 	uv run pre-commit run markdownlint --all-files
 
 # Format all files (Python + Markdown)
+# Uses pre-commit to ensure consistent tool versions
 format:
-	uv run ruff format .
-	uv run ruff check --fix .
+	uv run pre-commit run ruff-format --all-files
+	uv run pre-commit run ruff --all-files
 	uv run pre-commit run mdformat --all-files
 
 # Install pre-commit hooks
