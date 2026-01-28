@@ -181,7 +181,7 @@ def create_app() -> FastAPI:
     # Only mount if no user static files are configured - otherwise the root endpoint would conflict
     static_files_mounted = mount_user_static_files(app)
     if static_files_mounted:
-        logger.info(f"User static files mounted at / from {config.serve_static_files}")
+        logger.info(f"Public static files mounted at / from {config.public_static_dir}")
 
     # Root endpoint (only if user static files are not mounted)
     if not static_files_mounted:

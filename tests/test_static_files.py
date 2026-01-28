@@ -22,7 +22,7 @@ from fastapi import FastAPI
 
 
 def test_get_user_static_dir_returns_none_when_not_configured():
-    """Test that get_user_static_dir returns None when serve_static_files is None."""
+    """Test that get_user_static_dir returns None when public_static_dir is None."""
     from tinybase.api.routes.static_user import get_user_static_dir
     from tinybase.settings.static import _reset_config
 
@@ -30,7 +30,7 @@ def test_get_user_static_dir_returns_none_when_not_configured():
     _reset_config()
 
     with patch("tinybase.api.routes.static_user.config") as mock_config:
-        mock_config.serve_static_files = None
+        mock_config.public_static_dir = None
 
         result = get_user_static_dir()
 
@@ -42,7 +42,7 @@ def test_get_user_static_dir_returns_none_when_directory_not_exists():
     from tinybase.api.routes.static_user import get_user_static_dir
 
     with patch("tinybase.api.routes.static_user.config") as mock_config:
-        mock_config.serve_static_files = "/nonexistent/path/to/static"
+        mock_config.public_static_dir = "/nonexistent/path/to/static"
 
         result = get_user_static_dir()
 
@@ -59,7 +59,7 @@ def test_get_user_static_dir_returns_none_when_index_html_missing():
         static_dir.mkdir()
 
         with patch("tinybase.api.routes.static_user.config") as mock_config:
-            mock_config.serve_static_files = str(static_dir)
+            mock_config.public_static_dir = str(static_dir)
 
             result = get_user_static_dir()
 
@@ -77,7 +77,7 @@ def test_get_user_static_dir_returns_path_when_valid():
         (static_dir / "index.html").write_text("<html><body>Hello</body></html>")
 
         with patch("tinybase.api.routes.static_user.config") as mock_config:
-            mock_config.serve_static_files = str(static_dir)
+            mock_config.public_static_dir = str(static_dir)
 
             result = get_user_static_dir()
 
@@ -100,7 +100,7 @@ def test_get_user_static_dir_expands_tilde():
         # We'll just test that expanduser is called by checking resolved path
         with patch("tinybase.api.routes.static_user.config") as mock_config:
             # Use the actual path but verify it gets resolved
-            mock_config.serve_static_files = str(static_dir)
+            mock_config.public_static_dir = str(static_dir)
 
             result = get_user_static_dir()
 

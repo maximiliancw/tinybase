@@ -199,9 +199,9 @@ class Config(BaseSettings):
     # -------------------------------------------------------------------------
     # Static Files
     # -------------------------------------------------------------------------
-    serve_static_files: str | None = Field(
+    public_static_dir: str | None = Field(
         default=None,
-        description="Path to user static files directory (must contain index.html). "
+        description="Directory for public static files (must contain index.html). "
         "When set, files will be served at the root path /",
     )
 

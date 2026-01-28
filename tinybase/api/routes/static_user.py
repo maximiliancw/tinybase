@@ -21,10 +21,10 @@ def get_user_static_dir() -> Path | None:
     Returns:
         Path to static files directory, or None if not configured or invalid.
     """
-    if config.serve_static_files is None:
+    if config.public_static_dir is None:
         return None
 
-    static_path = Path(config.serve_static_files).expanduser().resolve()
+    static_path = Path(config.public_static_dir).expanduser().resolve()
 
     if not static_path.exists():
         return None
