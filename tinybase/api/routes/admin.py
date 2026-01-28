@@ -551,7 +551,7 @@ class InstanceSettingsResponse(BaseModel):
         default=None, description="Max concurrent function executions per user"
     )
     storage_enabled: bool = Field(description="File storage enabled")
-    storage_endpoint: str | None = Field(default=None, description="S3 endpoint")
+    storage_url: str | None = Field(default=None, description="S3 endpoint URL")
     storage_bucket: str | None = Field(default=None, description="S3 bucket name")
     storage_region: str | None = Field(default=None, description="S3 region")
     # Note: access_key and secret_key are not returned for security
@@ -601,7 +601,7 @@ class InstanceSettingsUpdate(BaseModel):
         default=None, ge=1, description="Max concurrent function executions per user"
     )
     storage_enabled: bool | None = Field(default=None)
-    storage_endpoint: str | None = Field(default=None, max_length=500)
+    storage_url: str | None = Field(default=None, max_length=500)
     storage_bucket: str | None = Field(default=None, max_length=100)
     storage_access_key: str | None = Field(default=None, max_length=200)
     storage_secret_key: str | None = Field(default=None, max_length=200)
@@ -631,7 +631,7 @@ def settings_to_response() -> InstanceSettingsResponse:
         scheduler_max_concurrent_executions=settings.scheduler.max_concurrent_executions,
         max_concurrent_functions_per_user=settings.limits.max_concurrent_functions_per_user,
         storage_enabled=settings.storage.enabled,
-        storage_endpoint=settings.storage.endpoint,
+        storage_url=settings.storage.url,
         storage_bucket=settings.storage.bucket,
         storage_region=settings.storage.region,
         auth_portal_enabled=settings.auth.portal.enabled,
@@ -733,8 +733,8 @@ def update_settings(
         settings.set("core.limits.max_concurrent_functions_per_user", request.max_concurrent_functions_per_user)
     if request.storage_enabled is not None:
         settings.set("core.storage.enabled", request.storage_enabled)
-    if request.storage_endpoint is not None:
-        settings.set("core.storage.endpoint", request.storage_endpoint)
+    if request.storage_url is not None:
+        settings.set("core.storage.url", request.storage_url)
     if request.storage_bucket is not None:
         settings.set("core.storage.bucket", request.storage_bucket)
     if request.storage_access_key is not None:

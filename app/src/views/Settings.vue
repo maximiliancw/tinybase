@@ -101,7 +101,7 @@ const { handleSubmit, defineField, resetForm, meta } = useForm({
     max_concurrent_functions_per_user: null,
     scheduler_workers: null,
     storage_enabled: false,
-    storage_endpoint: null,
+    storage_url: null,
     storage_bucket: null,
     storage_region: null,
     auth_portal_enabled: false,
@@ -197,7 +197,7 @@ const [schedulerMaxSchedulesPerTick] = defineField('scheduler_max_schedules_per_
 const [schedulerMaxConcurrentExecutions] = defineField('scheduler_max_concurrent_executions');
 const [maxConcurrentFunctionsPerUser] = defineField('max_concurrent_functions_per_user');
 const [storageEnabled] = defineField('storage_enabled');
-const [storageEndpoint] = defineField('storage_endpoint');
+const [storageUrl] = defineField('storage_url');
 const [storageBucket] = defineField('storage_bucket');
 const [storageRegion] = defineField('storage_region');
 const [authPortalEnabled] = defineField('auth_portal_enabled');
@@ -871,10 +871,10 @@ function resetChanges() {
               <div v-if="storageEnabled" class="space-y-4 pl-6 border-l-2 border-muted">
                 <div class="grid gap-4 md:grid-cols-2">
                   <div class="space-y-2">
-                    <Label for="storage_endpoint">Endpoint</Label>
+                    <Label for="storage_url">Endpoint</Label>
                     <Input
-                      id="storage_endpoint"
-                      v-model="storageEndpoint"
+                      id="storage_url"
+                      v-model="storageUrl"
                       placeholder="https://s3.amazonaws.com"
                     />
                     <FieldDescription>

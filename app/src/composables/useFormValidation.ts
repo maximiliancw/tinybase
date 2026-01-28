@@ -248,7 +248,7 @@ export const validationSchemas = {
       .nullable()
       .optional(),
     storage_enabled: yup.boolean().required(),
-    storage_endpoint: yup
+    storage_url: yup
       .string()
       .max(500, 'Endpoint must be 500 characters or less')
       .url('Please enter a valid URL')

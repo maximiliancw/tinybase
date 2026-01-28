@@ -63,7 +63,7 @@ def upgrade() -> None:
                 "scheduler_max_concurrent_executions": ("core.scheduler.max_concurrent_executions", "int"),
                 "max_concurrent_functions_per_user": ("core.limits.max_concurrent_functions_per_user", "int"),
                 "storage_enabled": ("core.storage.enabled", "bool"),
-                "storage_endpoint": ("core.storage.endpoint", "str"),
+                "storage_url": ("core.storage.url", "str"),
                 "storage_bucket": ("core.storage.bucket", "str"),
                 "storage_access_key": ("core.storage.access_key", "str"),
                 "storage_secret_key": ("core.storage.secret_key", "str"),

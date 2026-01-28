@@ -305,8 +305,8 @@ class StorageSettings:
         return self._s._get_value("core.storage.enabled", False)
 
     @property
-    def endpoint(self) -> str | None:
-        return self._s._get_value("core.storage.endpoint", None)
+    def url(self) -> str | None:
+        return self._s._get_value("core.storage.url", None)
 
     @property
     def bucket(self) -> str | None:

@@ -41,7 +41,7 @@ class StorageService:
         """Check if storage is enabled and configured."""
         if not settings.storage.enabled:
             return False
-        if not settings.storage.endpoint or not settings.storage.bucket:
+        if not settings.storage.url or not settings.storage.bucket:
             return False
         if not settings.storage.access_key or not settings.storage.secret_key:
             return False
@@ -63,7 +63,7 @@ class StorageService:
 
         self._client = boto3.client(
             "s3",
-            endpoint_url=settings.storage.endpoint,
+            endpoint_url=settings.storage.url,
             aws_access_key_id=settings.storage.access_key,
             aws_secret_access_key=settings.storage.secret_key,
             region_name=settings.storage.region or "us-east-1",

@@ -399,7 +399,7 @@ class InstanceSettings(SQLModel, table=True):
 
     # File storage settings (S3-compatible)
     storage_enabled: bool = Field(default=False)
-    storage_endpoint: str | None = Field(default=None, max_length=500)
+    storage_url: str | None = Field(default=None, max_length=500)
     storage_bucket: str | None = Field(default=None, max_length=100)
     storage_access_key: str | None = Field(default=None, max_length=200)
     storage_secret_key: str | None = Field(default=None, max_length=200)
