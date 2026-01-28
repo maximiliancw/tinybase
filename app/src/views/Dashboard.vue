@@ -24,6 +24,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Database, Zap, Activity, LogIn, UserPlus, FileEdit, Trash2, FilePlus } from 'lucide-vue-next';
 
 const toast = useToast();
@@ -278,8 +279,12 @@ async function fetchMetrics() {
           </div>
         </CardHeader>
         <CardContent class="overflow-hidden">
-          <div v-if="metricsLoading" class="flex h-[300px] items-center justify-center">
-            <p class="text-sm text-muted-foreground">Loading metrics...</p>
+          <div v-if="metricsLoading" class="h-[300px] space-y-3 p-4">
+            <Skeleton class="h-8 w-3/4" />
+            <Skeleton class="h-8 w-full" />
+            <Skeleton class="h-8 w-5/6" />
+            <Skeleton class="h-8 w-2/3" />
+            <Skeleton class="h-8 w-4/5" />
           </div>
 
           <Empty v-else-if="metrics.collection_sizes.length === 0" class="h-[300px]">
@@ -309,8 +314,12 @@ async function fetchMetrics() {
           </div>
         </CardHeader>
         <CardContent class="overflow-hidden">
-          <div v-if="metricsLoading" class="flex h-[300px] items-center justify-center">
-            <p class="text-sm text-muted-foreground">Loading metrics...</p>
+          <div v-if="metricsLoading" class="h-[300px] space-y-3 p-4">
+            <Skeleton class="h-8 w-3/4" />
+            <Skeleton class="h-8 w-full" />
+            <Skeleton class="h-8 w-5/6" />
+            <Skeleton class="h-8 w-2/3" />
+            <Skeleton class="h-8 w-4/5" />
           </div>
 
           <Empty v-else-if="metrics.function_stats.length === 0" class="h-[300px]">
@@ -336,8 +345,14 @@ async function fetchMetrics() {
         <CardTitle>Recent Activity</CardTitle>
       </CardHeader>
       <CardContent>
-        <div v-if="activityStore.loading" class="flex items-center justify-center py-8">
-          <p class="text-sm text-muted-foreground">Loading activity...</p>
+        <div v-if="activityStore.loading" class="space-y-4">
+          <div v-for="i in 5" :key="i" class="flex items-start gap-3">
+            <Skeleton class="h-8 w-8 rounded-full shrink-0" />
+            <div class="flex-1 space-y-2">
+              <Skeleton class="h-4 w-3/4" />
+              <Skeleton class="h-3 w-1/2" />
+            </div>
+          </div>
         </div>
 
         <Empty v-else-if="activityStore.recentActivity.length === 0" class="py-8">

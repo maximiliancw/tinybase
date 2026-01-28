@@ -43,6 +43,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { Puzzle, Settings } from 'lucide-vue-next';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Extension {
   id: string;
@@ -282,11 +283,21 @@ function getInputType(valueType: string): string {
     </header>
 
     <!-- Loading State -->
-    <Card v-if="loading">
-      <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">Loading extensions...</p>
-      </CardContent>
-    </Card>
+    <div v-if="loading" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <Card v-for="i in 3" :key="i" class="flex flex-col">
+        <CardHeader class="border-b pb-4">
+          <Skeleton class="h-6 w-3/4" />
+          <Skeleton class="h-4 w-1/4 mt-2" />
+        </CardHeader>
+        <CardContent class="flex-1 pt-4">
+          <Skeleton class="h-4 w-full mb-2" />
+          <Skeleton class="h-4 w-5/6" />
+        </CardContent>
+        <CardFooter class="border-t pt-4">
+          <Skeleton class="h-8 w-full" />
+        </CardFooter>
+      </Card>
+    </div>
 
     <!-- Empty State -->
     <Empty v-else-if="extensions.length === 0">

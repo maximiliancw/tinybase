@@ -37,6 +37,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { FolderOpen } from 'lucide-vue-next';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const toast = useToast();
 const collectionsStore = useCollectionsStore();
@@ -177,8 +178,12 @@ const collectionColumns = computed(() => {
 
     <!-- Loading State -->
     <Card v-if="collectionsStore.loading">
-      <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">Loading collections...</p>
+      <CardContent class="space-y-3 p-6">
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
       </CardContent>
     </Card>
 

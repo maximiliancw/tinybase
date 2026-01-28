@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const toast = useToast();
 const usersStore = useUsersStore();
@@ -131,8 +132,12 @@ const userColumns = computed(() => [
 
     <!-- Loading State -->
     <Card v-if="usersStore.loading">
-      <CardContent class="flex items-center justify-center py-10">
-        <p class="text-sm text-muted-foreground">Loading users...</p>
+      <CardContent class="space-y-3 p-6">
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
       </CardContent>
     </Card>
 
