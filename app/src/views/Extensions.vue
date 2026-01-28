@@ -19,10 +19,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -33,7 +42,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { Puzzle } from 'lucide-vue-next';
+import { Puzzle, Settings } from 'lucide-vue-next';
 
 interface Extension {
   id: string;
@@ -53,6 +62,13 @@ interface ExtensionListResponse {
   total: number;
   limit: number;
   offset: number;
+}
+
+interface ExtensionSetting {
+  key: string;
+  value: string | null;
+  value_type: string;
+  description: string | null;
 }
 
 const toast = useToast();
@@ -79,6 +95,14 @@ const repoUrlField = useField('repo_url');
 const showUninstallModal = ref(false);
 const extensionToUninstall = ref<Extension | null>(null);
 const uninstalling = ref(false);
+
+// Settings sheet
+const showSettingsSheet = ref(false);
+const selectedExtension = ref<Extension | null>(null);
+const extensionSettings = ref<ExtensionSetting[]>([]);
+const settingsLoading = ref(false);
+const settingsSaving = ref(false);
+const settingsFormData = ref<Record<string, string | null>>({});
 
 onMounted(async () => {
   await fetchExtensions();
@@ -186,6 +210,64 @@ function formatDate(dateStr: string): string {
     day: 'numeric',
   });
 }
+
+async function openSettingsSheet(ext: Extension) {
+  selectedExtension.value = ext;
+  settingsLoading.value = true;
+  showSettingsSheet.value = true;
+
+  try {
+    const response = await api.extensions.getExtensionSettings({
+      path: { extension_name: ext.name },
+    });
+    extensionSettings.value = response.data.settings as ExtensionSetting[];
+    
+    // Initialize form data
+    settingsFormData.value = {};
+    for (const setting of extensionSettings.value) {
+      settingsFormData.value[setting.key] = setting.value;
+    }
+  } catch (err: any) {
+    toast.error(err.error?.detail || 'Failed to load settings');
+    showSettingsSheet.value = false;
+  } finally {
+    settingsLoading.value = false;
+  }
+}
+
+async function saveSettings() {
+  if (!selectedExtension.value) return;
+
+  settingsSaving.value = true;
+
+  try {
+    await api.extensions.updateExtensionSettings({
+      path: { extension_name: selectedExtension.value.name },
+      body: {
+        settings: settingsFormData.value,
+      },
+    });
+
+    toast.success('Settings saved');
+    showSettingsSheet.value = false;
+  } catch (err: any) {
+    toast.error(err.error?.detail || 'Failed to save settings');
+  } finally {
+    settingsSaving.value = false;
+  }
+}
+
+function getInputType(valueType: string): string {
+  switch (valueType) {
+    case 'int':
+    case 'float':
+      return 'number';
+    case 'bool':
+      return 'checkbox';
+    default:
+      return 'text';
+  }
+}
 </script>
 
 <template>
@@ -264,6 +346,10 @@ function formatDate(dateStr: string): string {
             </Label>
           </div>
           <div class="flex gap-2">
+            <Button variant="outline" size="sm" @click="openSettingsSheet(ext)">
+              <Settings class="h-3.5 w-3.5 mr-1" />
+              Settings
+            </Button>
             <Button variant="outline" size="sm" as-child>
               <a :href="ext.repo_url" target="_blank" rel="noopener noreferrer">
                 <Icon name="ExternalLink" :size="14" />
@@ -338,6 +424,93 @@ function formatDate(dateStr: string): string {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Settings Sheet -->
+    <Sheet v-model:open="showSettingsSheet">
+      <SheetContent class="sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>{{ selectedExtension?.name }} Settings</SheetTitle>
+          <SheetDescription>
+            Configure settings for this extension.
+          </SheetDescription>
+        </SheetHeader>
+
+        <div v-if="settingsLoading" class="flex items-center justify-center py-8">
+          <p class="text-sm text-muted-foreground">Loading settings...</p>
+        </div>
+
+        <div v-else-if="extensionSettings.length === 0" class="py-8 text-center">
+          <p class="text-sm text-muted-foreground">
+            This extension has no configurable settings.
+          </p>
+        </div>
+
+        <div v-else class="space-y-4 py-4">
+          <div v-for="setting in extensionSettings" :key="setting.key" class="space-y-2">
+            <Label :for="`setting-${setting.key}`">
+              {{ setting.key }}
+            </Label>
+            
+            <!-- Boolean toggle -->
+            <div v-if="setting.value_type === 'bool'" class="flex items-center gap-2">
+              <Switch
+                :id="`setting-${setting.key}`"
+                :checked="settingsFormData[setting.key] === 'true'"
+                @update:checked="settingsFormData[setting.key] = $event ? 'true' : 'false'"
+              />
+              <span class="text-sm text-muted-foreground">
+                {{ settingsFormData[setting.key] === 'true' ? 'Enabled' : 'Disabled' }}
+              </span>
+            </div>
+
+            <!-- JSON textarea -->
+            <Textarea
+              v-else-if="setting.value_type === 'json'"
+              :id="`setting-${setting.key}`"
+              v-model="settingsFormData[setting.key]"
+              :rows="4"
+              class="font-mono text-sm"
+              spellcheck="false"
+            />
+
+            <!-- Number input -->
+            <Input
+              v-else-if="setting.value_type === 'int' || setting.value_type === 'float'"
+              :id="`setting-${setting.key}`"
+              v-model="settingsFormData[setting.key]"
+              :type="'number'"
+              :step="setting.value_type === 'float' ? '0.01' : '1'"
+            />
+
+            <!-- Default text input -->
+            <Input
+              v-else
+              :id="`setting-${setting.key}`"
+              v-model="settingsFormData[setting.key]"
+              type="text"
+            />
+
+            <p v-if="setting.description" class="text-xs text-muted-foreground">
+              {{ setting.description }}
+            </p>
+          </div>
+        </div>
+
+        <SheetFooter v-if="extensionSettings.length > 0">
+          <Button
+            type="button"
+            variant="ghost"
+            :disabled="settingsSaving"
+            @click="showSettingsSheet = false"
+          >
+            Cancel
+          </Button>
+          <Button :disabled="settingsSaving" @click="saveSettings">
+            {{ settingsSaving ? 'Saving...' : 'Save Settings' }}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
 
     <!-- Uninstall Confirmation Modal -->
     <Dialog v-model:open="showUninstallModal">

@@ -15,7 +15,7 @@ from sqlalchemy import func
 from sqlmodel import select
 
 from tinybase.auth import CurrentAdminUser, DBSession
-from tinybase.db.models import Extension
+from tinybase.db.models import AppSetting, Extension
 from tinybase.extensions import (
     InstallError,
     check_for_updates,
@@ -70,6 +70,30 @@ class ExtensionUpdateRequest(BaseModel):
     """Extension update request."""
 
     is_enabled: bool | None = Field(default=None, description="Enable/disable extension")
+
+
+class ExtensionSettingInfo(BaseModel):
+    """Extension setting information."""
+
+    key: str = Field(description="Setting key (without ext.{name}. prefix)")
+    value: str | None = Field(default=None, description="Setting value")
+    value_type: str = Field(description="Value type (str, int, bool, float, json)")
+    description: str | None = Field(default=None, description="Setting description")
+
+
+class ExtensionSettingsResponse(BaseModel):
+    """Extension settings response."""
+
+    extension_name: str = Field(description="Extension name")
+    settings: list[ExtensionSettingInfo] = Field(description="Extension settings")
+
+
+class ExtensionSettingsUpdateRequest(BaseModel):
+    """Extension settings update request."""
+
+    settings: dict[str, str | None] = Field(
+        description="Settings to update (key without prefix -> value)"
+    )
 
 
 # =============================================================================
@@ -251,3 +275,111 @@ def delete_extension(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Extension '{extension_name}' not found",
         )
+
+
+# =============================================================================
+# Extension Settings Routes
+# =============================================================================
+
+
+@router.get(
+    "/{extension_name}/settings",
+    response_model=ExtensionSettingsResponse,
+    summary="Get extension settings",
+    description="Get settings for a specific extension.",
+)
+def get_extension_settings(
+    extension_name: str,
+    session: DBSession,
+    _admin: CurrentAdminUser,
+) -> ExtensionSettingsResponse:
+    """Get all settings for an extension."""
+    # Verify extension exists
+    extension = session.exec(select(Extension).where(Extension.name == extension_name)).first()
+    if not extension:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Extension '{extension_name}' not found",
+        )
+
+    # Get settings with prefix ext.{extension_name}.
+    prefix = f"ext.{extension_name}."
+    settings = session.exec(
+        select(AppSetting).where(AppSetting.key.startswith(prefix))  # type: ignore
+    ).all()
+
+    return ExtensionSettingsResponse(
+        extension_name=extension_name,
+        settings=[
+            ExtensionSettingInfo(
+                key=s.key[len(prefix) :],  # Remove prefix
+                value=s.value,
+                value_type=s.value_type,
+                description=s.description,
+            )
+            for s in settings
+        ],
+    )
+
+
+@router.patch(
+    "/{extension_name}/settings",
+    response_model=ExtensionSettingsResponse,
+    summary="Update extension settings",
+    description="Update settings for a specific extension.",
+)
+def update_extension_settings(
+    extension_name: str,
+    request: ExtensionSettingsUpdateRequest,
+    session: DBSession,
+    _admin: CurrentAdminUser,
+) -> ExtensionSettingsResponse:
+    """Update settings for an extension."""
+    # Verify extension exists
+    extension = session.exec(select(Extension).where(Extension.name == extension_name)).first()
+    if not extension:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Extension '{extension_name}' not found",
+        )
+
+    prefix = f"ext.{extension_name}."
+
+    # Update each setting
+    for key, value in request.settings.items():
+        full_key = f"{prefix}{key}"
+        setting = session.get(AppSetting, full_key)
+
+        if setting:
+            # Update existing setting
+            setting.value = value
+            setting.updated_at = utcnow()
+            session.add(setting)
+        else:
+            # Create new setting (default to str type)
+            setting = AppSetting(
+                key=full_key,
+                value=value,
+                value_type="str",
+            )
+            session.add(setting)
+
+    session.commit()
+
+    # Return updated settings
+    settings = session.exec(
+        select(AppSetting).where(AppSetting.key.startswith(prefix))  # type: ignore
+    ).all()
+
+    return ExtensionSettingsResponse(
+        extension_name=extension_name,
+        settings=[
+            ExtensionSettingInfo(
+                key=s.key[len(prefix) :],
+                value=s.value,
+                value_type=s.value_type,
+                description=s.description,
+            )
+            for s in settings
+        ],
+    )
