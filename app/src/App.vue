@@ -13,6 +13,7 @@ import { useNetworkStatus } from './composables/useNetworkStatus';
 import { useDarkMode } from './composables/useDarkMode';
 import Icon from './components/Icon.vue';
 import UserProfileLink from './components/UserProfileLink.vue';
+import ErrorBoundary from './components/ErrorBoundary.vue';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Toaster } from 'vue-sonner';
@@ -370,11 +371,13 @@ function handleLogout() {
         'flex items-center justify-center': isAuthPortal,
       }"
     >
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
+      <ErrorBoundary>
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </ErrorBoundary>
     </main>
   </div>
 </template>
