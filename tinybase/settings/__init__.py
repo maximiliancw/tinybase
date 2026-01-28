@@ -20,11 +20,13 @@ from tinybase.settings.core import Settings, settings
 # Re-export Config class directly
 Config = _static_module.Config
 
+
 # Dynamic access to config singleton - always returns current instance
 # This allows _reset_config() to work correctly in tests
 def __getattr__(name: str):
     if name == "config":
         return _static_module.config
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = ["config", "Config", "settings", "Settings"]

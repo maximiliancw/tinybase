@@ -784,7 +784,12 @@ def test_reference_field_validates_existing_record(client, admin_token):
         schema={
             "fields": [
                 {"name": "title", "type": "string", "required": True},
-                {"name": "author_id", "type": "reference", "collection": "authors", "required": True},
+                {
+                    "name": "author_id",
+                    "type": "reference",
+                    "collection": "authors",
+                    "required": True,
+                },
             ]
         },
     )
@@ -801,7 +806,9 @@ def test_reference_field_validates_existing_record(client, admin_token):
     response = client.post(
         "/api/collections/posts_with_author/records",
         headers={"Authorization": f"Bearer {admin_token}"},
-        json={"data": {"title": "Another Post", "author_id": "00000000-0000-0000-0000-000000000000"}},
+        json={
+            "data": {"title": "Another Post", "author_id": "00000000-0000-0000-0000-000000000000"}
+        },
     )
     assert response.status_code == 400
     assert "does not exist" in response.json()["detail"].lower()

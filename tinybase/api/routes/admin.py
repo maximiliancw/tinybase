@@ -709,28 +709,37 @@ def update_settings(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="scheduler_function_timeout_seconds must be at least 1",
             )
-        settings.set("core.scheduler.function_timeout_seconds", request.scheduler_function_timeout_seconds)
+        settings.set(
+            "core.scheduler.function_timeout_seconds", request.scheduler_function_timeout_seconds
+        )
     if request.scheduler_max_schedules_per_tick is not None:
         if request.scheduler_max_schedules_per_tick < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="scheduler_max_schedules_per_tick must be at least 1",
             )
-        settings.set("core.scheduler.max_schedules_per_tick", request.scheduler_max_schedules_per_tick)
+        settings.set(
+            "core.scheduler.max_schedules_per_tick", request.scheduler_max_schedules_per_tick
+        )
     if request.scheduler_max_concurrent_executions is not None:
         if request.scheduler_max_concurrent_executions < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="scheduler_max_concurrent_executions must be at least 1",
             )
-        settings.set("core.scheduler.max_concurrent_executions", request.scheduler_max_concurrent_executions)
+        settings.set(
+            "core.scheduler.max_concurrent_executions", request.scheduler_max_concurrent_executions
+        )
     if request.max_concurrent_functions_per_user is not None:
         if request.max_concurrent_functions_per_user < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="max_concurrent_functions_per_user must be at least 1",
             )
-        settings.set("core.limits.max_concurrent_functions_per_user", request.max_concurrent_functions_per_user)
+        settings.set(
+            "core.limits.max_concurrent_functions_per_user",
+            request.max_concurrent_functions_per_user,
+        )
     if request.storage_enabled is not None:
         settings.set("core.storage.enabled", request.storage_enabled)
     if request.storage_url is not None:
@@ -758,7 +767,9 @@ def update_settings(
     if request.auth_portal_primary_color is not None:
         settings.set("core.auth.portal.primary_color", request.auth_portal_primary_color)
     if request.auth_portal_background_image_url is not None:
-        settings.set("core.auth.portal.background_image_url", request.auth_portal_background_image_url)
+        settings.set(
+            "core.auth.portal.background_image_url", request.auth_portal_background_image_url
+        )
     if request.auth_portal_login_redirect_url is not None:
         # Only validate redirect URL format if auth portal is (or will be) enabled
         if auth_portal_will_be_enabled:
@@ -790,7 +801,9 @@ def update_settings(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Register redirect URL must not point to /admin URLs. Use your application's URL instead.",
                 )
-        settings.set("core.auth.portal.register_redirect_url", request.auth_portal_register_redirect_url)
+        settings.set(
+            "core.auth.portal.register_redirect_url", request.auth_portal_register_redirect_url
+        )
 
     # If auth portal is enabled, require redirect URLs to be set
     if settings.auth.portal.enabled:
@@ -813,7 +826,9 @@ def update_settings(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="admin_report_email_interval_days must be at least 1",
             )
-        settings.set("core.jobs.admin_report.interval_days", request.admin_report_email_interval_days)
+        settings.set(
+            "core.jobs.admin_report.interval_days", request.admin_report_email_interval_days
+        )
 
     return settings_to_response()
 
@@ -1612,6 +1627,5 @@ def get_recent_activity(
         users_map = {u.id: u for u in users}
 
     return [
-        activity_to_response(a, users_map.get(a.user_id) if a.user_id else None)
-        for a in activities
+        activity_to_response(a, users_map.get(a.user_id) if a.user_id else None) for a in activities
     ]

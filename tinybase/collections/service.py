@@ -196,17 +196,14 @@ class CollectionService:
             # Get target collection
             target_collection = self.get_collection_by_name(field_def.collection)
             if not target_collection:
-                raise ValueError(
-                    f"Referenced collection '{field_def.collection}' does not exist"
-                )
+                raise ValueError(f"Referenced collection '{field_def.collection}' does not exist")
 
             # Check if record exists
             try:
                 record_id = UUID(value) if isinstance(value, str) else value
             except (ValueError, TypeError):
                 raise ValueError(
-                    f"Invalid reference value for '{field_def.name}': "
-                    f"'{value}' is not a valid UUID"
+                    f"Invalid reference value for '{field_def.name}': '{value}' is not a valid UUID"
                 )
 
             record = self.get_record_in_collection(target_collection, record_id)

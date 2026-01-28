@@ -73,16 +73,12 @@ class Config(BaseSettings):
     # -------------------------------------------------------------------------
     # Database
     # -------------------------------------------------------------------------
-    db_url: str = Field(
-        default="sqlite:///./tinybase.db", description="Database connection URL"
-    )
+    db_url: str = Field(default="sqlite:///./tinybase.db", description="Database connection URL")
 
     # -------------------------------------------------------------------------
     # Auth / JWT
     # -------------------------------------------------------------------------
-    auth_token_ttl_hours: int = Field(
-        default=24, description="Auth token time-to-live in hours"
-    )
+    auth_token_ttl_hours: int = Field(default=24, description="Auth token time-to-live in hours")
     jwt_secret_key: str | None = Field(
         default=None,
         description="Secret key for JWT signing (auto-generated if not provided)",
@@ -91,9 +87,7 @@ class Config(BaseSettings):
     jwt_access_token_expire_minutes: int = Field(
         default=1440, description="Access token TTL in minutes (default: 24 hours)"
     )
-    jwt_refresh_token_expire_days: int = Field(
-        default=30, description="Refresh token TTL in days"
-    )
+    jwt_refresh_token_expire_days: int = Field(default=30, description="Refresh token TTL in days")
 
     # -------------------------------------------------------------------------
     # Functions
@@ -157,9 +151,7 @@ class Config(BaseSettings):
     # -------------------------------------------------------------------------
     # Scheduler
     # -------------------------------------------------------------------------
-    scheduler_enabled: bool = Field(
-        default=True, description="Enable the background scheduler"
-    )
+    scheduler_enabled: bool = Field(default=True, description="Enable the background scheduler")
     scheduler_interval_seconds: int = Field(
         default=5, description="Scheduler polling interval in seconds"
     )
@@ -167,9 +159,7 @@ class Config(BaseSettings):
     # -------------------------------------------------------------------------
     # CORS
     # -------------------------------------------------------------------------
-    cors_allow_origins: list[str] = Field(
-        default=["*"], description="CORS allowed origins"
-    )
+    cors_allow_origins: list[str] = Field(default=["*"], description="CORS allowed origins")
 
     # -------------------------------------------------------------------------
     # Admin
@@ -178,9 +168,7 @@ class Config(BaseSettings):
         default="builtin",
         description="Path to admin UI static files, or 'builtin' for packaged assets",
     )
-    admin_email: str | None = Field(
-        default=None, description="Default admin email for bootstrap"
-    )
+    admin_email: str | None = Field(default=None, description="Default admin email for bootstrap")
     admin_password: str | None = Field(
         default=None, description="Default admin password for bootstrap"
     )
@@ -188,9 +176,7 @@ class Config(BaseSettings):
     # -------------------------------------------------------------------------
     # Extensions
     # -------------------------------------------------------------------------
-    extensions_enabled: bool = Field(
-        default=True, description="Enable the extension system"
-    )
+    extensions_enabled: bool = Field(default=True, description="Enable the extension system")
     extensions_dir: str = Field(
         default="./.tinybase/extensions",
         description="Directory for installed extensions (workspace-local)",
@@ -254,13 +240,9 @@ class Config(BaseSettings):
 
     @field_validator("rate_limit_redis_url")
     @classmethod
-    def validate_rate_limit_redis_url(
-        cls, v: str | None, info: ValidationInfo
-    ) -> str | None:
+    def validate_rate_limit_redis_url(cls, v: str | None, info: ValidationInfo) -> str | None:
         if info.data.get("rate_limit_backend") == "redis" and not v:
-            raise ValueError(
-                "rate_limit_redis_url is required when rate_limit_backend is 'redis'"
-            )
+            raise ValueError("rate_limit_redis_url is required when rate_limit_backend is 'redis'")
         return v
 
     def __init__(self, **kwargs: Any) -> None:

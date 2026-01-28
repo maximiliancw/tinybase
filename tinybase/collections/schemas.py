@@ -111,7 +111,9 @@ class FieldDefinition(BaseModel):
 
         # reference type requires collection property
         if self.type.lower() == "reference" and not self.collection:
-            raise ValueError("reference type requires 'collection' property specifying target collection")
+            raise ValueError(
+                "reference type requires 'collection' property specifying target collection"
+            )
 
         # collection property only valid for reference type
         if self.collection and self.type.lower() != "reference":

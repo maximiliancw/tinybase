@@ -30,27 +30,17 @@ def upgrade() -> None:
             "activity_log",
             sa.Column("id", sa.UUID(), nullable=False),
             sa.Column("action", sqlmodel.sql.sqltypes.AutoString(length=50), nullable=False),
-            sa.Column(
-                "resource_type", sqlmodel.sql.sqltypes.AutoString(length=50), nullable=True
-            ),
-            sa.Column(
-                "resource_id", sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True
-            ),
+            sa.Column("resource_type", sqlmodel.sql.sqltypes.AutoString(length=50), nullable=True),
+            sa.Column("resource_id", sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
             sa.Column("user_id", sa.UUID(), nullable=True),
             sa.Column("meta_data", sa.JSON(), nullable=False),
-            sa.Column(
-                "ip_address", sqlmodel.sql.sqltypes.AutoString(length=45), nullable=True
-            ),
+            sa.Column("ip_address", sqlmodel.sql.sqltypes.AutoString(length=45), nullable=True),
             sa.Column("created_at", sa.DateTime(), nullable=False),
             sa.PrimaryKeyConstraint("id"),
             sa.ForeignKeyConstraint(["user_id"], ["user.id"]),
         )
-        op.create_index(
-            op.f("ix_activity_log_action"), "activity_log", ["action"], unique=False
-        )
-        op.create_index(
-            op.f("ix_activity_log_user_id"), "activity_log", ["user_id"], unique=False
-        )
+        op.create_index(op.f("ix_activity_log_action"), "activity_log", ["action"], unique=False)
+        op.create_index(op.f("ix_activity_log_user_id"), "activity_log", ["user_id"], unique=False)
         op.create_index(
             op.f("ix_activity_log_created_at"),
             "activity_log",

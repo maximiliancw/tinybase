@@ -238,9 +238,7 @@ def test_list_activity_user_email_lookup(client, admin_token):
     # Get admin user ID
     engine = get_db_engine()
     with Session(engine) as session:
-        admin_user = session.exec(
-            select(User).where(User.email == "admin@test.com")
-        ).first()
+        admin_user = session.exec(select(User).where(User.email == "admin@test.com")).first()
         admin_id = admin_user.id
 
     # The login to get admin_token already created an activity
