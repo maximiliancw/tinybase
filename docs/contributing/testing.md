@@ -28,16 +28,16 @@ Coverage report is generated in `htmlcov/`.
 
 ```bash
 # Run a specific file
-pytest tests/test_functions.py
+uv run pytest packages/tinybase/tests/test_functions.py
 
 # Run a specific test
-pytest tests/test_functions.py::test_register_function
+uv run pytest packages/tinybase/tests/test_functions.py::test_register_function
 
 # Run tests matching a pattern
-pytest -k "test_auth"
+uv run pytest -k "test_auth"
 
 # Run with verbose output
-pytest -v
+uv run pytest -v
 ```
 
 ### Watch Mode
@@ -76,7 +76,7 @@ packages/tinybase-sdk/tests/       # SDK package tests
 
 Common fixtures are defined in `conftest.py`:
 
-```python title="tests/conftest.py"
+```python title="packages/tinybase/tests/conftest.py"
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, create_engine, SQLModel

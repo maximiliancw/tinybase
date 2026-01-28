@@ -152,17 +152,17 @@ git checkout -b fix/issue-123
 ### 3. Run Tests
 
 ```bash
-# Run all tests
-pytest
+# Run all tests (parallel execution recommended)
+uv run pytest -n auto
 
 # Run with coverage
-pytest --cov=tinybase
+uv run pytest --cov=packages/tinybase/tinybase
 
 # Run specific test file
-pytest tests/test_functions.py
+uv run pytest packages/tinybase/tests/test_functions.py
 
 # Run specific test
-pytest tests/test_functions.py::test_register_function
+uv run pytest packages/tinybase/tests/test_functions.py::test_register_function
 ```
 
 ### 4. Check Code Quality
@@ -200,33 +200,33 @@ git push origin feature/my-feature
 
 ### Adding a New API Endpoint
 
-1. Create/edit route handler in `tinybase/api/routes/`
-2. Register route in `tinybase/api/app.py`
-3. Add tests in `tests/`
+1. Create/edit route handler in `packages/tinybase/tinybase/api/routes/`
+2. Register route in `packages/tinybase/tinybase/api/app.py`
+3. Add tests in `packages/tinybase/tests/`
 4. Update API documentation
 
 ### Adding a New CLI Command
 
-1. Add command to the appropriate module in `tinybase/cli/`:
-   - Core commands → `cli/main.py`
-   - Functions commands → `cli/functions.py`
-   - Database commands → `cli/db.py`
-   - Admin commands → `cli/admin.py`
-   - Extensions commands → `cli/extensions.py`
+1. Add command to the appropriate module in `packages/tinybase/tinybase/cli/`:
+   - Core commands → `main.py`
+   - Functions commands → `functions.py`
+   - Database commands → `db.py`
+   - Admin commands → `admin.py`
+   - Extensions commands → `extensions.py`
 2. Follow existing patterns for Typer commands
-3. Add tests
+3. Add tests in `packages/tinybase/tests/`
 4. Update CLI documentation
 
 ### Adding a Database Migration
 
 ```bash
-# Make model changes in tinybase/db/models.py
+# Make model changes in packages/tinybase/tinybase/db/models.py
 
 # Generate migration
-tinybase db migrate -m "description of change"
+uv run tinybase db migrate -m "description of change"
 
 # Apply migration
-tinybase db upgrade
+uv run tinybase db upgrade
 ```
 
 ### Building the Admin UI

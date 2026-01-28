@@ -31,37 +31,45 @@ TinyBase includes a multi-stage Dockerfile:
 
 ```dockerfile title="Dockerfile"
 # Stage 1: Build Admin UI
-FROM node:20-slim AS ui-builder
+FROM node:20-slim AS frontend-builder
+RUN corepack enable
 WORKDIR /app
-COPY app/package.json app/yarn.lock ./
-RUN yarn install --frozen-lockfile
-COPY app/ ./
+COPY apps/admin/package.json apps/admin/yarn.lock ./
+RUN yarn install --immutable
+COPY apps/admin/ ./
 RUN yarn build
 
 # Stage 2: Python Runtime
-FROM python:3.11-slim
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_SYSTEM_PYTHON=1
 WORKDIR /app
 
 # Install uv
-RUN pip install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Copy and install dependencies
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+# Copy Python package files
+COPY packages/tinybase/pyproject.toml ./
+COPY README.md LICENSE ./
+COPY packages/tinybase/tinybase/ ./tinybase/
 
-# Copy application
-COPY tinybase/ ./tinybase/
-COPY --from=ui-builder /app/dist ./tinybase/static/app/
+# Copy built admin UI from frontend builder stage
+COPY --from=frontend-builder /app/dist ./tinybase/static/app/
 
-# Create data directory
-RUN mkdir -p /data
+# Install TinyBase using uv
+RUN uv pip install --no-cache .
 
-# Environment
-ENV TINYBASE_DB_URL=sqlite:////data/tinybase.db
-ENV TINYBASE_ADMIN_STATIC_DIR=builtin
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash tinybase
+USER tinybase
+RUN mkdir -p /home/tinybase/data
+WORKDIR /home/tinybase/data
 
 EXPOSE 8000
-CMD ["uv", "run", "tinybase", "serve", "--host", "0.0.0.0"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+CMD ["tinybase", "serve", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 ## Docker Compose
