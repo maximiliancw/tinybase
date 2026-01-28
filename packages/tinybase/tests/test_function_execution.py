@@ -12,7 +12,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlmodel import Session
-
 from tinybase.db.core import get_db_engine
 from tinybase.db.models import FunctionCall, FunctionCallStatus
 from tinybase.functions.core import FunctionMeta, execute_function

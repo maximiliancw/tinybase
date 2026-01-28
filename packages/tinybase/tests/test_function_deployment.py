@@ -6,8 +6,6 @@ from unittest.mock import patch
 
 import pytest
 from sqlmodel import Session, select
-
-from tests.utils import get_admin_token, get_user_token
 from tinybase.functions.deployment import (
     FunctionValidationError,
     calculate_content_hash,
@@ -15,6 +13,8 @@ from tinybase.functions.deployment import (
     validate_filename,
     validate_function_file,
 )
+
+from tests.utils import get_admin_token, get_user_token
 
 # =============================================================================
 # Validation Tests

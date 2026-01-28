@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """TinyBase monorepo management CLI."""
+
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 import typer

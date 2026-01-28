@@ -8,7 +8,6 @@ from datetime import timedelta
 
 import pytest
 from sqlmodel import Session, select
-
 from tinybase.auth import create_internal_token
 from tinybase.db.core import get_db_engine, init_db
 from tinybase.db.models import AuthToken

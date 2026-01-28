@@ -129,7 +129,6 @@ def test_mount_user_static_files_returns_false_when_not_configured():
 def test_mount_user_static_files_returns_true_when_valid():
     """Test that mount_user_static_files returns True and mounts files when valid."""
     from starlette.routing import Mount
-
     from tinybase.api.routes.static_user import mount_user_static_files
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -186,7 +185,6 @@ def test_api_routes_accessible_with_custom_static_app():
 
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
-
     from tinybase.api.routes.static_user import mount_user_static_files
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -226,7 +224,6 @@ def test_static_files_serve_index_for_root():
 
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
-
     from tinybase.api.routes.static_user import mount_user_static_files
 
     with tempfile.TemporaryDirectory() as tmpdir:

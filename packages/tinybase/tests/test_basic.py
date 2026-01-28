@@ -422,7 +422,6 @@ def test_password_reset_request_nonexistent_email(client):
 def test_password_reset_confirm(client):
     """Test confirming password reset with valid token."""
     from sqlmodel import Session, select
-
     from tinybase.db.core import get_db_engine
     from tinybase.db.models import PasswordResetToken, User
 

@@ -35,7 +35,6 @@ class TestFunctionMetrics:
     def test_metrics_aggregation(self, client, admin_token):
         """Test that metrics are properly aggregated by function name."""
         from sqlmodel import Session
-
         from tinybase.db.core import get_db_engine
 
         now = utcnow()
@@ -113,7 +112,6 @@ class TestFunctionMetrics:
     def test_metrics_time_range_filtering(self, client, admin_token):
         """Test that metrics respect time range parameter."""
         from sqlmodel import Session
-
         from tinybase.db.core import get_db_engine
 
         now = utcnow()
@@ -160,7 +158,6 @@ class TestFunctionMetrics:
     def test_metrics_custom_time_range(self, client, admin_token):
         """Test metrics with custom time range parameter."""
         from sqlmodel import Session
-
         from tinybase.db.core import get_db_engine
 
         now = utcnow()
@@ -194,7 +191,6 @@ class TestFunctionMetrics:
     def test_metrics_avg_duration_no_durations(self, client, admin_token):
         """Test average duration calculation when no durations exist."""
         from sqlmodel import Session
-
         from tinybase.db.core import get_db_engine
 
         now = utcnow()

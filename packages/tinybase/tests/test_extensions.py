@@ -103,7 +103,6 @@ def test_list_extensions_pagination(client, admin_token):
 def _create_test_extension(client, admin_token, name="test_ext"):
     """Helper to create a test extension directly in the database."""
     from sqlmodel import Session
-
     from tinybase.db.core import get_db_engine
     from tinybase.db.models import Extension
 
@@ -163,7 +162,6 @@ def test_get_extension_settings_empty(client, admin_token):
 def test_get_extension_settings_returns_settings(client, admin_token):
     """Test that extension settings are returned with prefix stripped."""
     from sqlmodel import Session
-
     from tinybase.db.core import get_db_engine
     from tinybase.db.models import AppSetting
 
@@ -257,7 +255,6 @@ def test_update_extension_settings_creates_new(client, admin_token):
 def test_update_extension_settings_updates_existing(client, admin_token):
     """Test that updating settings updates existing settings."""
     from sqlmodel import Session
-
     from tinybase.db.core import get_db_engine
     from tinybase.db.models import AppSetting
 

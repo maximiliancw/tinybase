@@ -9,7 +9,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from tinybase.functions.core import get_function_registry, reset_function_registry
 from tinybase.functions.loader import (
     ensure_functions_package,
