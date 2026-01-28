@@ -168,6 +168,15 @@ def extensions_enable(
         session.add(extension)
         session.commit()
 
+        # Log activity
+        from tinybase.activity import Actions, log_activity
+
+        log_activity(
+            action=Actions.EXTENSION_ENABLE,
+            resource_type="extension",
+            resource_id=extension.name,
+        )
+
         typer.echo(f"✓ Enabled extension: {name}")
         typer.echo("")
         typer.echo("Note: Restart the server to load the extension.")
@@ -206,6 +215,15 @@ def extensions_disable(
         extension.updated_at = utcnow()
         session.add(extension)
         session.commit()
+
+        # Log activity
+        from tinybase.activity import Actions, log_activity
+
+        log_activity(
+            action=Actions.EXTENSION_DISABLE,
+            resource_type="extension",
+            resource_id=extension.name,
+        )
 
         typer.echo(f"✓ Disabled extension: {name}")
         typer.echo("")

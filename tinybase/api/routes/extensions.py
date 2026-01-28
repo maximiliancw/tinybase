@@ -236,7 +236,7 @@ def update_extension(
     extension_name: str,
     request: ExtensionUpdateRequest,
     session: DBSession,
-    _admin: CurrentAdminUser,
+    admin: CurrentAdminUser,
 ) -> ExtensionInfo:
     """Update extension settings (enable/disable)."""
     extension = session.exec(select(Extension).where(Extension.name == extension_name)).first()
@@ -247,7 +247,17 @@ def update_extension(
             detail=f"Extension '{extension_name}' not found",
         )
 
-    if request.is_enabled is not None:
+    # Log activity if enabled status is changing
+    if request.is_enabled is not None and request.is_enabled != extension.is_enabled:
+        from tinybase.activity import Actions, log_activity
+
+        action = Actions.EXTENSION_ENABLE if request.is_enabled else Actions.EXTENSION_DISABLE
+        log_activity(
+            action=action,
+            resource_type="extension",
+            resource_id=extension.name,
+            user_id=admin.id,
+        )
         extension.is_enabled = request.is_enabled
 
     extension.updated_at = utcnow()

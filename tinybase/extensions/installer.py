@@ -297,6 +297,17 @@ def install_extension(
         # Load the extension
         load_extension_module(final_dir, manifest.entry_point)
 
+        # Log activity
+        from tinybase.activity import Actions, log_activity
+
+        log_activity(
+            action=Actions.EXTENSION_INSTALL,
+            resource_type="extension",
+            resource_id=extension.name,
+            user_id=user_id,
+            meta_data={"version": extension.version, "repo_url": repo_url},
+        )
+
         logger.info(f"Successfully installed extension: {manifest.name}")
         return extension
 
@@ -328,6 +339,16 @@ def uninstall_extension(session: "Session", name: str) -> bool:
 
     if not extension:
         return False
+
+    # Log activity before deletion
+    from tinybase.activity import Actions, log_activity
+
+    log_activity(
+        action=Actions.EXTENSION_UNINSTALL,
+        resource_type="extension",
+        resource_id=extension.name,
+        meta_data={"version": extension.version},
+    )
 
     # Unload from memory
     unload_extension(name)
