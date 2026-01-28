@@ -57,6 +57,13 @@
     border-color: hsl(var(--border));
   }
 
+  html,
+  body,
+  #app {
+    overflow-x: clip;
+    max-width: 100%;
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));

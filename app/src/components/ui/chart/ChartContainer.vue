@@ -23,7 +23,7 @@ provide('chartConfig', toRef(props, 'config'));
   <div
     :class="
       cn(
-        'flex aspect-video justify-center text-xs [&_.unovis-xy-container]:!pointer-events-none',
+        'flex w-full min-w-0 justify-center text-xs [&_.unovis-xy-container]:!pointer-events-none [&_svg]:max-w-full',
         props.class
       )
     "

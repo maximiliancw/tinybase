@@ -36,8 +36,8 @@ const colors = computed(() =>
 </script>
 
 <template>
-  <ChartContainer :config="chartConfig" class="h-[300px]">
-    <VisSingleContainer :data="chartData" class="h-full">
+  <ChartContainer :config="chartConfig" class="h-[300px] w-full max-w-full overflow-hidden">
+    <VisSingleContainer :data="chartData" class="h-full w-full">
       <VisDonut
         :value="(d: CollectionSize) => d.record_count"
         :color="(_d: CollectionSize, i: number) => colors[i]"

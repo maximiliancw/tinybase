@@ -227,16 +227,16 @@ async function fetchMetrics() {
     <!-- Charts Section -->
     <div v-if="authStore.isAdmin" class="grid gap-4 md:grid-cols-2">
       <!-- Collection Sizes Chart -->
-      <Card>
+      <Card class="overflow-hidden">
         <CardHeader>
-          <div class="flex items-center justify-between">
-            <CardTitle>Collection Sizes</CardTitle>
-            <p v-if="metrics.collected_at" class="text-xs text-muted-foreground">
-              Updated {{ timeAgo }} ({{ formattedDate }})
+          <div class="flex items-center justify-between gap-2">
+            <CardTitle class="shrink-0">Collection Sizes</CardTitle>
+            <p v-if="metrics.collected_at" class="truncate text-xs text-muted-foreground">
+              Updated {{ timeAgo }}
             </p>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent class="overflow-hidden">
           <div v-if="metricsLoading" class="flex h-[300px] items-center justify-center">
             <p class="text-sm text-muted-foreground">Loading metrics...</p>
           </div>
@@ -258,16 +258,16 @@ async function fetchMetrics() {
       </Card>
 
       <!-- Function Statistics Chart -->
-      <Card>
+      <Card class="overflow-hidden">
         <CardHeader>
-          <div class="flex items-center justify-between">
-            <CardTitle>Function Statistics</CardTitle>
-            <p v-if="metrics.collected_at" class="text-xs text-muted-foreground">
-              Updated {{ timeAgo }} ({{ formattedDate }})
+          <div class="flex items-center justify-between gap-2">
+            <CardTitle class="shrink-0">Function Statistics</CardTitle>
+            <p v-if="metrics.collected_at" class="truncate text-xs text-muted-foreground">
+              Updated {{ timeAgo }}
             </p>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent class="overflow-hidden">
           <div v-if="metricsLoading" class="flex h-[300px] items-center justify-center">
             <p class="text-sm text-muted-foreground">Loading metrics...</p>
           </div>

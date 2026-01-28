@@ -34,8 +34,8 @@ const chartConfig = {
 </script>
 
 <template>
-  <ChartContainer :config="chartConfig" class="h-[300px]">
-    <VisXYContainer :data="chartData" class="h-full">
+  <ChartContainer :config="chartConfig" class="h-[300px] w-full max-w-full overflow-hidden">
+    <VisXYContainer :data="chartData" class="h-full w-full">
       <VisGroupedBar
         :x="(d: FunctionStat, i: number) => i"
         :y="[(d: FunctionStat) => d.avg_runtime_ms || 0, (d: FunctionStat) => d.error_rate]"

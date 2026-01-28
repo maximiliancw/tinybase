@@ -12,8 +12,9 @@ import { usePortalStore } from './stores/portal';
 import { useNetworkStatus } from './composables/useNetworkStatus';
 import { useDarkMode } from './composables/useDarkMode';
 import Icon from './components/Icon.vue';
-import { Badge } from '@/components/ui/badge';
+import UserProfileLink from './components/UserProfileLink.vue';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Toaster } from 'vue-sonner';
 
 const router = useRouter();
@@ -65,16 +66,159 @@ function handleLogout() {
 <template>
   <div
     id="app-root"
-    class="flex min-h-screen bg-background"
+    class="min-h-screen bg-background"
     :class="{ 'auth-portal': isAuthPortal }"
     :style="isAuthPortal ? portalStore.styles : {}"
   >
     <Toaster position="top-right" :duration="3000" rich-colors theme="system" />
-    <!-- Sidebar Navigation -->
+
+    <!-- Mobile Header Bar -->
+    <header
+      v-if="showSidebar && isMobile"
+      class="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-card px-4 md:hidden"
+    >
+      <Sheet>
+        <SheetTrigger as-child>
+          <Button variant="ghost" size="icon" class="shrink-0" aria-label="Open menu">
+            <Icon name="Menu" :size="20" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" class="w-64 p-0">
+          <!-- Mobile Sidebar Header -->
+          <header class="flex flex-col items-center justify-center p-6 border-b">
+            <div class="flex w-full items-center gap-3">
+              <div
+                class="flex h-9 w-9 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/80 shadow-md"
+              >
+                <Icon name="Box" :size="20" class="text-primary-foreground" />
+              </div>
+              <h1
+                class="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent"
+              >
+                {{ authStore.instanceName }}
+              </h1>
+            </div>
+            <UserProfileLink class="w-full mt-4" />
+          </header>
+
+          <!-- Mobile Navigation -->
+          <nav aria-label="Main navigation" class="flex flex-col gap-1 p-3 flex-1 overflow-y-auto">
+            <!-- System Section -->
+            <div class="px-3 py-2">
+              <h2 class="mb-2 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                System
+              </h2>
+              <div class="flex flex-col gap-0.5">
+                <router-link
+                  to="/admin"
+                  class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  active-class="bg-accent/50 text-primary"
+                >
+                  <Icon name="Dashboard" :size="18" />
+                  <span>Dashboard</span>
+                </router-link>
+                <router-link
+                  to="/admin/settings"
+                  class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  active-class="bg-accent/50 text-primary"
+                >
+                  <Icon name="Settings" :size="18" />
+                  <span>Settings</span>
+                </router-link>
+                <router-link
+                  to="/admin/extensions"
+                  class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  active-class="bg-accent/50 text-primary"
+                >
+                  <Icon name="Extensions" :size="18" />
+                  <span>Extensions</span>
+                </router-link>
+              </div>
+            </div>
+
+            <!-- Database Section -->
+            <div class="px-3 py-2">
+              <h2 class="mb-2 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                Database
+              </h2>
+              <div class="flex flex-col gap-0.5">
+                <router-link
+                  to="/admin/users"
+                  class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  active-class="bg-accent/50 text-primary"
+                >
+                  <Icon name="Users" :size="18" />
+                  <span>Users</span>
+                </router-link>
+                <router-link
+                  to="/admin/collections"
+                  class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  active-class="bg-accent/50 text-primary"
+                >
+                  <Icon name="Collections" :size="18" />
+                  <span>Collections</span>
+                </router-link>
+                <router-link
+                  to="/admin/files"
+                  class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  active-class="bg-accent/50 text-primary"
+                >
+                  <Icon name="Files" :size="18" />
+                  <span>Files</span>
+                </router-link>
+              </div>
+            </div>
+
+            <!-- Functions Section -->
+            <div v-if="authStore.isAdmin" class="px-3 py-2">
+              <h2 class="mb-2 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                Functions
+              </h2>
+              <div class="flex flex-col gap-0.5">
+                <router-link
+                  to="/admin/functions"
+                  class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  active-class="bg-accent/50 text-primary"
+                >
+                  <Icon name="Functions" :size="18" />
+                  <span>Overview</span>
+                </router-link>
+                <router-link
+                  to="/admin/schedules"
+                  class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  active-class="bg-accent/50 text-primary"
+                >
+                  <Icon name="Schedules" :size="18" />
+                  <span>Schedules</span>
+                </router-link>
+                <router-link
+                  to="/admin/function-calls"
+                  class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  active-class="bg-accent/50 text-primary"
+                >
+                  <Icon name="List" :size="18" />
+                  <span>Function Calls</span>
+                </router-link>
+              </div>
+            </div>
+          </nav>
+
+          <!-- Mobile Footer -->
+          <footer v-if="authStore.user" class="mt-auto p-4 border-t">
+            <Button variant="ghost" size="sm" class="w-full justify-start" @click="handleLogout">
+              <Icon name="Logout" :size="18" />
+              <span>Logout</span>
+            </Button>
+          </footer>
+        </SheetContent>
+      </Sheet>
+      <UserProfileLink class="ml-auto" />
+    </header>
+
+    <!-- Desktop Sidebar Navigation -->
     <aside
-      v-if="showSidebar"
-      class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r bg-card overflow-y-auto transition-transform md:translate-x-0"
-      :class="{ '-translate-x-full': isMobile }"
+      v-if="showSidebar && !isMobile"
+      class="fixed left-0 top-0 z-30 hidden h-screen w-64 flex-col border-r bg-card overflow-y-auto md:flex"
     >
       <!-- Header -->
       <header class="flex flex-col items-center justify-center p-6 border-b">
@@ -90,24 +234,15 @@ function handleLogout() {
             {{ authStore.instanceName }}
           </h1>
         </div>
-        <div class="w-full mt-4 flex items-center gap-2 text-sm">
-          <Icon name="User" :size="18" />
-          <RouterLink
-            to="/admin/profile"
-            class="hover:underline text-muted-foreground"
-            active-class="bg-accent/50 text-primary underline"
-          >
-            {{ authStore.user?.email }}
-          </RouterLink>
-        </div>
+        <UserProfileLink class="w-full mt-4" />
       </header>
 
       <!-- Navigation -->
       <nav aria-label="Main navigation" class="flex flex-col gap-1 p-3 flex-1">
-        <!-- Overview Section -->
+        <!-- System Section -->
         <div class="px-3 py-2">
           <h2 class="mb-2 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-            Overview
+            System
           </h2>
           <div class="flex flex-col gap-0.5">
             <router-link
@@ -229,10 +364,10 @@ function handleLogout() {
 
     <!-- Main Content Area -->
     <main
-      class="flex-1 p-6 transition-all"
+      class="min-h-screen p-6"
       :class="{
-        'md:ml-64': showSidebar && !isMobile,
-        'flex items-center justify-center min-h-screen': isAuthPortal,
+        'md:ml-64': showSidebar,
+        'flex items-center justify-center': isAuthPortal,
       }"
     >
       <router-view v-slot="{ Component }">

@@ -75,6 +75,7 @@ const iconNameMap: Record<string, string> = {
   AlertCircle: 'AlertCircle',
   CheckCircle: 'CheckCircle',
   List: 'List',
+  Menu: 'Menu',
 };
 
 const IconComponent = computed(() => {
