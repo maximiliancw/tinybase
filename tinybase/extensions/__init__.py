@@ -46,14 +46,13 @@ Usage for extension developers:
         return MyOutput(...)
 
     # Activity logging (for audit trails)
-    from tinybase.extensions import log_extension_activity
+    from tinybase.extensions import create_activity_logger
 
-    log_extension_activity(
-        extension_name="my_extension",
-        action_name="sync_completed",
-        meta_data={"records": 150},
-    )
-    # Logs as action: "ext.my_extension.sync_completed"
+    log_act = create_activity_logger("my_extension")
+
+    log_act("sync_started")
+    log_act("sync_completed", meta_data={"records": 150})
+    # Logs as: ext.my_extension.sync_completed
 """
 
 from tinybase.extensions.hooks import (
@@ -105,7 +104,7 @@ from tinybase.extensions.loader import (
     load_extension_module,
     unload_extension,
 )
-from tinybase.activity import log_extension_activity
+from tinybase.activity import create_activity_logger, log_extension_activity
 
 __all__ = [
     # Lifecycle hooks (for extension developers)
@@ -155,4 +154,5 @@ __all__ = [
     "ExtensionManifest",
     # Activity logging
     "log_extension_activity",
+    "create_activity_logger",
 ]

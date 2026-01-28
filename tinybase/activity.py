@@ -168,3 +168,73 @@ def log_extension_activity(
         meta_data=meta_data,
         ip_address=ip_address,
     )
+
+
+class ExtensionActivityLogger:
+    """
+    A bound activity logger for a specific extension.
+
+    Pre-configured with the extension name so you don't need to pass it
+    on every call.
+
+    Example:
+        log = ExtensionActivityLogger("my_extension")
+        log("sync_completed", meta_data={"records": 150})
+        # Logs as: ext.my_extension.sync_completed
+    """
+
+    def __init__(self, extension_name: str):
+        """
+        Create a logger bound to a specific extension.
+
+        Args:
+            extension_name: Name of the extension (should match extension.toml)
+        """
+        self.extension_name = extension_name
+
+    def __call__(
+        self,
+        action_name: str,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+        user_id: UUID | None = None,
+        meta_data: dict | None = None,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log an activity for this extension."""
+        log_extension_activity(
+            extension_name=self.extension_name,
+            action_name=action_name,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            user_id=user_id,
+            meta_data=meta_data,
+            ip_address=ip_address,
+        )
+
+
+def create_activity_logger(extension_name: str) -> ExtensionActivityLogger:
+    """
+    Create a bound activity logger for an extension.
+
+    This factory creates a logger pre-configured with your extension name,
+    so you don't need to pass it on every call.
+
+    Args:
+        extension_name: Name of the extension (should match extension.toml)
+
+    Returns:
+        An ExtensionActivityLogger instance.
+
+    Example:
+        # At the top of your extension's main.py
+        from tinybase.extensions import create_activity_logger
+
+        log_act = create_activity_logger("my_extension")
+
+        # Then use it throughout your extension
+        log_act("sync_started")
+        log_act("sync_completed", meta_data={"records": 150})
+        log_act("error_occurred", meta_data={"error": str(e)})
+    """
+    return ExtensionActivityLogger(extension_name)
