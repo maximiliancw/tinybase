@@ -7,12 +7,14 @@
 [project]
 name = "tinybase-workspace"
 version = "0.0.0"
-description = "TinyBase monorepo workspace root"
+description = "TinyBase monorepo workspace root (not a distributable package)"
 requires-python = ">=3.11"
+dependencies = [
+    "tinybase",
+]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+# Note: No [build-system] section - this is a workspace root, not a buildable package.
+# The actual packages are in packages/tinybase and packages/tinybase-sdk.
 
 [dependency-groups]
 dev = [
@@ -90,5 +92,6 @@ exclude_lines = [
 members = ["packages/tinybase", "packages/tinybase-sdk"]
 
 [tool.uv.sources]
+tinybase = { workspace = true }
 tinybase-sdk = { workspace = true }
 

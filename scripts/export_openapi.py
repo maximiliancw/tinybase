@@ -6,8 +6,9 @@ from pathlib import Path
 
 
 def main():
-    from tinybase.api.app import app
+    from tinybase.api.app import create_app
 
+    app = create_app()
     spec = app.openapi()
 
     output_path = Path(__file__).parent.parent / "openapi" / "openapi.json"

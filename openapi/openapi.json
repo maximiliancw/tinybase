@@ -1,0 +1,6377 @@
+{
+  "components": {
+    "schemas": {
+      "ActivityLogInfo": {
+        "description": "Activity log entry information.",
+        "properties": {
+          "action": {
+            "description": "Action performed",
+            "title": "Action",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "When the action occurred",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "description": "Activity ID",
+            "title": "Id",
+            "type": "string"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client IP address",
+            "title": "Ip Address"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "description": "Additional context",
+            "title": "Metadata",
+            "type": "object"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resource ID",
+            "title": "Resource Id"
+          },
+          "resource_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resource type",
+            "title": "Resource Type"
+          },
+          "user_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Email of user who performed action",
+            "title": "User Email"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User who performed the action",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "created_at"
+        ],
+        "title": "ActivityLogInfo",
+        "type": "object"
+      },
+      "ActivityLogListResponse": {
+        "description": "Paginated activity log list.",
+        "properties": {
+          "activities": {
+            "description": "Activity log entries",
+            "items": {
+              "$ref": "#/components/schemas/ActivityLogInfo"
+            },
+            "title": "Activities",
+            "type": "array"
+          },
+          "limit": {
+            "description": "Page size",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Page offset",
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total count",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "activities",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ActivityLogListResponse",
+        "type": "object"
+      },
+      "AdminFunctionInfo": {
+        "description": "Extended function information for admins.",
+        "properties": {
+          "auth": {
+            "$ref": "#/components/schemas/AuthLevel",
+            "description": "Auth requirement"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Function description",
+            "title": "Description"
+          },
+          "file_path": {
+            "description": "Source file path",
+            "title": "File Path",
+            "type": "string"
+          },
+          "has_input_model": {
+            "description": "Whether function has input validation",
+            "title": "Has Input Model",
+            "type": "boolean"
+          },
+          "has_output_model": {
+            "description": "Whether function has output schema",
+            "title": "Has Output Model",
+            "type": "boolean"
+          },
+          "is_async": {
+            "default": false,
+            "description": "Whether function is async",
+            "title": "Is Async",
+            "type": "boolean"
+          },
+          "last_loaded_at": {
+            "description": "When function was last loaded",
+            "title": "Last Loaded At",
+            "type": "string"
+          },
+          "module": {
+            "description": "Python module name",
+            "title": "Module",
+            "type": "string"
+          },
+          "name": {
+            "description": "Function name",
+            "title": "Name",
+            "type": "string"
+          },
+          "tags": {
+            "description": "Function tags",
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "auth",
+          "module",
+          "file_path",
+          "last_loaded_at",
+          "has_input_model",
+          "has_output_model"
+        ],
+        "title": "AdminFunctionInfo",
+        "type": "object"
+      },
+      "AllCollectionsStatusResponse": {
+        "description": "Status summary for all collections.",
+        "properties": {
+          "collections": {
+            "description": "Collection summaries",
+            "items": {
+              "$ref": "#/components/schemas/CollectionStatusSummary"
+            },
+            "title": "Collections",
+            "type": "array"
+          },
+          "total_collections": {
+            "description": "Total number of collections",
+            "title": "Total Collections",
+            "type": "integer"
+          },
+          "total_records": {
+            "description": "Total number of records across all collections",
+            "title": "Total Records",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "collections",
+          "total_collections",
+          "total_records"
+        ],
+        "title": "AllCollectionsStatusResponse",
+        "type": "object"
+      },
+      "ApplicationTokenCreate": {
+        "description": "Create application token request.",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Token description",
+            "title": "Description"
+          },
+          "expires_days": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Expiration in days (None = never expires)",
+            "title": "Expires Days"
+          },
+          "name": {
+            "description": "Token name",
+            "maxLength": 200,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ApplicationTokenCreate",
+        "type": "object"
+      },
+      "ApplicationTokenCreateResponse": {
+        "description": "Application token creation response.",
+        "properties": {
+          "token": {
+            "$ref": "#/components/schemas/ApplicationTokenInfo",
+            "description": "Token information"
+          },
+          "token_value": {
+            "description": "The actual token value (only shown once)",
+            "title": "Token Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "token_value"
+        ],
+        "title": "ApplicationTokenCreateResponse",
+        "type": "object"
+      },
+      "ApplicationTokenInfo": {
+        "description": "Application token information.",
+        "properties": {
+          "created_at": {
+            "description": "Created timestamp",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Token description",
+            "title": "Description"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Expiration timestamp",
+            "title": "Expires At"
+          },
+          "id": {
+            "description": "Token ID",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "description": "Whether token is active",
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "is_valid": {
+            "description": "Whether token is valid (active and not expired)",
+            "title": "Is Valid",
+            "type": "boolean"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Last used timestamp",
+            "title": "Last Used At"
+          },
+          "name": {
+            "description": "Token name",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "created_at",
+          "is_active",
+          "is_valid"
+        ],
+        "title": "ApplicationTokenInfo",
+        "type": "object"
+      },
+      "ApplicationTokenListResponse": {
+        "description": "Application token list response.",
+        "properties": {
+          "tokens": {
+            "description": "Application tokens",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationTokenInfo"
+            },
+            "title": "Tokens",
+            "type": "array"
+          }
+        },
+        "required": [
+          "tokens"
+        ],
+        "title": "ApplicationTokenListResponse",
+        "type": "object"
+      },
+      "ApplicationTokenUpdate": {
+        "description": "Update application token request.",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Token description",
+            "title": "Description"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Active status",
+            "title": "Is Active"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Token name",
+            "title": "Name"
+          }
+        },
+        "title": "ApplicationTokenUpdate",
+        "type": "object"
+      },
+      "AuthLevel": {
+        "description": "Authentication level required for a resource.",
+        "enum": [
+          "public",
+          "auth",
+          "admin"
+        ],
+        "title": "AuthLevel",
+        "type": "string"
+      },
+      "BatchUploadRequest": {
+        "description": "Batch function upload request.",
+        "properties": {
+          "functions": {
+            "description": "List of functions to upload",
+            "items": {
+              "$ref": "#/components/schemas/FunctionUploadRequest"
+            },
+            "title": "Functions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "functions"
+        ],
+        "title": "BatchUploadRequest",
+        "type": "object"
+      },
+      "Body_files_upload_file": {
+        "properties": {
+          "file": {
+            "format": "binary",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_files_upload_file",
+        "type": "object"
+      },
+      "CollectionCreate": {
+        "description": "Request to create a new collection.",
+        "properties": {
+          "label": {
+            "description": "Human-readable label",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "description": "Collection name (lowercase, underscores allowed)",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Name",
+            "type": "string"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Additional options (access rules, etc.)",
+            "title": "Options"
+          },
+          "schema": {
+            "additionalProperties": true,
+            "description": "Collection schema with fields definition",
+            "title": "Schema",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "schema"
+        ],
+        "title": "CollectionCreate",
+        "type": "object"
+      },
+      "CollectionIndexInfo": {
+        "description": "Information about a collection index.",
+        "properties": {
+          "field": {
+            "description": "Field name",
+            "title": "Field",
+            "type": "string"
+          },
+          "has_index": {
+            "description": "Whether the index exists",
+            "title": "Has Index",
+            "type": "boolean"
+          },
+          "index_name": {
+            "description": "Index name in database",
+            "title": "Index Name",
+            "type": "string"
+          },
+          "status": {
+            "description": "Index status (active/missing)",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "index_name",
+          "has_index",
+          "status"
+        ],
+        "title": "CollectionIndexInfo",
+        "type": "object"
+      },
+      "CollectionReferenceInfo": {
+        "description": "Information about a collection reference field.",
+        "properties": {
+          "field": {
+            "description": "Field name",
+            "title": "Field",
+            "type": "string"
+          },
+          "target_collection": {
+            "description": "Target collection name",
+            "title": "Target Collection",
+            "type": "string"
+          },
+          "target_exists": {
+            "description": "Whether target collection exists",
+            "title": "Target Exists",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "field",
+          "target_collection",
+          "target_exists"
+        ],
+        "title": "CollectionReferenceInfo",
+        "type": "object"
+      },
+      "CollectionResponse": {
+        "description": "Collection information response.",
+        "properties": {
+          "created_at": {
+            "description": "Creation timestamp",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "description": "Collection ID",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "description": "Human-readable label",
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "description": "Collection name",
+            "title": "Name",
+            "type": "string"
+          },
+          "options": {
+            "additionalProperties": true,
+            "description": "Collection options",
+            "title": "Options",
+            "type": "object"
+          },
+          "schema": {
+            "additionalProperties": true,
+            "description": "Collection schema",
+            "title": "Schema",
+            "type": "object"
+          },
+          "updated_at": {
+            "description": "Last update timestamp",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "label",
+          "schema",
+          "options",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CollectionResponse",
+        "type": "object"
+      },
+      "CollectionSizesResponse": {
+        "description": "Collection sizes metrics response.",
+        "properties": {
+          "collection_name": {
+            "description": "Collection name",
+            "title": "Collection Name",
+            "type": "string"
+          },
+          "record_count": {
+            "description": "Number of records",
+            "title": "Record Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "collection_name",
+          "record_count"
+        ],
+        "title": "CollectionSizesResponse",
+        "type": "object"
+      },
+      "CollectionStatusResponse": {
+        "description": "Detailed status information for a collection.",
+        "properties": {
+          "collection": {
+            "description": "Collection name",
+            "title": "Collection",
+            "type": "string"
+          },
+          "health_status": {
+            "description": "Overall health status",
+            "title": "Health Status",
+            "type": "string"
+          },
+          "indexes": {
+            "description": "Index status for unique fields",
+            "items": {
+              "$ref": "#/components/schemas/CollectionIndexInfo"
+            },
+            "title": "Indexes",
+            "type": "array"
+          },
+          "label": {
+            "description": "Collection label",
+            "title": "Label",
+            "type": "string"
+          },
+          "last_updated": {
+            "description": "Last schema update timestamp",
+            "title": "Last Updated",
+            "type": "string"
+          },
+          "record_count": {
+            "description": "Number of records",
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "references": {
+            "description": "Reference field status",
+            "items": {
+              "$ref": "#/components/schemas/CollectionReferenceInfo"
+            },
+            "title": "References",
+            "type": "array"
+          },
+          "schema_fields": {
+            "description": "Number of schema fields",
+            "title": "Schema Fields",
+            "type": "integer"
+          },
+          "unique_fields": {
+            "description": "Fields with unique constraint",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unique Fields",
+            "type": "array"
+          }
+        },
+        "required": [
+          "collection",
+          "label",
+          "record_count",
+          "schema_fields",
+          "unique_fields",
+          "indexes",
+          "references",
+          "last_updated",
+          "health_status"
+        ],
+        "title": "CollectionStatusResponse",
+        "type": "object"
+      },
+      "CollectionStatusSummary": {
+        "description": "Summary status for a collection.",
+        "properties": {
+          "health_status": {
+            "description": "Overall health status",
+            "title": "Health Status",
+            "type": "string"
+          },
+          "label": {
+            "description": "Collection label",
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "description": "Collection name",
+            "title": "Name",
+            "type": "string"
+          },
+          "record_count": {
+            "description": "Number of records",
+            "title": "Record Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "record_count",
+          "health_status"
+        ],
+        "title": "CollectionStatusSummary",
+        "type": "object"
+      },
+      "CollectionUpdate": {
+        "description": "Request to update a collection.",
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New label",
+            "title": "Label"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New options",
+            "title": "Options"
+          },
+          "schema": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New schema",
+            "title": "Schema"
+          }
+        },
+        "title": "CollectionUpdate",
+        "type": "object"
+      },
+      "ExtensionInfo": {
+        "description": "Extension information response.",
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Extension author",
+            "title": "Author"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Extension description",
+            "title": "Description"
+          },
+          "id": {
+            "description": "Extension ID",
+            "title": "Id",
+            "type": "string"
+          },
+          "installed_at": {
+            "description": "Installation timestamp",
+            "title": "Installed At",
+            "type": "string"
+          },
+          "is_enabled": {
+            "description": "Whether extension is enabled",
+            "title": "Is Enabled",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "Extension name",
+            "title": "Name",
+            "type": "string"
+          },
+          "repo_url": {
+            "description": "GitHub repository URL",
+            "title": "Repo Url",
+            "type": "string"
+          },
+          "update_available": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Latest version if update available",
+            "title": "Update Available"
+          },
+          "updated_at": {
+            "description": "Last update timestamp",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "description": "Extension version",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "version",
+          "repo_url",
+          "is_enabled",
+          "installed_at",
+          "updated_at"
+        ],
+        "title": "ExtensionInfo",
+        "type": "object"
+      },
+      "ExtensionInstallRequest": {
+        "description": "Extension installation request.",
+        "properties": {
+          "repo_url": {
+            "description": "GitHub repository URL",
+            "examples": [
+              "https://github.com/user/tinybase-extension"
+            ],
+            "title": "Repo Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repo_url"
+        ],
+        "title": "ExtensionInstallRequest",
+        "type": "object"
+      },
+      "ExtensionListResponse": {
+        "description": "Paginated extension list response.",
+        "properties": {
+          "extensions": {
+            "description": "Extensions",
+            "items": {
+              "$ref": "#/components/schemas/ExtensionInfo"
+            },
+            "title": "Extensions",
+            "type": "array"
+          },
+          "limit": {
+            "description": "Page size",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Page offset",
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total count",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "extensions",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ExtensionListResponse",
+        "type": "object"
+      },
+      "ExtensionSettingInfo": {
+        "description": "Extension setting information.",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Setting description",
+            "title": "Description"
+          },
+          "key": {
+            "description": "Setting key (without ext.{name}. prefix)",
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Setting value",
+            "title": "Value"
+          },
+          "value_type": {
+            "description": "Value type (str, int, bool, float, json)",
+            "title": "Value Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value_type"
+        ],
+        "title": "ExtensionSettingInfo",
+        "type": "object"
+      },
+      "ExtensionSettingsResponse": {
+        "description": "Extension settings response.",
+        "properties": {
+          "extension_name": {
+            "description": "Extension name",
+            "title": "Extension Name",
+            "type": "string"
+          },
+          "settings": {
+            "description": "Extension settings",
+            "items": {
+              "$ref": "#/components/schemas/ExtensionSettingInfo"
+            },
+            "title": "Settings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "extension_name",
+          "settings"
+        ],
+        "title": "ExtensionSettingsResponse",
+        "type": "object"
+      },
+      "ExtensionSettingsUpdateRequest": {
+        "description": "Extension settings update request.",
+        "properties": {
+          "settings": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Settings to update (key without prefix -> value)",
+            "title": "Settings",
+            "type": "object"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "title": "ExtensionSettingsUpdateRequest",
+        "type": "object"
+      },
+      "ExtensionUpdateRequest": {
+        "description": "Extension update request.",
+        "properties": {
+          "is_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Enable/disable extension",
+            "title": "Is Enabled"
+          }
+        },
+        "title": "ExtensionUpdateRequest",
+        "type": "object"
+      },
+      "FileUploadResponse": {
+        "description": "Response after successful file upload.",
+        "properties": {
+          "content_type": {
+            "description": "MIME type",
+            "title": "Content Type",
+            "type": "string"
+          },
+          "filename": {
+            "description": "Original filename",
+            "title": "Filename",
+            "type": "string"
+          },
+          "key": {
+            "description": "Storage key (path) of the uploaded file",
+            "title": "Key",
+            "type": "string"
+          },
+          "size": {
+            "description": "File size in bytes",
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "filename",
+          "content_type",
+          "size"
+        ],
+        "title": "FileUploadResponse",
+        "type": "object"
+      },
+      "FunctionCallInfo": {
+        "description": "Function call metadata.",
+        "properties": {
+          "created_at": {
+            "description": "Created timestamp",
+            "title": "Created At",
+            "type": "string"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Duration in ms",
+            "title": "Duration Ms"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Error message",
+            "title": "Error Message"
+          },
+          "error_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Error type",
+            "title": "Error Type"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "End time",
+            "title": "Finished At"
+          },
+          "function_name": {
+            "description": "Function name",
+            "title": "Function Name",
+            "type": "string"
+          },
+          "id": {
+            "description": "Call ID",
+            "title": "Id",
+            "type": "string"
+          },
+          "requested_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User ID",
+            "title": "Requested By User Id"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Start time",
+            "title": "Started At"
+          },
+          "status": {
+            "description": "Execution status",
+            "title": "Status",
+            "type": "string"
+          },
+          "trigger_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Schedule ID if scheduled",
+            "title": "Trigger Id"
+          },
+          "trigger_type": {
+            "description": "Trigger type (manual/schedule)",
+            "title": "Trigger Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "function_name",
+          "status",
+          "trigger_type",
+          "created_at"
+        ],
+        "title": "FunctionCallInfo",
+        "type": "object"
+      },
+      "FunctionCallListResponse": {
+        "description": "Paginated function call list.",
+        "properties": {
+          "calls": {
+            "description": "Function calls",
+            "items": {
+              "$ref": "#/components/schemas/FunctionCallInfo"
+            },
+            "title": "Calls",
+            "type": "array"
+          },
+          "limit": {
+            "description": "Page size",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Page offset",
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total count",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "calls",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "FunctionCallListResponse",
+        "type": "object"
+      },
+      "FunctionCallResponse": {
+        "description": "Function call response.",
+        "properties": {
+          "call_id": {
+            "description": "Unique call ID",
+            "title": "Call Id",
+            "type": "string"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Execution duration in ms",
+            "title": "Duration Ms"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Error message (if failed)",
+            "title": "Error Message"
+          },
+          "error_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Error type (if failed)",
+            "title": "Error Type"
+          },
+          "result": {
+            "description": "Function result (if succeeded)",
+            "title": "Result"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FunctionCallStatus",
+            "description": "Execution status"
+          }
+        },
+        "required": [
+          "call_id",
+          "status"
+        ],
+        "title": "FunctionCallResponse",
+        "type": "object"
+      },
+      "FunctionCallStatus": {
+        "description": "Status of a function call execution.",
+        "enum": [
+          "running",
+          "succeeded",
+          "failed"
+        ],
+        "title": "FunctionCallStatus",
+        "type": "string"
+      },
+      "FunctionInfo": {
+        "description": "Public function information.",
+        "properties": {
+          "auth": {
+            "$ref": "#/components/schemas/AuthLevel",
+            "description": "Auth requirement"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Function description",
+            "title": "Description"
+          },
+          "name": {
+            "description": "Function name",
+            "title": "Name",
+            "type": "string"
+          },
+          "tags": {
+            "description": "Function tags",
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "auth"
+        ],
+        "title": "FunctionInfo",
+        "type": "object"
+      },
+      "FunctionSchemaResponse": {
+        "description": "Function schema information.",
+        "properties": {
+          "has_input_model": {
+            "description": "Whether function has input validation",
+            "title": "Has Input Model",
+            "type": "boolean"
+          },
+          "has_output_model": {
+            "description": "Whether function has output schema",
+            "title": "Has Output Model",
+            "type": "boolean"
+          },
+          "input_schema": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "JSON Schema for input",
+            "title": "Input Schema"
+          },
+          "name": {
+            "description": "Function name",
+            "title": "Name",
+            "type": "string"
+          },
+          "output_schema": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "JSON Schema for output",
+            "title": "Output Schema"
+          }
+        },
+        "required": [
+          "name",
+          "has_input_model",
+          "has_output_model"
+        ],
+        "title": "FunctionSchemaResponse",
+        "type": "object"
+      },
+      "FunctionStatsResponse": {
+        "description": "Function statistics metrics response.",
+        "properties": {
+          "avg_runtime_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Average runtime in milliseconds",
+            "title": "Avg Runtime Ms"
+          },
+          "error_rate": {
+            "description": "Error rate as percentage",
+            "title": "Error Rate",
+            "type": "number"
+          },
+          "function_name": {
+            "description": "Function name",
+            "title": "Function Name",
+            "type": "string"
+          },
+          "total_calls": {
+            "description": "Total number of calls",
+            "title": "Total Calls",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "function_name",
+          "avg_runtime_ms",
+          "error_rate",
+          "total_calls"
+        ],
+        "title": "FunctionStatsResponse",
+        "type": "object"
+      },
+      "FunctionUploadRequest": {
+        "description": "Function upload request.",
+        "properties": {
+          "content": {
+            "description": "Function file content",
+            "title": "Content",
+            "type": "string"
+          },
+          "filename": {
+            "description": "Function filename (e.g., my_func.py)",
+            "title": "Filename",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional deployment notes",
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "filename",
+          "content"
+        ],
+        "title": "FunctionUploadRequest",
+        "type": "object"
+      },
+      "FunctionUploadResponse": {
+        "description": "Function upload response.",
+        "properties": {
+          "content_hash": {
+            "description": "Content hash",
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "function_name": {
+            "description": "Function name",
+            "title": "Function Name",
+            "type": "string"
+          },
+          "is_new_version": {
+            "description": "Whether this is a new version",
+            "title": "Is New Version",
+            "type": "boolean"
+          },
+          "message": {
+            "description": "Status message",
+            "title": "Message",
+            "type": "string"
+          },
+          "version_id": {
+            "description": "Version ID",
+            "title": "Version Id",
+            "type": "string"
+          },
+          "warnings": {
+            "description": "Security/validation warnings",
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "function_name",
+          "version_id",
+          "content_hash",
+          "is_new_version",
+          "message"
+        ],
+        "title": "FunctionUploadResponse",
+        "type": "object"
+      },
+      "FunctionVersionInfo": {
+        "description": "Function version information.",
+        "properties": {
+          "content_hash": {
+            "description": "Content hash",
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "deployed_at": {
+            "description": "Deployment timestamp",
+            "title": "Deployed At",
+            "type": "string"
+          },
+          "deployed_by_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Email of deploying user",
+            "title": "Deployed By Email"
+          },
+          "execution_count": {
+            "description": "Number of executions using this version",
+            "title": "Execution Count",
+            "type": "integer"
+          },
+          "file_size": {
+            "description": "File size in bytes",
+            "title": "File Size",
+            "type": "integer"
+          },
+          "function_name": {
+            "description": "Function name",
+            "title": "Function Name",
+            "type": "string"
+          },
+          "id": {
+            "description": "Version ID",
+            "title": "Id",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Deployment notes",
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "id",
+          "function_name",
+          "content_hash",
+          "file_size",
+          "deployed_at",
+          "execution_count"
+        ],
+        "title": "FunctionVersionInfo",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "InstanceInfoResponse": {
+        "description": "Public instance information.",
+        "properties": {
+          "instance_name": {
+            "description": "The name of this TinyBase instance",
+            "title": "Instance Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instance_name"
+        ],
+        "title": "InstanceInfoResponse",
+        "type": "object"
+      },
+      "InstanceSettingsResponse": {
+        "description": "Instance settings response.",
+        "properties": {
+          "admin_report_email_enabled": {
+            "description": "Enable periodic admin report emails",
+            "title": "Admin Report Email Enabled",
+            "type": "boolean"
+          },
+          "admin_report_email_interval_days": {
+            "description": "Interval between admin report emails in days",
+            "title": "Admin Report Email Interval Days",
+            "type": "integer"
+          },
+          "allow_public_registration": {
+            "description": "Allow public registration",
+            "title": "Allow Public Registration",
+            "type": "boolean"
+          },
+          "auth_portal_background_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Auth portal background image URL",
+            "title": "Auth Portal Background Image Url"
+          },
+          "auth_portal_enabled": {
+            "description": "Auth portal enabled",
+            "title": "Auth Portal Enabled",
+            "type": "boolean"
+          },
+          "auth_portal_login_redirect_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Auth portal login redirect URL",
+            "title": "Auth Portal Login Redirect Url"
+          },
+          "auth_portal_logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Auth portal logo URL",
+            "title": "Auth Portal Logo Url"
+          },
+          "auth_portal_primary_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Auth portal primary color",
+            "title": "Auth Portal Primary Color"
+          },
+          "auth_portal_register_redirect_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Auth portal register redirect URL",
+            "title": "Auth Portal Register Redirect Url"
+          },
+          "instance_name": {
+            "description": "Instance name",
+            "title": "Instance Name",
+            "type": "string"
+          },
+          "max_concurrent_functions_per_user": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Max concurrent function executions per user",
+            "title": "Max Concurrent Functions Per User"
+          },
+          "metrics_collection_interval": {
+            "description": "Metrics collection interval in scheduler ticks",
+            "title": "Metrics Collection Interval",
+            "type": "integer"
+          },
+          "scheduler_function_timeout_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Function execution timeout in seconds",
+            "title": "Scheduler Function Timeout Seconds"
+          },
+          "scheduler_max_concurrent_executions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Max concurrent executions",
+            "title": "Scheduler Max Concurrent Executions"
+          },
+          "scheduler_max_schedules_per_tick": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Max schedules per tick",
+            "title": "Scheduler Max Schedules Per Tick"
+          },
+          "server_timezone": {
+            "description": "Server timezone",
+            "title": "Server Timezone",
+            "type": "string"
+          },
+          "storage_bucket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "S3 bucket name",
+            "title": "Storage Bucket"
+          },
+          "storage_enabled": {
+            "description": "File storage enabled",
+            "title": "Storage Enabled",
+            "type": "boolean"
+          },
+          "storage_region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "S3 region",
+            "title": "Storage Region"
+          },
+          "storage_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "S3 endpoint URL",
+            "title": "Storage Url"
+          },
+          "token_cleanup_interval": {
+            "description": "Token cleanup interval in scheduler ticks",
+            "title": "Token Cleanup Interval",
+            "type": "integer"
+          },
+          "updated_at": {
+            "description": "Last update time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instance_name",
+          "allow_public_registration",
+          "server_timezone",
+          "token_cleanup_interval",
+          "metrics_collection_interval",
+          "storage_enabled",
+          "auth_portal_enabled",
+          "admin_report_email_enabled",
+          "admin_report_email_interval_days",
+          "updated_at"
+        ],
+        "title": "InstanceSettingsResponse",
+        "type": "object"
+      },
+      "InstanceSettingsUpdate": {
+        "description": "Instance settings update request.",
+        "properties": {
+          "admin_report_email_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin Report Email Enabled"
+          },
+          "admin_report_email_interval_days": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Interval between admin report emails in days",
+            "title": "Admin Report Email Interval Days"
+          },
+          "allow_public_registration": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allow Public Registration"
+          },
+          "auth_portal_background_image_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Portal Background Image Url"
+          },
+          "auth_portal_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Portal Enabled"
+          },
+          "auth_portal_login_redirect_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Portal Login Redirect Url"
+          },
+          "auth_portal_logo_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Portal Logo Url"
+          },
+          "auth_portal_primary_color": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Portal Primary Color"
+          },
+          "auth_portal_register_redirect_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Portal Register Redirect Url"
+          },
+          "instance_name": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instance Name"
+          },
+          "max_concurrent_functions_per_user": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Max concurrent function executions per user",
+            "title": "Max Concurrent Functions Per User"
+          },
+          "metrics_collection_interval": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Metrics collection interval in scheduler ticks",
+            "title": "Metrics Collection Interval"
+          },
+          "scheduler_function_timeout_seconds": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Function execution timeout in seconds",
+            "title": "Scheduler Function Timeout Seconds"
+          },
+          "scheduler_max_concurrent_executions": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Max concurrent executions",
+            "title": "Scheduler Max Concurrent Executions"
+          },
+          "scheduler_max_schedules_per_tick": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Max schedules per tick",
+            "title": "Scheduler Max Schedules Per Tick"
+          },
+          "server_timezone": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Timezone"
+          },
+          "storage_access_key": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Access Key"
+          },
+          "storage_bucket": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Bucket"
+          },
+          "storage_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Enabled"
+          },
+          "storage_region": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Region"
+          },
+          "storage_secret_key": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Secret Key"
+          },
+          "storage_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Url"
+          },
+          "token_cleanup_interval": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Token cleanup interval in scheduler ticks",
+            "title": "Token Cleanup Interval"
+          }
+        },
+        "title": "InstanceSettingsUpdate",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "description": "User login request.",
+        "properties": {
+          "email": {
+            "description": "User email address",
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "description": "User password",
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
+      "LoginResponse": {
+        "description": "User login response with JWT tokens.",
+        "properties": {
+          "access_token": {
+            "description": "JWT access token for API authentication",
+            "title": "Access Token",
+            "type": "string"
+          },
+          "admin_created": {
+            "default": false,
+            "description": "Whether an admin user was auto-created",
+            "title": "Admin Created",
+            "type": "boolean"
+          },
+          "email": {
+            "description": "Authenticated user email",
+            "title": "Email",
+            "type": "string"
+          },
+          "is_admin": {
+            "description": "Whether user has admin privileges",
+            "title": "Is Admin",
+            "type": "boolean"
+          },
+          "refresh_token": {
+            "description": "JWT refresh token for obtaining new access tokens",
+            "title": "Refresh Token",
+            "type": "string"
+          },
+          "token_type": {
+            "default": "bearer",
+            "title": "Token Type",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "Authenticated user ID",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "refresh_token",
+          "user_id",
+          "email",
+          "is_admin"
+        ],
+        "title": "LoginResponse",
+        "type": "object"
+      },
+      "LogoutResponse": {
+        "description": "Logout response.",
+        "properties": {
+          "message": {
+            "default": "Successfully logged out",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "title": "LogoutResponse",
+        "type": "object"
+      },
+      "MetricsResponse": {
+        "description": "Metrics response.",
+        "properties": {
+          "collected_at": {
+            "description": "When metrics were collected",
+            "title": "Collected At",
+            "type": "string"
+          },
+          "collection_sizes": {
+            "description": "Collection sizes",
+            "items": {
+              "$ref": "#/components/schemas/CollectionSizesResponse"
+            },
+            "title": "Collection Sizes",
+            "type": "array"
+          },
+          "function_stats": {
+            "description": "Function statistics",
+            "items": {
+              "$ref": "#/components/schemas/FunctionStatsResponse"
+            },
+            "title": "Function Stats",
+            "type": "array"
+          }
+        },
+        "required": [
+          "collection_sizes",
+          "function_stats",
+          "collected_at"
+        ],
+        "title": "MetricsResponse",
+        "type": "object"
+      },
+      "PasswordResetConfirm": {
+        "description": "Password reset confirmation.",
+        "properties": {
+          "password": {
+            "description": "New password (min 8 characters)",
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          },
+          "token": {
+            "description": "Password reset token",
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ],
+        "title": "PasswordResetConfirm",
+        "type": "object"
+      },
+      "PasswordResetConfirmResponse": {
+        "description": "Password reset confirmation response.",
+        "properties": {
+          "message": {
+            "default": "Password reset successful",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "title": "PasswordResetConfirmResponse",
+        "type": "object"
+      },
+      "PasswordResetRequest": {
+        "description": "Password reset request.",
+        "properties": {
+          "email": {
+            "description": "User email address",
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "PasswordResetRequest",
+        "type": "object"
+      },
+      "PasswordResetRequestResponse": {
+        "description": "Password reset request response.",
+        "properties": {
+          "message": {
+            "default": "If the email exists, a password reset link has been sent",
+            "description": "Response message (always the same for security)",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "title": "PasswordResetRequestResponse",
+        "type": "object"
+      },
+      "PortalConfigResponse": {
+        "description": "Auth portal configuration.",
+        "properties": {
+          "background_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Background image URL",
+            "title": "Background Image Url"
+          },
+          "instance_name": {
+            "description": "Instance name",
+            "title": "Instance Name",
+            "type": "string"
+          },
+          "login_redirect_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default redirect URL after login",
+            "title": "Login Redirect Url"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Logo URL",
+            "title": "Logo Url"
+          },
+          "primary_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Primary color",
+            "title": "Primary Color"
+          },
+          "register_redirect_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default redirect URL after registration",
+            "title": "Register Redirect Url"
+          },
+          "registration_enabled": {
+            "description": "Whether registration is enabled",
+            "title": "Registration Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "instance_name",
+          "registration_enabled"
+        ],
+        "title": "PortalConfigResponse",
+        "type": "object"
+      },
+      "PresignedUrlResponse": {
+        "description": "Response with presigned URL.",
+        "properties": {
+          "expires_in": {
+            "description": "URL expiration time in seconds",
+            "title": "Expires In",
+            "type": "integer"
+          },
+          "url": {
+            "description": "Presigned URL for file access",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "expires_in"
+        ],
+        "title": "PresignedUrlResponse",
+        "type": "object"
+      },
+      "RecordCreate": {
+        "description": "Request to create a new record.",
+        "properties": {
+          "data": {
+            "additionalProperties": true,
+            "description": "Record data",
+            "title": "Data",
+            "type": "object"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "RecordCreate",
+        "type": "object"
+      },
+      "RecordListResponse": {
+        "description": "Paginated record list response.",
+        "properties": {
+          "limit": {
+            "description": "Page size",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Page offset",
+            "title": "Offset",
+            "type": "integer"
+          },
+          "records": {
+            "description": "List of records",
+            "items": {
+              "$ref": "#/components/schemas/RecordResponse"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "total": {
+            "description": "Total number of records",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "records",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "RecordListResponse",
+        "type": "object"
+      },
+      "RecordResponse": {
+        "description": "Record response.",
+        "properties": {
+          "collection_id": {
+            "description": "Collection ID",
+            "title": "Collection Id",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Creation timestamp",
+            "title": "Created At",
+            "type": "string"
+          },
+          "data": {
+            "additionalProperties": true,
+            "description": "Record data",
+            "title": "Data",
+            "type": "object"
+          },
+          "id": {
+            "description": "Record ID",
+            "title": "Id",
+            "type": "string"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Owner user ID",
+            "title": "Owner Id"
+          },
+          "updated_at": {
+            "description": "Last update timestamp",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "collection_id",
+          "owner_id",
+          "data",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RecordResponse",
+        "type": "object"
+      },
+      "RecordUpdate": {
+        "description": "Request to update a record.",
+        "properties": {
+          "data": {
+            "additionalProperties": true,
+            "description": "Record data (partial update)",
+            "title": "Data",
+            "type": "object"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "RecordUpdate",
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "description": "User registration request.",
+        "properties": {
+          "email": {
+            "description": "User email address",
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "description": "Password (min 8 characters)",
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "RegisterRequest",
+        "type": "object"
+      },
+      "RegisterResponse": {
+        "description": "User registration response.",
+        "properties": {
+          "email": {
+            "description": "User email address",
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "description": "User ID",
+            "title": "Id",
+            "type": "string"
+          },
+          "message": {
+            "default": "User registered successfully",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ],
+        "title": "RegisterResponse",
+        "type": "object"
+      },
+      "ScheduleCreate": {
+        "description": "Create schedule request.",
+        "properties": {
+          "function_name": {
+            "description": "Function to execute",
+            "title": "Function Name",
+            "type": "string"
+          },
+          "input_data": {
+            "additionalProperties": true,
+            "description": "Input data for the function",
+            "title": "Input Data",
+            "type": "object"
+          },
+          "is_active": {
+            "default": true,
+            "description": "Whether schedule is active",
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "Schedule name",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "schedule": {
+            "additionalProperties": true,
+            "description": "Schedule configuration",
+            "title": "Schedule",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "function_name",
+          "schedule"
+        ],
+        "title": "ScheduleCreate",
+        "type": "object"
+      },
+      "ScheduleListResponse": {
+        "description": "Paginated schedule list response.",
+        "properties": {
+          "limit": {
+            "description": "Page size",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Page offset",
+            "title": "Offset",
+            "type": "integer"
+          },
+          "schedules": {
+            "description": "Schedules",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleResponse"
+            },
+            "title": "Schedules",
+            "type": "array"
+          },
+          "total": {
+            "description": "Total count",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schedules",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ScheduleListResponse",
+        "type": "object"
+      },
+      "ScheduleResponse": {
+        "description": "Schedule information response.",
+        "properties": {
+          "created_at": {
+            "description": "Created timestamp",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Creator user ID",
+            "title": "Created By User Id"
+          },
+          "function_name": {
+            "description": "Function name",
+            "title": "Function Name",
+            "type": "string"
+          },
+          "id": {
+            "description": "Schedule ID",
+            "title": "Id",
+            "type": "string"
+          },
+          "input_data": {
+            "additionalProperties": true,
+            "description": "Input data for the function",
+            "title": "Input Data",
+            "type": "object"
+          },
+          "is_active": {
+            "description": "Whether schedule is active",
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Last execution time",
+            "title": "Last Run At"
+          },
+          "name": {
+            "description": "Schedule name",
+            "title": "Name",
+            "type": "string"
+          },
+          "next_run_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Next scheduled run",
+            "title": "Next Run At"
+          },
+          "schedule": {
+            "additionalProperties": true,
+            "description": "Schedule configuration",
+            "title": "Schedule",
+            "type": "object"
+          },
+          "updated_at": {
+            "description": "Updated timestamp",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "function_name",
+          "schedule",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ScheduleResponse",
+        "type": "object"
+      },
+      "ScheduleUpdate": {
+        "description": "Update schedule request.",
+        "properties": {
+          "input_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New input data",
+            "title": "Input Data"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New active status",
+            "title": "Is Active"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New name",
+            "title": "Name"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New schedule config",
+            "title": "Schedule"
+          }
+        },
+        "title": "ScheduleUpdate",
+        "type": "object"
+      },
+      "SetupStatusResponse": {
+        "description": "Setup status response.",
+        "properties": {
+          "needs_setup": {
+            "description": "Whether initial setup is needed (no users exist)",
+            "title": "Needs Setup",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "needs_setup"
+        ],
+        "title": "SetupStatusResponse",
+        "type": "object"
+      },
+      "StorageStatusResponse": {
+        "description": "Storage status response.",
+        "properties": {
+          "enabled": {
+            "description": "Whether storage is enabled and configured",
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "StorageStatusResponse",
+        "type": "object"
+      },
+      "TriggerType": {
+        "description": "How a function was triggered.",
+        "enum": [
+          "manual",
+          "schedule"
+        ],
+        "title": "TriggerType",
+        "type": "string"
+      },
+      "UserCreate": {
+        "description": "Create user request.",
+        "properties": {
+          "email": {
+            "description": "Email address",
+            "title": "Email",
+            "type": "string"
+          },
+          "is_admin": {
+            "default": false,
+            "description": "Admin status",
+            "title": "Is Admin",
+            "type": "boolean"
+          },
+          "password": {
+            "description": "Password",
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserCreate",
+        "type": "object"
+      },
+      "UserListResponse": {
+        "description": "Paginated user list.",
+        "properties": {
+          "limit": {
+            "description": "Page size",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Page offset",
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total count",
+            "title": "Total",
+            "type": "integer"
+          },
+          "users": {
+            "description": "Users",
+            "items": {
+              "$ref": "#/components/schemas/tinybase__api__routes__admin__UserInfo"
+            },
+            "title": "Users",
+            "type": "array"
+          }
+        },
+        "required": [
+          "users",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "UserListResponse",
+        "type": "object"
+      },
+      "UserUpdate": {
+        "description": "Update user request.",
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New email",
+            "title": "Email"
+          },
+          "is_admin": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New admin status",
+            "title": "Is Admin"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "minLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New password",
+            "title": "Password"
+          }
+        },
+        "title": "UserUpdate",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "tinybase__api__routes__admin__UserInfo": {
+        "description": "User information for admin.",
+        "properties": {
+          "created_at": {
+            "description": "Created timestamp",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "description": "Email address",
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "description": "User ID",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_admin": {
+            "description": "Admin status",
+            "title": "Is Admin",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "description": "Updated timestamp",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "is_admin",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "UserInfo",
+        "type": "object"
+      },
+      "tinybase__api__routes__auth__UserInfo": {
+        "description": "Current user information.",
+        "properties": {
+          "created_at": {
+            "description": "User creation timestamp",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "description": "User email address",
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "description": "User ID",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_admin": {
+            "description": "Whether user has admin privileges",
+            "title": "Is Admin",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "is_admin",
+          "created_at"
+        ],
+        "title": "UserInfo",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "A lightweight, self-hosted Backend-as-a-Service framework for Python developers",
+    "title": "TinyBase",
+    "version": "0.3.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/": {
+      "get": {
+        "description": "Root endpoint returning API information.",
+        "operationId": "system_get_root",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response System Get Root",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Root",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/admin/activity": {
+      "get": {
+        "description": "Get a paginated list of activity log entries.",
+        "operationId": "admin_list_activity_logs",
+        "parameters": [
+          {
+            "description": "Filter by action type",
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by action type",
+              "title": "Action"
+            }
+          },
+          {
+            "description": "Filter by resource type",
+            "in": "query",
+            "name": "resource_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by resource type",
+              "title": "Resource Type"
+            }
+          },
+          {
+            "description": "Filter by user ID",
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by user ID",
+              "title": "User Id"
+            }
+          },
+          {
+            "description": "Page size",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Page size",
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Page offset",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityLogListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List activity log",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/activity/recent": {
+      "get": {
+        "description": "Get the most recent activity log entries (for dashboard).",
+        "operationId": "admin_get_recent_activity",
+        "parameters": [
+          {
+            "description": "Number of entries to return",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "description": "Number of entries to return",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ActivityLogInfo"
+                  },
+                  "title": "Response Admin Get Recent Activity",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get recent activity",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/application-tokens": {
+      "get": {
+        "description": "Get a list of all application tokens.",
+        "operationId": "admin_list_application_tokens",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationTokenListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List application tokens",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "description": "Create a new application token for client applications.",
+        "operationId": "admin_create_application_token",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationTokenCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationTokenCreateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create application token",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/application-tokens/{token_id}": {
+      "delete": {
+        "description": "Revoke (deactivate) an application token.",
+        "operationId": "admin_revoke_application_token",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Token Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke application token",
+        "tags": [
+          "admin"
+        ]
+      },
+      "patch": {
+        "description": "Update an application token's details.",
+        "operationId": "admin_update_application_token",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Token Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationTokenUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationTokenInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update application token",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/collections/status": {
+      "get": {
+        "description": "Get health and status summary for all collections. Admin only.",
+        "operationId": "admin_get_all_collections_status",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllCollectionsStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get status summary for all collections",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/collections/{collection_name}/status": {
+      "get": {
+        "description": "Get detailed health and index status for a specific collection. Admin only.",
+        "operationId": "admin_get_collection_status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_name",
+            "required": true,
+            "schema": {
+              "title": "Collection Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get detailed status for a collection",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/extensions": {
+      "get": {
+        "description": "Get a paginated list of installed extensions.",
+        "operationId": "extensions_list_extensions",
+        "parameters": [
+          {
+            "description": "Only show enabled extensions",
+            "in": "query",
+            "name": "enabled_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Only show enabled extensions",
+              "title": "Enabled Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Check for available updates",
+            "in": "query",
+            "name": "check_updates",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Check for available updates",
+              "title": "Check Updates",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Page size",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "description": "Page size",
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Page offset",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtensionListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List extensions",
+        "tags": [
+          "extensions"
+        ]
+      },
+      "post": {
+        "description": "Install an extension from a GitHub repository.",
+        "operationId": "extensions_create_extension",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtensionInstallRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtensionInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Install extension",
+        "tags": [
+          "extensions"
+        ]
+      }
+    },
+    "/api/admin/extensions/{extension_name}": {
+      "delete": {
+        "description": "Uninstall an extension and remove its files.",
+        "operationId": "extensions_delete_extension",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "extension_name",
+            "required": true,
+            "schema": {
+              "title": "Extension Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Uninstall extension",
+        "tags": [
+          "extensions"
+        ]
+      },
+      "get": {
+        "description": "Get details of a specific extension.",
+        "operationId": "extensions_get_extension",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "extension_name",
+            "required": true,
+            "schema": {
+              "title": "Extension Name",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Check for available updates",
+            "in": "query",
+            "name": "check_updates",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Check for available updates",
+              "title": "Check Updates",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtensionInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get extension details",
+        "tags": [
+          "extensions"
+        ]
+      },
+      "patch": {
+        "description": "Enable or disable an extension.",
+        "operationId": "extensions_update_extension",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "extension_name",
+            "required": true,
+            "schema": {
+              "title": "Extension Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtensionUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtensionInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update extension",
+        "tags": [
+          "extensions"
+        ]
+      }
+    },
+    "/api/admin/extensions/{extension_name}/settings": {
+      "get": {
+        "description": "Get settings for a specific extension.",
+        "operationId": "extensions_get_extension_settings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "extension_name",
+            "required": true,
+            "schema": {
+              "title": "Extension Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtensionSettingsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get extension settings",
+        "tags": [
+          "extensions"
+        ]
+      },
+      "patch": {
+        "description": "Update settings for a specific extension.",
+        "operationId": "extensions_update_extension_settings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "extension_name",
+            "required": true,
+            "schema": {
+              "title": "Extension Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtensionSettingsUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtensionSettingsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update extension settings",
+        "tags": [
+          "extensions"
+        ]
+      }
+    },
+    "/api/admin/functions/calls": {
+      "get": {
+        "description": "Get a paginated list of function call records.",
+        "operationId": "admin_list_function_calls",
+        "parameters": [
+          {
+            "description": "Filter by function name",
+            "in": "query",
+            "name": "function_name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by function name",
+              "title": "Function Name"
+            }
+          },
+          {
+            "description": "Filter by status",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/FunctionCallStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status",
+              "title": "Status"
+            }
+          },
+          {
+            "description": "Filter by trigger type",
+            "in": "query",
+            "name": "trigger_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TriggerType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by trigger type",
+              "title": "Trigger Type"
+            }
+          },
+          {
+            "description": "Page size",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "description": "Page size",
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Page offset",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunctionCallListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List function calls",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/functions/calls/{call_id}": {
+      "get": {
+        "description": "Get details of a specific function call.",
+        "operationId": "admin_get_function_call",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunctionCallInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get function call details",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/functions/metrics": {
+      "get": {
+        "description": "Get aggregated function execution metrics over a time period.",
+        "operationId": "admin_get_function_metrics",
+        "parameters": [
+          {
+            "description": "Time period in hours",
+            "in": "query",
+            "name": "hours",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Time period in hours",
+              "maximum": 720,
+              "minimum": 1,
+              "title": "Hours",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Admin Get Function Metrics",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get function execution metrics",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/functions/upload": {
+      "post": {
+        "description": "Upload a function file and trigger hot-reload. Admin only.",
+        "operationId": "admin_upload_function",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FunctionUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunctionUploadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upload function file",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/functions/upload-batch": {
+      "post": {
+        "description": "Upload multiple function files at once. Admin only.",
+        "operationId": "admin_upload_functions_batch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FunctionUploadResponse"
+                  },
+                  "title": "Response Admin Upload Functions Batch",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upload multiple functions",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/functions/{function_name}/versions": {
+      "get": {
+        "description": "Get deployment history for a function. Admin only.",
+        "operationId": "admin_list_function_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "function_name",
+            "required": true,
+            "schema": {
+              "title": "Function Name",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of versions to return",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Number of versions to return",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FunctionVersionInfo"
+                  },
+                  "title": "Response Admin List Function Versions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List function versions",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/metrics": {
+      "get": {
+        "description": "Get the most recent collected metrics (collection sizes and function statistics).",
+        "operationId": "admin_get_metrics",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get latest metrics",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/schedules": {
+      "get": {
+        "description": "Get a paginated list of function schedules.",
+        "operationId": "schedules_list_schedules",
+        "parameters": [
+          {
+            "description": "Filter by function name",
+            "in": "query",
+            "name": "function_name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by function name",
+              "title": "Function Name"
+            }
+          },
+          {
+            "description": "Filter by active status",
+            "in": "query",
+            "name": "is_active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by active status",
+              "title": "Is Active"
+            }
+          },
+          {
+            "description": "Page size",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "description": "Page size",
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Page offset",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List schedules",
+        "tags": [
+          "schedules"
+        ]
+      },
+      "post": {
+        "description": "Create a new function schedule.",
+        "operationId": "schedules_create_schedule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create schedule",
+        "tags": [
+          "schedules"
+        ]
+      }
+    },
+    "/api/admin/schedules/{schedule_id}": {
+      "delete": {
+        "description": "Delete a schedule.",
+        "operationId": "schedules_delete_schedule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Schedule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete schedule",
+        "tags": [
+          "schedules"
+        ]
+      },
+      "get": {
+        "description": "Get details of a specific schedule.",
+        "operationId": "schedules_get_schedule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Schedule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get schedule",
+        "tags": [
+          "schedules"
+        ]
+      },
+      "patch": {
+        "description": "Update a schedule's configuration.",
+        "operationId": "schedules_update_schedule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Schedule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update schedule",
+        "tags": [
+          "schedules"
+        ]
+      }
+    },
+    "/api/admin/settings": {
+      "get": {
+        "description": "Get the current instance configuration.",
+        "operationId": "admin_get_settings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceSettingsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get instance settings",
+        "tags": [
+          "admin"
+        ]
+      },
+      "patch": {
+        "description": "Update the instance configuration.",
+        "operationId": "admin_update_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstanceSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceSettingsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update instance settings",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "description": "Get a paginated list of users.",
+        "operationId": "admin_list_users",
+        "parameters": [
+          {
+            "description": "Page size",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "description": "Page size",
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Page offset",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List users",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "description": "Create a new user (admin can create admin users).",
+        "operationId": "admin_create_user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/tinybase__api__routes__admin__UserInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create user",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/users/{user_id}": {
+      "delete": {
+        "description": "Delete a user.",
+        "operationId": "admin_delete_user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete user",
+        "tags": [
+          "admin"
+        ]
+      },
+      "get": {
+        "description": "Get details of a specific user.",
+        "operationId": "admin_get_user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/tinybase__api__routes__admin__UserInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get user details",
+        "tags": [
+          "admin"
+        ]
+      },
+      "patch": {
+        "description": "Update a user's details.",
+        "operationId": "admin_update_user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/tinybase__api__routes__admin__UserInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update user",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/auth/instance-info": {
+      "get": {
+        "description": "Get public information about this TinyBase instance (no auth required).",
+        "operationId": "auth_get_instance_info",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceInfoResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get public instance info",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "description": "Authenticate with email and password to receive a bearer token.",
+        "operationId": "auth_login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login and get access token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "description": "Revoke all access and refresh tokens for the current user.",
+        "operationId": "auth_logout",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Logout and revoke tokens",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "description": "Retrieve information about the currently authenticated user.",
+        "operationId": "auth_get_me",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/tinybase__api__routes__auth__UserInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get current user info",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/password-reset/confirm": {
+      "post": {
+        "description": "Reset password using a valid reset token.",
+        "operationId": "auth_confirm_password_reset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetConfirm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordResetConfirmResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm password reset",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/password-reset/request": {
+      "post": {
+        "description": "Request a password reset email. Always returns success for security.",
+        "operationId": "auth_request_password_reset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordResetRequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request password reset",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/portal-config": {
+      "get": {
+        "description": "Get public portal configuration. Supports preview mode for admins.",
+        "operationId": "auth_get_portal_config",
+        "parameters": [
+          {
+            "description": "Enable preview mode (admin only)",
+            "in": "query",
+            "name": "preview",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Enable preview mode (admin only)",
+              "title": "Preview",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Preview logo URL",
+            "in": "query",
+            "name": "logo_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Preview logo URL",
+              "title": "Logo Url"
+            }
+          },
+          {
+            "description": "Preview primary color",
+            "in": "query",
+            "name": "primary_color",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Preview primary color",
+              "title": "Primary Color"
+            }
+          },
+          {
+            "description": "Preview background image URL",
+            "in": "query",
+            "name": "background_image_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Preview background image URL",
+              "title": "Background Image Url"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalConfigResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get portal configuration",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "description": "Use a refresh token to obtain new access and refresh tokens.",
+        "operationId": "auth_refresh_token",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Refresh access token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "description": "Create a new user account with email and password.",
+        "operationId": "auth_register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register a new user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/setup-status": {
+      "get": {
+        "description": "Check if initial setup is needed (no users exist yet).",
+        "operationId": "auth_get_setup_status",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Check setup status",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/collections": {
+      "get": {
+        "description": "Get a list of all collections. Available to all authenticated users.",
+        "operationId": "collections_list_collections",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionResponse"
+                  },
+                  "title": "Response Collections List Collections",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List all collections",
+        "tags": [
+          "collections"
+        ]
+      },
+      "post": {
+        "description": "Create a new collection with the specified schema. Admin only.",
+        "operationId": "collections_create_collection",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create a new collection",
+        "tags": [
+          "collections"
+        ]
+      }
+    },
+    "/api/collections/{collection_name}": {
+      "delete": {
+        "description": "Delete a collection and all its records. Admin only.",
+        "operationId": "collections_delete_collection",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_name",
+            "required": true,
+            "schema": {
+              "title": "Collection Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete a collection",
+        "tags": [
+          "collections"
+        ]
+      },
+      "get": {
+        "description": "Get details of a specific collection by name.",
+        "operationId": "collections_get_collection",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_name",
+            "required": true,
+            "schema": {
+              "title": "Collection Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get collection details",
+        "tags": [
+          "collections"
+        ]
+      },
+      "patch": {
+        "description": "Update a collection's label, schema, or options. Admin only.",
+        "operationId": "collections_update_collection",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_name",
+            "required": true,
+            "schema": {
+              "title": "Collection Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update a collection",
+        "tags": [
+          "collections"
+        ]
+      }
+    },
+    "/api/collections/{collection_name}/records": {
+      "get": {
+        "description": "Get a paginated list of records in a collection.",
+        "operationId": "collections_list_records",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_name",
+            "required": true,
+            "schema": {
+              "title": "Collection Name",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "description": "Page size",
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Page offset",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Sort by field (created_at, updated_at)",
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sort by field (created_at, updated_at)",
+              "title": "Sort By"
+            }
+          },
+          {
+            "description": "Sort order",
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "desc",
+              "description": "Sort order",
+              "pattern": "^(asc|desc)$",
+              "title": "Sort Order",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List records in a collection",
+        "tags": [
+          "collections"
+        ]
+      },
+      "post": {
+        "description": "Create a new record in a collection. Data is validated against the collection schema.",
+        "operationId": "collections_create_record",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_name",
+            "required": true,
+            "schema": {
+              "title": "Collection Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create a new record",
+        "tags": [
+          "collections"
+        ]
+      }
+    },
+    "/api/collections/{collection_name}/records/{record_id}": {
+      "delete": {
+        "description": "Delete a specific record.",
+        "operationId": "collections_delete_record",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_name",
+            "required": true,
+            "schema": {
+              "title": "Collection Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete a record",
+        "tags": [
+          "collections"
+        ]
+      },
+      "get": {
+        "description": "Get a specific record by ID.",
+        "operationId": "collections_get_record",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_name",
+            "required": true,
+            "schema": {
+              "title": "Collection Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get a record",
+        "tags": [
+          "collections"
+        ]
+      },
+      "patch": {
+        "description": "Partially update a record. Data is validated against the collection schema.",
+        "operationId": "collections_update_record",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_name",
+            "required": true,
+            "schema": {
+              "title": "Collection Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update a record",
+        "tags": [
+          "collections"
+        ]
+      }
+    },
+    "/api/files/download/{key}": {
+      "get": {
+        "description": "Download a file from storage by its key.",
+        "operationId": "files_download_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Download a file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/api/files/presigned/{key}": {
+      "get": {
+        "description": "Generate a presigned URL for direct file access.",
+        "operationId": "files_get_presigned_url",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Expiration in seconds",
+            "in": "query",
+            "name": "expires_in",
+            "required": false,
+            "schema": {
+              "default": 3600,
+              "description": "Expiration in seconds",
+              "maximum": 86400,
+              "minimum": 60,
+              "title": "Expires In",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignedUrlResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get presigned URL",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/api/files/status": {
+      "get": {
+        "description": "Check if file storage is enabled and configured.",
+        "operationId": "files_get_storage_status",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Check storage status",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/api/files/upload": {
+      "post": {
+        "description": "Upload a file to storage. Returns the storage key.",
+        "operationId": "files_upload_file",
+        "parameters": [
+          {
+            "description": "Optional path prefix",
+            "in": "query",
+            "name": "path_prefix",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Optional path prefix",
+              "title": "Path Prefix",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_files_upload_file"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileUploadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upload a file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/api/files/{key}": {
+      "delete": {
+        "description": "Delete a file from storage by its key.",
+        "operationId": "files_delete_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete a file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/api/functions": {
+      "get": {
+        "description": "Get a list of all registered functions that the current user can access.",
+        "operationId": "functions_list_functions",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FunctionInfo"
+                  },
+                  "title": "Response Functions List Functions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List available functions",
+        "tags": [
+          "functions"
+        ]
+      }
+    },
+    "/api/functions/admin/list": {
+      "get": {
+        "description": "Get detailed information about all registered functions. Admin only.",
+        "operationId": "functions_list_functions_admin",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AdminFunctionInfo"
+                  },
+                  "title": "Response Functions List Functions Admin",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List functions (admin)",
+        "tags": [
+          "functions"
+        ]
+      }
+    },
+    "/api/functions/{function_name}": {
+      "post": {
+        "description": "Invoke a registered function with the provided payload.",
+        "operationId": "functions_call_function",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "function_name",
+            "required": true,
+            "schema": {
+              "title": "Function Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunctionCallResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Call a function",
+        "tags": [
+          "functions"
+        ]
+      }
+    },
+    "/api/functions/{function_name}/schema": {
+      "get": {
+        "description": "Get the input/output JSON schema for a function.",
+        "operationId": "functions_get_function_schema",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "function_name",
+            "required": true,
+            "schema": {
+              "title": "Function Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunctionSchemaResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get function schema",
+        "tags": [
+          "functions"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Basic health check endpoint (liveness probe).\n\nReturns healthy if the application process is running.\nThis is a simple liveness probe that doesn't require authentication.\nSuitable for container orchestrators to check if the process is alive.",
+        "operationId": "system_get_health",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response System Get Health",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Health",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "description": "Kubernetes-style health check endpoint.\n\nReturns a simple status for Kubernetes liveness probes.\nDoes NOT require authentication.",
+        "operationId": "system_get_healthz",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response System Get Healthz",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Healthz",
+        "tags": [
+          "system"
+        ]
+      }
+    }
+  }
+}
