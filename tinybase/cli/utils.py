@@ -49,6 +49,7 @@ def create_function_boilerplate(name: str, description: str) -> str:
 # requires-python = ">=3.11"
 # dependencies = [
 #     "tinybase-sdk",
+#     "httpx>=0.28.1",
 # ]
 # ///
 
@@ -103,6 +104,7 @@ def get_example_functions() -> list[tuple[str, str]]:
 # requires-python = ">=3.11"
 # dependencies = [
 #     "tinybase-sdk",
+#     "httpx>=0.28.1",
 # ]
 # ///
 
@@ -144,6 +146,7 @@ if __name__ == "__main__":
 # requires-python = ">=3.11"
 # dependencies = [
 #     "tinybase-sdk",
+#     "httpx>=0.28.1",
 # ]
 # ///
 
@@ -200,6 +203,7 @@ if __name__ == "__main__":
 # requires-python = ">=3.11"
 # dependencies = [
 #     "tinybase-sdk",
+#     "httpx>=0.28.1",
 #     "requests>=2.32.0",
 # ]
 # ///
