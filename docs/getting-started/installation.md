@@ -30,7 +30,7 @@ uv add tinybase
 ```
 
 !!! tip "Why uv?"
-    uv is 10-100x faster than pip and provides better dependency resolution. TinyBase is designed to work seamlessly with uv.
+uv is 10-100x faster than pip and provides better dependency resolution. TinyBase is designed to work seamlessly with uv.
 
 ### Using pipx (Isolated Installation)
 
@@ -125,14 +125,14 @@ See the [Docker Deployment Guide](../deployment/docker.md) for more details.
 
 TinyBase automatically installs these core dependencies:
 
-| Package | Purpose |
-|---------|---------|
-| FastAPI | Web framework |
-| Uvicorn | ASGI server |
-| SQLModel | Database ORM |
-| Pydantic | Data validation |
-| Typer | CLI framework |
-| bcrypt | Password hashing |
+| Package  | Purpose                 |
+| -------- | ----------------------- |
+| FastAPI  | Web framework           |
+| Uvicorn  | ASGI server             |
+| SQLModel | Database ORM            |
+| Pydantic | Data validation         |
+| Typer    | CLI framework           |
+| bcrypt   | Password hashing        |
 | croniter | Cron expression parsing |
 
 ## Optional Dependencies
@@ -193,12 +193,11 @@ pip install tinybase
 If the database fails to initialize:
 
 1. Ensure you have write permissions in the directory
-2. Delete any corrupted `tinybase.db` file
-3. Run `tinybase init` again
+1. Delete any corrupted `tinybase.db` file
+1. Run `tinybase init` again
 
 ## Next Steps
 
 - [Quickstart Tutorial](quickstart.md) - Build your first app
 - [Configuration Guide](configuration.md) - Customize TinyBase
 - [Docker Deployment](../deployment/docker.md) - Deploy with containers
-

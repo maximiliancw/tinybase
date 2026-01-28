@@ -195,18 +195,18 @@ environment:
   - TINYBASE_SERVER_PORT=8000
   - TINYBASE_DEBUG=false
   - TINYBASE_LOG_LEVEL=info
-  
+
   # Database
   - TINYBASE_DB_URL=sqlite:////data/tinybase.db
-  
+
   # Auth
   - TINYBASE_AUTH_TOKEN_TTL_HOURS=24
   - TINYBASE_ADMIN_EMAIL=admin@example.com
   - TINYBASE_ADMIN_PASSWORD=${ADMIN_PASSWORD}
-  
+
   # CORS
   - TINYBASE_CORS_ALLOW_ORIGINS=https://myapp.com
-  
+
   # Scheduler
   - TINYBASE_SCHEDULER_ENABLED=true
 ```
@@ -335,7 +335,7 @@ TinyBase with SQLite works best as a single container:
 For read scaling, you can:
 
 1. Run one primary with scheduler
-2. Run read replicas without scheduler
+1. Run read replicas without scheduler
 
 ```yaml
 services:
@@ -353,7 +353,7 @@ services:
 ```
 
 !!! warning "SQLite Limitations"
-    SQLite with multiple writers can cause issues. For high-write workloads, consider architectural changes.
+SQLite with multiple writers can cause issues. For high-write workloads, consider architectural changes.
 
 ## Security
 
@@ -388,7 +388,7 @@ services:
     networks:
       - internal
       - proxy
-    
+
   traefik:
     networks:
       - proxy
@@ -494,4 +494,3 @@ spec:
 - [Production Guide](production.md) - Security and performance
 - [Configuration](../getting-started/configuration.md) - All options
 - [Deployment Overview](index.md) - Architecture patterns
-

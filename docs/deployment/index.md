@@ -6,17 +6,17 @@ This guide covers deploying TinyBase to production environments.
 
 <div class="grid cards" markdown>
 
--   :material-docker: [**Docker**](docker.md)
+- :material-docker: [**Docker**](docker.md)
 
-    Deploy TinyBase using containers. Ideal for cloud platforms and orchestration.
+  Deploy TinyBase using containers. Ideal for cloud platforms and orchestration.
 
--   :material-server: [**Production**](production.md)
+- :material-server: [**Production**](production.md)
 
-    Best practices for production deployments, security, and performance.
+  Best practices for production deployments, security, and performance.
 
--   :material-shield-lock: [**Security**](security.md)
+- :material-shield-lock: [**Security**](security.md)
 
-    Security considerations, best practices, and hardening guide for production.
+  Security considerations, best practices, and hardening guide for production.
 
 </div>
 
@@ -42,24 +42,28 @@ tinybase serve --host 0.0.0.0 --port 8000
 Before deploying to production:
 
 - [ ] **Security**
+
   - [ ] Set strong admin password
   - [ ] Configure HTTPS (via reverse proxy)
   - [ ] Set appropriate CORS origins
   - [ ] Review token TTL settings
 
 - [ ] **Configuration**
+
   - [ ] Set `debug = false`
   - [ ] Set appropriate `log_level`
   - [ ] Configure database path
   - [ ] Review scheduler settings
 
 - [ ] **Infrastructure**
+
   - [ ] Set up reverse proxy (nginx/caddy)
   - [ ] Configure SSL/TLS certificates
   - [ ] Set up monitoring
   - [ ] Configure backups
 
 - [ ] **Testing**
+
   - [ ] Test all API endpoints
   - [ ] Verify authentication flow
   - [ ] Test scheduled functions
@@ -161,20 +165,23 @@ TINYBASE_SCHEDULER_ENABLED=true
 TinyBase uses SQLite by default. For production:
 
 1. **Store database on persistent storage**
+
    ```bash
    TINYBASE_DB_URL=sqlite:////var/lib/tinybase/tinybase.db
    ```
 
-2. **Regular backups**
+1. **Regular backups**
+
    ```bash
    # Simple backup
    cp /var/lib/tinybase/tinybase.db /backups/tinybase-$(date +%Y%m%d).db
-   
+
    # SQLite online backup
    sqlite3 /var/lib/tinybase/tinybase.db ".backup /backups/tinybase.db"
    ```
 
-3. **Monitor database size**
+1. **Monitor database size**
+
    - SQLite handles databases up to several GB efficiently
    - For larger needs, consider implementing archival
 
@@ -247,4 +254,3 @@ See the [Security Guide](security.md) for comprehensive security recommendations
 - [Production Guide](production.md) - Performance and optimization
 - [Security Guide](security.md) - Security best practices
 - [Configuration](../getting-started/configuration.md) - All configuration options
-

@@ -36,18 +36,18 @@ The dashboard provides an overview of your TinyBase instance:
 ### Viewing Collections
 
 1. Click **Collections** in the sidebar
-2. See all collections with record counts
-3. Click a collection to view details
+1. See all collections with record counts
+1. Click a collection to view details
 
 ### Creating a Collection
 
 1. Click **New Collection**
-2. Enter:
+1. Enter:
    - **Name**: URL-safe identifier (e.g., `blog_posts`)
    - **Label**: Human-readable name (e.g., "Blog Posts")
-3. Define the schema in JSON format
-4. Configure access rules (optional)
-5. Click **Create**
+1. Define the schema in JSON format
+1. Configure access rules (optional)
+1. Click **Create**
 
 ### Schema Editor
 
@@ -86,17 +86,17 @@ The schema editor accepts JSON defining your collection fields:
 Within a collection:
 
 1. **View records** - Paginated list with data preview
-2. **Create record** - Form based on schema
-3. **Edit record** - Modify existing data
-4. **Delete record** - Remove with confirmation
+1. **Create record** - Form based on schema
+1. **Edit record** - Modify existing data
+1. **Delete record** - Remove with confirmation
 
 ## Users Management
 
 ### Viewing Users
 
 1. Click **Users** in the sidebar
-2. See all registered users
-3. Filter by admin status
+1. See all registered users
+1. Filter by admin status
 
 ### User Details
 
@@ -113,14 +113,14 @@ Click a user to see:
 - **Delete user** - Remove user account
 
 !!! warning "Deleting Users"
-    Deleting a user does not delete their owned records. Records will have `owner_id = null`.
+Deleting a user does not delete their owned records. Records will have `owner_id = null`.
 
 ## Functions
 
 ### Viewing Functions
 
 1. Click **Functions** in the sidebar
-2. See all registered functions with:
+1. See all registered functions with:
    - Name and description
    - Auth level
    - Tags
@@ -140,16 +140,16 @@ Click a function to see:
 From the function detail page:
 
 1. Click **Test Function**
-2. Enter JSON payload
-3. Click **Execute**
-4. View the result
+1. Enter JSON payload
+1. Click **Execute**
+1. View the result
 
 ## Schedules
 
 ### Viewing Schedules
 
 1. Click **Schedules** in the sidebar
-2. See all scheduled tasks with:
+1. See all scheduled tasks with:
    - Function name
    - Schedule type
    - Next run time
@@ -158,14 +158,14 @@ From the function detail page:
 ### Creating a Schedule
 
 1. Click **New Schedule**
-2. Select the function
-3. Choose schedule type:
+1. Select the function
+1. Choose schedule type:
    - **Once** - Specific date and time
    - **Interval** - Every N seconds/minutes/hours/days
    - **Cron** - Cron expression
-4. Configure timezone
-5. Set the payload (optional)
-6. Enable and save
+1. Configure timezone
+1. Set the payload (optional)
+1. Enable and save
 
 ### Managing Schedules
 
@@ -178,7 +178,7 @@ From the function detail page:
 ### Viewing Function Calls
 
 1. Click **Function Calls** in the sidebar
-2. See execution history with:
+1. See execution history with:
    - Function name
    - Status (succeeded/failed)
    - Duration
@@ -238,11 +238,11 @@ View TinyBase configuration:
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+K` / `Cmd+K` | Quick search |
-| `Escape` | Close modal |
-| `Enter` | Confirm action |
+| Shortcut           | Action         |
+| ------------------ | -------------- |
+| `Ctrl+K` / `Cmd+K` | Quick search   |
+| `Escape`           | Close modal    |
+| `Enter`            | Confirm action |
 
 ## Customizing the Admin UI
 
@@ -258,32 +258,32 @@ static_dir = "/path/to/custom/admin"
 ### Building Custom Admin
 
 1. Clone the TinyBase repository
-2. Navigate to `/apps/admin`
-3. Install dependencies: `yarn install`
-4. Make modifications
-5. Build: `yarn build`
-6. Copy `dist/` to your custom path
+1. Navigate to `/apps/admin`
+1. Install dependencies: `yarn install`
+1. Make modifications
+1. Build: `yarn build`
+1. Copy `dist/` to your custom path
 
 ## Troubleshooting
 
 ### Can't Access Admin UI
 
 1. Verify server is running
-2. Check URL: `http://localhost:8000/admin`
-3. Clear browser cache
-4. Check for JavaScript errors in browser console
+1. Check URL: `http://localhost:8000/admin`
+1. Clear browser cache
+1. Check for JavaScript errors in browser console
 
 ### Login Issues
 
 1. Verify admin credentials
-2. Check user has `is_admin = true`
-3. Try creating a new admin: `tinybase admin add email password`
+1. Check user has `is_admin = true`
+1. Try creating a new admin: `tinybase admin add email password`
 
 ### UI Not Loading
 
 1. Check `admin.static_dir` configuration
-2. Verify static files exist
-3. Check server logs for errors
+1. Verify static files exist
+1. Check server logs for errors
 
 ## Mobile Access
 
@@ -296,8 +296,8 @@ The Admin UI is responsive and works on mobile devices:
 For best experience on mobile:
 
 1. Use landscape orientation for tables
-2. Use the sidebar toggle button
-3. Use filters to reduce data displayed
+1. Use the sidebar toggle button
+1. Use filters to reduce data displayed
 
 ## Security Considerations
 
@@ -316,13 +316,12 @@ For best experience on mobile:
 ### Best Practices
 
 1. Use HTTPS in production
-2. Set strong admin passwords
-3. Limit admin user count
-4. Review function calls regularly
+1. Set strong admin passwords
+1. Limit admin user count
+1. Review function calls regularly
 
 ## See Also
 
 - [Authentication Guide](authentication.md) - Admin user setup
 - [Collections Guide](collections.md) - Working with data
 - [Functions Guide](functions.md) - Managing functions
-

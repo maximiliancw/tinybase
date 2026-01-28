@@ -4,7 +4,7 @@ This directory contains the Python packages that make up TinyBase.
 
 ## Structure
 
-```
+```text
 packages/
 ├── tinybase/           # Core TinyBase package (FastAPI server + CLI)
 │   ├── pyproject.toml  # Package configuration

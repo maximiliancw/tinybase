@@ -6,32 +6,32 @@ Thank you for your interest in contributing to TinyBase! This guide will help yo
 
 <div class="grid cards" markdown>
 
--   :material-bug: **Report Bugs**
+- :material-bug: **Report Bugs**
 
-    Found a bug? Open an issue with details on how to reproduce it.
+  Found a bug? Open an issue with details on how to reproduce it.
 
--   :material-lightbulb: **Suggest Features**
+- :material-lightbulb: **Suggest Features**
 
-    Have an idea? Open an issue to discuss new features.
+  Have an idea? Open an issue to discuss new features.
 
--   :material-code-tags: **Submit Code**
+- :material-code-tags: **Submit Code**
 
-    Fix bugs, add features, or improve documentation.
+  Fix bugs, add features, or improve documentation.
 
--   :material-file-document: **Improve Docs**
+- :material-file-document: **Improve Docs**
 
-    Help make our documentation clearer and more complete.
+  Help make our documentation clearer and more complete.
 
 </div>
 
 ## Getting Started
 
 1. **Fork the repository** on GitHub
-2. **Clone your fork** locally
-3. **Set up development environment** ([Development Guide](development.md))
-4. **Create a branch** for your changes
-5. **Make your changes** with tests
-6. **Submit a pull request**
+1. **Clone your fork** locally
+1. **Set up development environment** ([Development Guide](development.md))
+1. **Create a branch** for your changes
+1. **Make your changes** with tests
+1. **Submit a pull request**
 
 ## Development Guides
 
@@ -73,23 +73,23 @@ We are committed to providing a welcoming and inclusive experience for everyone.
 ### Before Submitting
 
 1. **Check existing issues** - Your change might already be in progress
-2. **Open an issue first** - For significant changes, discuss before coding
-3. **Update documentation** - If your change affects user-facing behavior
-4. **Add tests** - Ensure your changes are tested
-5. **Run the test suite** - Make sure nothing is broken
+1. **Open an issue first** - For significant changes, discuss before coding
+1. **Update documentation** - If your change affects user-facing behavior
+1. **Add tests** - Ensure your changes are tested
+1. **Run the test suite** - Make sure nothing is broken
 
 ### Submitting
 
 1. **Create a descriptive title** - Summarize the change
-2. **Fill out the PR template** - Provide context and details
-3. **Link related issues** - Use "Fixes #123" or "Closes #123"
-4. **Keep changes focused** - One feature/fix per PR
+1. **Fill out the PR template** - Provide context and details
+1. **Link related issues** - Use "Fixes #123" or "Closes #123"
+1. **Keep changes focused** - One feature/fix per PR
 
 ### After Submitting
 
 1. **Respond to reviews** - Address feedback promptly
-2. **Keep the PR updated** - Rebase if needed
-3. **Be patient** - Maintainers review when available
+1. **Keep the PR updated** - Rebase if needed
+1. **Be patient** - Maintainers review when available
 
 ## Issue Guidelines
 
@@ -123,4 +123,3 @@ By contributing, you agree that your contributions will be licensed under the MI
 - **GitHub Issues** - For bugs and features
 
 Thank you for contributing to TinyBase! 🎉
-

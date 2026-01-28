@@ -40,5 +40,5 @@ The OpenAPI spec is used to generate typed API clients:
 The OpenAPI spec follows the same versioning as the TinyBase package. When releasing a new version:
 
 1. Ensure the spec is up to date (`make export-openapi`)
-2. Commit the updated `openapi.json`
-3. Tag the release - the tag points to the exact spec at that time
+1. Commit the updated `openapi.json`
+1. Tag the release - the tag points to the exact spec at that time

@@ -12,21 +12,21 @@ Before diving in, here are the key concepts you'll work with:
 
 <div class="grid cards" markdown>
 
--   :material-database-outline: **Collections**
+- :material-database-outline: **Collections**
 
-    Schema-driven data tables stored in SQLite. Define fields, types, and validation rules using JSON schemas.
+  Schema-driven data tables stored in SQLite. Define fields, types, and validation rules using JSON schemas.
 
--   :material-function: **Functions**
+- :material-function: **Functions**
 
-    Server-side Python functions with typed inputs and outputs. Automatically exposed as REST endpoints.
+  Server-side Python functions with typed inputs and outputs. Automatically exposed as REST endpoints.
 
--   :material-clock-outline: **Schedules**
+- :material-clock-outline: **Schedules**
 
-    Run functions automatically using once, interval, or cron expressions.
+  Run functions automatically using once, interval, or cron expressions.
 
--   :material-account-key: **Authentication**
+- :material-account-key: **Authentication**
 
-    Built-in user management with token-based authentication and role-based access control.
+  Built-in user management with token-based authentication and role-based access control.
 
 </div>
 
@@ -36,25 +36,31 @@ Before diving in, here are the key concepts you'll work with:
 - **pip or uv** - For installing packages
 
 !!! tip "Recommended: Use uv"
-    We recommend using [uv](https://github.com/astral-sh/uv) for faster dependency management:
-    
-    ```bash
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    ```
+We recommend using [uv](https://github.com/astral-sh/uv) for faster dependency management:
+
+````
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+````
 
 ## Quick Installation
 
 === "pip"
 
-    ```bash
-    pip install tinybase
-    ```
+````
+```bash
+pip install tinybase
+```
+````
 
 === "uv"
 
-    ```bash
-    uv add tinybase
-    ```
+````
+```bash
+uv add tinybase
+```
+````
 
 ## Your First TinyBase App
 
@@ -98,17 +104,17 @@ Open `http://localhost:8000/admin` in your browser and log in with your admin cr
 
 <div class="grid cards" markdown>
 
--   :material-download: [**Installation Guide**](installation.md)
+- :material-download: [**Installation Guide**](installation.md)
 
-    Detailed installation instructions for different environments
+  Detailed installation instructions for different environments
 
--   :material-play: [**Quickstart Tutorial**](quickstart.md)
+- :material-play: [**Quickstart Tutorial**](quickstart.md)
 
-    Build your first TinyBase application step by step
+  Build your first TinyBase application step by step
 
--   :material-cog: [**Configuration**](configuration.md)
+- :material-cog: [**Configuration**](configuration.md)
 
-    Learn how to configure TinyBase for your needs
+  Learn how to configure TinyBase for your needs
 
 </div>
 
@@ -117,6 +123,5 @@ Open `http://localhost:8000/admin` in your browser and log in with your admin cr
 If you run into issues:
 
 1. Check the [Troubleshooting](../guide/index.md#troubleshooting) section
-2. Search [GitHub Issues](https://github.com/maximiliancw/tinybase/issues)
-3. Ask in [GitHub Discussions](https://github.com/maximiliancw/tinybase/discussions)
-
+1. Search [GitHub Issues](https://github.com/maximiliancw/tinybase/issues)
+1. Ask in [GitHub Discussions](https://github.com/maximiliancw/tinybase/discussions)

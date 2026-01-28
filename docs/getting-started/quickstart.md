@@ -39,11 +39,11 @@ Collections are schema-driven tables for your data. Let's create a "tasks" colle
 ### Using the Admin UI
 
 1. Go to **Collections** in the sidebar
-2. Click **New Collection**
-3. Fill in:
+1. Click **New Collection**
+1. Fill in:
    - **Name**: `tasks`
    - **Label**: `Tasks`
-4. Add fields:
+1. Add fields:
 
 ```json
 {
@@ -197,12 +197,12 @@ def task_stats(client, payload: TaskStatsInput) -> TaskStatsOutput:
     # Query all task records via API
     response = client.get("/api/collections/tasks/records")
     records = response.json().get("items", [])
-    
+
     total = len(records)
     completed = sum(1 for r in records if r.get("data", {}).get("completed", False))
     pending = total - completed
     rate = (completed / total * 100) if total > 0 else 0.0
-    
+
     return TaskStatsOutput(
         total=total,
         completed=completed,
@@ -278,7 +278,7 @@ def send_task_reminders(client, payload: ReminderInput) -> ReminderOutput:
     response = client.get("/api/collections/tasks/records")
     records = response.json().get("items", [])
     pending = sum(1 for r in records if not r.get("data", {}).get("completed", False))
-    
+
     return ReminderOutput(
         message=f"Reminder: You have {pending} pending tasks!",
         pending_count=pending
@@ -314,21 +314,21 @@ Congratulations! You've built a functional task API with TinyBase. Here's what t
 
 <div class="grid cards" markdown>
 
--   :material-book-open: [**Collections Guide**](../guide/collections.md)
+- :material-book-open: [**Collections Guide**](../guide/collections.md)
 
-    Learn about schemas, access control, and advanced queries
+  Learn about schemas, access control, and advanced queries
 
--   :material-function-variant: [**Functions Guide**](../guide/functions.md)
+- :material-function-variant: [**Functions Guide**](../guide/functions.md)
 
-    Deep dive into typed functions and the Context object
+  Deep dive into typed functions and the Context object
 
--   :material-clock: [**Scheduling Guide**](../guide/scheduling.md)
+- :material-clock: [**Scheduling Guide**](../guide/scheduling.md)
 
-    Master cron expressions and interval scheduling
+  Master cron expressions and interval scheduling
 
--   :material-rocket: [**Deployment Guide**](../deployment/index.md)
+- :material-rocket: [**Deployment Guide**](../deployment/index.md)
 
-    Deploy your app to production
+  Deploy your app to production
 
 </div>
 
@@ -344,4 +344,3 @@ functions/
 ```
 
 Both function files follow the SDK format with inline dependency declarations and isolated execution environments.
-

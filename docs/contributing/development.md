@@ -81,11 +81,11 @@ tinybase serve --reload
 
 ### Development URLs
 
-| Service | URL |
-|---------|-----|
-| API | `http://localhost:8000` |
-| API Docs | `http://localhost:8000/docs` |
-| Admin UI (dev) | `http://localhost:5173` |
+| Service         | URL                           |
+| --------------- | ----------------------------- |
+| API             | `http://localhost:8000`       |
+| API Docs        | `http://localhost:8000/docs`  |
+| Admin UI (dev)  | `http://localhost:5173`       |
 | Admin UI (prod) | `http://localhost:8000/admin` |
 
 ## Project Structure
@@ -192,18 +192,18 @@ git push origin feature/my-feature
 ### 6. Open Pull Request
 
 1. Go to GitHub
-2. Click "Compare & pull request"
-3. Fill out the template
-4. Submit for review
+1. Click "Compare & pull request"
+1. Fill out the template
+1. Submit for review
 
 ## Common Tasks
 
 ### Adding a New API Endpoint
 
 1. Create/edit route handler in `packages/tinybase/tinybase/api/routes/`
-2. Register route in `packages/tinybase/tinybase/api/app.py`
-3. Add tests in `packages/tinybase/tests/`
-4. Update API documentation
+1. Register route in `packages/tinybase/tinybase/api/app.py`
+1. Add tests in `packages/tinybase/tests/`
+1. Update API documentation
 
 ### Adding a New CLI Command
 
@@ -213,9 +213,9 @@ git push origin feature/my-feature
    - Database commands → `db.py`
    - Admin commands → `admin.py`
    - Extensions commands → `extensions.py`
-2. Follow existing patterns for Typer commands
-3. Add tests in `packages/tinybase/tests/`
-4. Update CLI documentation
+1. Follow existing patterns for Typer commands
+1. Add tests in `packages/tinybase/tests/`
+1. Update CLI documentation
 
 ### Adding a Database Migration
 
@@ -360,4 +360,3 @@ yarn install
 - [Architecture](architecture.md) - Understanding the codebase
 - [Testing](testing.md) - Writing tests
 - [Code Style](code-style.md) - Coding conventions
-

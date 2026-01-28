@@ -19,34 +19,34 @@ TinyBase is a self-hosted Backend-as-a-Service (BaaS) framework that brings the 
 
 <div class="grid cards" markdown>
 
--   :material-rocket-launch:{ .lg .middle } __Quick Setup__
+- :material-rocket-launch:{ .lg .middle } __Quick Setup__
 
-    ---
+  ______________________________________________________________________
 
-    Get up and running in minutes with a single command. No complex configuration required.
+  Get up and running in minutes with a single command. No complex configuration required.
 
-    ```bash
-    pip install tinybase
-    tinybase init && tinybase serve
-    ```
+  ```bash
+  pip install tinybase
+  tinybase init && tinybase serve
+  ```
 
--   :material-database:{ .lg .middle } __SQLite-Backed__
+- :material-database:{ .lg .middle } __SQLite-Backed__
 
-    ---
+  ______________________________________________________________________
 
-    All your data stored in a single SQLite file. Easy to backup, migrate, and understand.
+  All your data stored in a single SQLite file. Easy to backup, migrate, and understand.
 
--   :material-api:{ .lg .middle } __FastAPI-Powered__
+- :material-api:{ .lg .middle } __FastAPI-Powered__
 
-    ---
+  ______________________________________________________________________
 
-    Built on FastAPI for high performance and automatic OpenAPI documentation.
+  Built on FastAPI for high performance and automatic OpenAPI documentation.
 
--   :material-language-python:{ .lg .middle } __Python-First__
+- :material-language-python:{ .lg .middle } __Python-First__
 
-    ---
+  ______________________________________________________________________
 
-    Define server-side functions with Pydantic models. Full type safety and IDE support.
+  Define server-side functions with Pydantic models. Full type safety and IDE support.
 
 </div>
 
@@ -54,53 +54,53 @@ TinyBase is a self-hosted Backend-as-a-Service (BaaS) framework that brings the 
 
 <div class="grid cards" markdown>
 
--   :material-format-list-bulleted:{ .lg .middle } __Dynamic Collections__
+- :material-format-list-bulleted:{ .lg .middle } __Dynamic Collections__
 
-    ---
+  ______________________________________________________________________
 
-    Create schema-driven collections with JSON schemas. Pydantic models are generated at runtime for validation.
+  Create schema-driven collections with JSON schemas. Pydantic models are generated at runtime for validation.
 
-    [:octicons-arrow-right-24: Learn about Collections](guide/collections.md)
+  [:octicons-arrow-right-24: Learn about Collections](guide/collections.md)
 
--   :material-function:{ .lg .middle } __Typed Functions__
+- :material-function:{ .lg .middle } __Typed Functions__
 
-    ---
+  ______________________________________________________________________
 
-    Define server-side functions with strongly-typed inputs and outputs. Exposed as HTTP endpoints with full OpenAPI docs.
+  Define server-side functions with strongly-typed inputs and outputs. Exposed as HTTP endpoints with full OpenAPI docs.
 
-    [:octicons-arrow-right-24: Learn about Functions](guide/functions.md)
+  [:octicons-arrow-right-24: Learn about Functions](guide/functions.md)
 
--   :material-clock-outline:{ .lg .middle } __Built-in Scheduling__
+- :material-clock-outline:{ .lg .middle } __Built-in Scheduling__
 
-    ---
+  ______________________________________________________________________
 
-    Schedule functions with once, interval, or cron expressions. No external job scheduler needed.
+  Schedule functions with once, interval, or cron expressions. No external job scheduler needed.
 
-    [:octicons-arrow-right-24: Learn about Scheduling](guide/scheduling.md)
+  [:octicons-arrow-right-24: Learn about Scheduling](guide/scheduling.md)
 
--   :material-puzzle:{ .lg .middle } __Extension System__
+- :material-puzzle:{ .lg .middle } __Extension System__
 
-    ---
+  ______________________________________________________________________
 
-    Extend TinyBase with community extensions. Hook into lifecycle events, authentication, and data operations.
+  Extend TinyBase with community extensions. Hook into lifecycle events, authentication, and data operations.
 
-    [:octicons-arrow-right-24: Learn about Extensions](guide/extensions.md)
+  [:octicons-arrow-right-24: Learn about Extensions](guide/extensions.md)
 
--   :material-shield-account:{ .lg .middle } __Authentication__
+- :material-shield-account:{ .lg .middle } __Authentication__
 
-    ---
+  ______________________________________________________________________
 
-    Built-in user authentication with JWT tokens. Role-based access control with admin and user roles. Includes access and refresh tokens.
+  Built-in user authentication with JWT tokens. Role-based access control with admin and user roles. Includes access and refresh tokens.
 
-    [:octicons-arrow-right-24: Learn about Authentication](guide/authentication.md)
+  [:octicons-arrow-right-24: Learn about Authentication](guide/authentication.md)
 
--   :material-view-dashboard:{ .lg .middle } __Admin UI__
+- :material-view-dashboard:{ .lg .middle } __Admin UI__
 
-    ---
+  ______________________________________________________________________
 
-    Modern admin interface built with Vue 3. Manage collections, users, functions, and schedules.
+  Modern admin interface built with Vue 3. Manage collections, users, functions, and schedules.
 
-    [:octicons-arrow-right-24: Learn about Admin UI](guide/admin-ui.md)
+  [:octicons-arrow-right-24: Learn about Admin UI](guide/admin-ui.md)
 
 </div>
 
@@ -163,22 +163,22 @@ Response:
 
 ## Why TinyBase?
 
-| Feature | TinyBase | PocketBase | Firebase | Supabase |
-|---------|----------|------------|----------|----------|
-| Language | Python | Go | - | - |
-| Self-hosted | ✅ | ✅ | ❌ | ✅ |
-| SQLite | ✅ | ✅ | ❌ | ❌ |
-| Typed Functions | ✅ | ❌ | ✅ | ✅ |
-| Python SDK | Native | Community | Official | Official |
-| Scheduling | ✅ | ❌ | ✅ | ❌ |
-| Open Source | ✅ | ✅ | ❌ | ✅ |
+| Feature         | TinyBase | PocketBase | Firebase | Supabase |
+| --------------- | -------- | ---------- | -------- | -------- |
+| Language        | Python   | Go         | -        | -        |
+| Self-hosted     | ✅       | ✅         | ❌       | ✅       |
+| SQLite          | ✅       | ✅         | ❌       | ❌       |
+| Typed Functions | ✅       | ❌         | ✅       | ✅       |
+| Python SDK      | Native   | Community  | Official | Official |
+| Scheduling      | ✅       | ❌         | ✅       | ❌       |
+| Open Source     | ✅       | ✅         | ❌       | ✅       |
 
 TinyBase is ideal for:
 
-- **Python developers** who want a simple backend without learning a new language
-- **Small to medium projects** that don't need the complexity of a full cloud platform
-- **Prototypes and MVPs** where development speed matters
-- **Self-hosted applications** where you want full control over your data
+- __Python developers__ who want a simple backend without learning a new language
+- __Small to medium projects__ that don't need the complexity of a full cloud platform
+- __Prototypes and MVPs__ where development speed matters
+- __Self-hosted applications__ where you want full control over your data
 
 ## Getting Help
 
@@ -188,4 +188,3 @@ TinyBase is ideal for:
 ## License
 
 TinyBase is released under the [MIT License](https://github.com/maximiliancw/tinybase/blob/main/LICENSE).
-

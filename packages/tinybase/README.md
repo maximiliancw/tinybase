@@ -4,7 +4,7 @@ The core TinyBase Python package containing the FastAPI server, CLI, and all bac
 
 ## Structure
 
-```
+```text
 tinybase/
 ├── pyproject.toml      # Package configuration and dependencies
 ├── tests/              # Test suite

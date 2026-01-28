@@ -10,7 +10,7 @@ graph TB
         CLI[CLI<br/>tinybase.cli]
         HTTP[HTTP<br/>FastAPI]
     end
-    
+
     subgraph "Core Services"
         AUTH[Auth Service]
         FUNC[Function Registry]
@@ -18,26 +18,26 @@ graph TB
         SCHED[Scheduler]
         EXT[Extension Loader]
     end
-    
+
     subgraph "Data Layer"
         MODELS[SQLModel Models]
         DB[(SQLite)]
     end
-    
+
     CLI --> FUNC
     CLI --> SCHED
     CLI --> EXT
-    
+
     HTTP --> AUTH
     HTTP --> FUNC
     HTTP --> COLL
-    
+
     AUTH --> MODELS
     FUNC --> MODELS
     COLL --> MODELS
     SCHED --> FUNC
     EXT --> FUNC
-    
+
     MODELS --> DB
 ```
 
@@ -125,9 +125,9 @@ tinybase/functions/
 **Flow:**
 
 1. Functions decorated with `@register`
-2. Metadata stored in registry
-3. Loader discovers and imports function files
-4. Routes dynamically generated from registry
+1. Metadata stored in registry
+1. Loader discovers and imports function files
+1. Routes dynamically generated from registry
 
 #### Collection Service (`tinybase/collections/`)
 
@@ -143,9 +143,9 @@ tinybase/collections/
 **Schema Processing:**
 
 1. JSON schema defined for collection
-2. `build_pydantic_model_from_schema()` generates Pydantic model
-3. Model used for validation on create/update
-4. Models cached in registry
+1. `build_pydantic_model_from_schema()` generates Pydantic model
+1. Model used for validation on create/update
+1. Models cached in registry
 
 #### Scheduler (`tinybase/schedule/`)
 
@@ -189,9 +189,9 @@ tinybase/extensions/
 **Hook System:**
 
 1. Extensions define handlers with `@on_*` decorators
-2. Handlers registered in global registries
-3. Core code calls `run_*_hooks()` at appropriate points
-4. Handlers receive event data
+1. Handlers registered in global registries
+1. Core code calls `run_*_hooks()` at appropriate points
+1. Handlers receive event data
 
 ### Data Layer
 
@@ -254,7 +254,7 @@ sequenceDiagram
     participant H as Handler
     participant S as Service
     participant D as Database
-    
+
     C->>R: HTTP Request
     R->>A: Validate token
     A->>D: Check token
@@ -280,7 +280,7 @@ sequenceDiagram
     participant F as Function
     participant H as Hooks
     participant D as Database
-    
+
     C->>R: Call function
     R->>REG: Get function meta
     REG-->>R: FunctionMeta
@@ -318,7 +318,7 @@ class Settings(BaseSettings):
         env_prefix="TINYBASE_",
         env_nested_delimiter="_",
     )
-    
+
     server_host: str = "0.0.0.0"
     server_port: int = 8000
     db_url: str = "sqlite:///./tinybase.db"
@@ -330,23 +330,23 @@ class Settings(BaseSettings):
 ### Adding a New Hook
 
 1. Define event data class in `hooks.py`
-2. Create global registry
-3. Create decorator function
-4. Create runner function
-5. Call runner from appropriate location
+1. Create global registry
+1. Create decorator function
+1. Create runner function
+1. Call runner from appropriate location
 
 ### Adding a New Route
 
 1. Create route file in `tinybase/api/routes/`
-2. Define FastAPI router
-3. Implement endpoints
-4. Register in `tinybase/api/app.py`
+1. Define FastAPI router
+1. Implement endpoints
+1. Register in `tinybase/api/app.py`
 
 ### Adding a New Model
 
 1. Define SQLModel class in `tinybase/db/models.py`
-2. Create migration: `tinybase db migrate`
-3. Apply migration: `tinybase db upgrade`
+1. Create migration: `tinybase db migrate`
+1. Apply migration: `tinybase db upgrade`
 
 ## Design Principles
 

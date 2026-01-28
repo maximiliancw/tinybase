@@ -108,7 +108,7 @@ def client(engine):
     def get_test_session():
         with Session(engine) as session:
             yield session
-    
+
     app.dependency_overrides[get_session] = get_test_session
     return TestClient(app)
 
@@ -117,7 +117,7 @@ def client(engine):
 def admin_user(session):
     """Create an admin user."""
     from tinybase.auth import hash_password
-    
+
     user = User(
         email="admin@test.com",
         password_hash=hash_password("password"),
@@ -154,26 +154,26 @@ from tinybase.auth import hash_password, verify_password
 
 class TestPasswordHashing:
     """Tests for password hashing functions."""
-    
+
     def test_hash_password_returns_hash(self):
         """Test that hash_password returns a hash."""
         password = "testpassword123"
         hashed = hash_password(password)
-        
+
         assert hashed != password
         assert len(hashed) > 0
-    
+
     def test_verify_password_correct(self):
         """Test verifying correct password."""
         password = "testpassword123"
         hashed = hash_password(password)
-        
+
         assert verify_password(password, hashed) is True
-    
+
     def test_verify_password_incorrect(self):
         """Test verifying incorrect password."""
         hashed = hash_password("correctpassword")
-        
+
         assert verify_password("wrongpassword", hashed) is False
 ```
 
@@ -189,11 +189,11 @@ from tinybase.collections.service import CollectionService
 
 class TestCollectionService:
     """Tests for CollectionService."""
-    
+
     def test_create_and_list_collection(self, session):
         """Test creating and listing collections."""
         service = CollectionService(session)
-        
+
         # Create collection
         schema = {"fields": [{"name": "title", "type": "string"}]}
         collection = service.create_collection(
@@ -201,19 +201,19 @@ class TestCollectionService:
             label="Blog Posts",
             schema=schema,
         )
-        
+
         assert collection.name == "posts"
         assert collection.label == "Blog Posts"
-        
+
         # List collections
         collections = service.list_collections()
         assert len(collections) == 1
         assert collections[0].name == "posts"
-    
+
     def test_create_record_with_validation(self, session):
         """Test that records are validated against schema."""
         service = CollectionService(session)
-        
+
         # Create collection with required field
         schema = {
             "fields": [
@@ -225,11 +225,11 @@ class TestCollectionService:
             label="Posts",
             schema=schema,
         )
-        
+
         # Valid record
         record = service.create_record(collection, {"title": "Test"})
         assert record.data["title"] == "Test"
-        
+
         # Invalid record (missing required field)
         with pytest.raises(Exception):  # ValidationError
             service.create_record(collection, {})
@@ -245,19 +245,19 @@ Test HTTP endpoints:
 
 class TestAuthAPI:
     """Tests for authentication endpoints."""
-    
+
     def test_register_user(self, client):
         """Test user registration."""
         response = client.post("/api/auth/register", json={
             "email": "new@test.com",
             "password": "testpassword123",
         })
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["email"] == "new@test.com"
         assert data["is_admin"] is False
-    
+
     def test_register_duplicate_email(self, client):
         """Test registration with existing email."""
         # Register first user
@@ -265,46 +265,46 @@ class TestAuthAPI:
             "email": "test@test.com",
             "password": "password",
         })
-        
+
         # Try to register same email
         response = client.post("/api/auth/register", json={
             "email": "test@test.com",
             "password": "password",
         })
-        
+
         assert response.status_code == 400
-    
+
     def test_login_success(self, client, admin_user):
         """Test successful login."""
         response = client.post("/api/auth/login", json={
             "email": "admin@test.com",
             "password": "password",
         })
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "token" in data
         assert data["user"]["email"] == "admin@test.com"
-    
+
     def test_login_invalid_credentials(self, client):
         """Test login with invalid credentials."""
         response = client.post("/api/auth/login", json={
             "email": "nobody@test.com",
             "password": "wrongpassword",
         })
-        
+
         assert response.status_code == 401
-    
+
     def test_protected_endpoint_without_token(self, client):
         """Test accessing protected endpoint without token."""
         response = client.get("/api/auth/me")
-        
+
         assert response.status_code == 401
-    
+
     def test_protected_endpoint_with_token(self, client, auth_headers):
         """Test accessing protected endpoint with valid token."""
         response = client.get("/api/auth/me", headers=auth_headers)
-        
+
         assert response.status_code == 200
         assert response.json()["email"] == "admin@test.com"
 ```
@@ -326,7 +326,7 @@ from tinybase.utils import AuthLevel, TriggerType
 
 class TestFunctionExecution:
     """Tests for function execution."""
-    
+
     def test_execute_function_success(self, session):
         """Test successful function execution."""
         # Create a temporary function file
@@ -347,20 +347,20 @@ if __name__ == "__main__":
             f.write(function_code)
             f.flush()
             function_file = Path(f.name)
-        
+
         try:
             meta = FunctionMeta(
                 name="test_function",
                 auth=AuthLevel.AUTH,
                 file_path=str(function_file),
             )
-            
+
             result = execute_function(
                 meta=meta,
                 payload={"value": 5},
                 session=session,
             )
-            
+
             assert result.status == FunctionCallStatus.SUCCEEDED
             assert result.result["result"] == 10
         finally:
@@ -380,16 +380,16 @@ from tinybase_sdk.decorator import get_registered_function, register
 
 class TestDecorator:
     """Test the @register decorator."""
-    
+
     def test_register_basic_function(self):
         """Test registering a basic function."""
         import tinybase_sdk.decorator as decorator_module
         decorator_module._registered_function = None
-        
+
         @register(name="test_function")
         def test_func(client, payload: dict) -> dict:
             return {"result": "ok"}
-        
+
         func = get_registered_function()
         assert func["name"] == "test_function"
         assert func["input_schema"] is not None
@@ -445,10 +445,10 @@ def test_send_email(session):
     """Test email sending is called."""
     with patch("tinybase.notifications.send_email") as mock_send:
         mock_send.return_value = True
-        
+
         # Trigger code that sends email
         create_user("test@example.com")
-        
+
         mock_send.assert_called_once_with(
             to="test@example.com",
             subject="Welcome!",
@@ -465,7 +465,7 @@ def test_invalid_input_raises():
     """Test that invalid input raises ValueError."""
     with pytest.raises(ValueError) as exc_info:
         process_data(invalid_data)
-    
+
     assert "Invalid format" in str(exc_info.value)
 ```
 
@@ -552,10 +552,10 @@ def test_create_record():
     # Arrange
     collection = create_collection("posts", schema)
     data = {"title": "Test Post"}
-    
+
     # Act
     record = service.create_record(collection, data)
-    
+
     # Assert
     assert record.data["title"] == "Test Post"
     assert record.collection_id == collection.id
@@ -601,12 +601,12 @@ uv run pytest --testmon
 
 ### Performance Comparison
 
-| Command | Description | Typical Time |
-|---------|-------------|--------------|
-| `pytest` | Serial execution | ~15-19 min |
-| `pytest -n auto` | Parallel execution | ~1-2 min |
-| `pytest --lf` | Last failed only | seconds |
-| `pytest --testmon` | Change-based | seconds |
+| Command            | Description        | Typical Time |
+| ------------------ | ------------------ | ------------ |
+| `pytest`           | Serial execution   | ~15-19 min   |
+| `pytest -n auto`   | Parallel execution | ~1-2 min     |
+| `pytest --lf`      | Last failed only   | seconds      |
+| `pytest --testmon` | Change-based       | seconds      |
 
 ### Test Markers
 
@@ -677,4 +677,3 @@ The `.testmondata` file stores the dependency information and should be added to
 - [Development Setup](development.md)
 - [Architecture](architecture.md)
 - [Code Style](code-style.md)
-

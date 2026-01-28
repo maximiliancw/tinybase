@@ -6,17 +6,17 @@ Complete reference documentation for TinyBase APIs and interfaces.
 
 <div class="grid cards" markdown>
 
--   :material-api: [**REST API**](rest-api.md)
+- :material-api: [**REST API**](rest-api.md)
 
-    Complete HTTP endpoint documentation with request/response examples.
+  Complete HTTP endpoint documentation with request/response examples.
 
--   :material-console: [**CLI Reference**](cli.md)
+- :material-console: [**CLI Reference**](cli.md)
 
-    Command-line interface documentation for all TinyBase commands.
+  Command-line interface documentation for all TinyBase commands.
 
--   :material-language-python: [**Python API**](python-api.md)
+- :material-language-python: [**Python API**](python-api.md)
 
-    Python module reference for extending TinyBase.
+  Python module reference for extending TinyBase.
 
 </div>
 
@@ -24,10 +24,10 @@ Complete reference documentation for TinyBase APIs and interfaces.
 
 ### Base URLs
 
-| Environment | URL |
-|-------------|-----|
-| Development | `http://localhost:8000` |
-| Production | `https://api.yourapp.com` |
+| Environment | URL                       |
+| ----------- | ------------------------- |
+| Development | `http://localhost:8000`   |
+| Production  | `https://api.yourapp.com` |
 
 ### Authentication
 
@@ -39,16 +39,16 @@ curl -H "Authorization: Bearer tb_your_token_here" \
 
 ### Common HTTP Status Codes
 
-| Code | Meaning |
-|------|---------|
-| `200` | Success |
-| `201` | Created |
-| `400` | Bad Request (validation error) |
+| Code  | Meaning                              |
+| ----- | ------------------------------------ |
+| `200` | Success                              |
+| `201` | Created                              |
+| `400` | Bad Request (validation error)       |
 | `401` | Unauthorized (invalid/missing token) |
 | `403` | Forbidden (insufficient permissions) |
-| `404` | Not Found |
-| `422` | Validation Error |
-| `500` | Internal Server Error |
+| `404` | Not Found                            |
+| `422` | Validation Error                     |
+| `500` | Internal Server Error                |
 
 ### Response Format
 
@@ -85,4 +85,3 @@ TinyBase provides interactive API documentation:
 The current API version is **v1** (implicit in all routes).
 
 Future versions will be introduced as `/api/v2/...` when needed.
-

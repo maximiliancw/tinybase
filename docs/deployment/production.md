@@ -43,12 +43,12 @@ server {
 
     ssl_certificate /etc/letsencrypt/live/api.example.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/api.example.com/privkey.pem;
-    
+
     # SSL configuration
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
     ssl_prefer_server_ciphers off;
-    
+
     # Security headers
     add_header Strict-Transport-Security "max-age=63072000" always;
     add_header X-Frame-Options DENY;
@@ -139,26 +139,29 @@ server {
 ### SQLite Best Practices
 
 1. **Persistent Storage**
+
    ```bash
    mkdir -p /var/lib/tinybase
    chown tinybase:tinybase /var/lib/tinybase
    ```
 
-2. **Regular Backups**
+1. **Regular Backups**
+
    ```bash
    #!/bin/bash
    # backup.sh
    BACKUP_DIR=/var/backups/tinybase
    DB_PATH=/var/lib/tinybase/tinybase.db
-   
+
    mkdir -p $BACKUP_DIR
    sqlite3 $DB_PATH ".backup $BACKUP_DIR/tinybase-$(date +%Y%m%d-%H%M%S).db"
-   
+
    # Keep last 7 days
    find $BACKUP_DIR -name "*.db" -mtime +7 -delete
    ```
 
-3. **Schedule Backups**
+1. **Schedule Backups**
+
    ```cron
    0 */6 * * * /opt/tinybase/backup.sh
    ```
@@ -287,7 +290,7 @@ gunicorn tinybase.api.app:create_app \
 ```
 
 !!! warning "Scheduler Consideration"
-    With multiple workers, ensure only one runs the scheduler to avoid duplicate executions.
+With multiple workers, ensure only one runs the scheduler to avoid duplicate executions.
 
 ### Connection Pooling
 
@@ -349,36 +352,41 @@ export TINYBASE_ADMIN_PASSWORD=$(vault kv get -field=password secret/tinybase)
 
 ### Backup Strategy
 
-| Data | Frequency | Retention |
-|------|-----------|-----------|
-| Database | Every 6 hours | 7 days |
-| Configuration | On change | 30 days |
-| Functions | With deployment | Version controlled |
+| Data          | Frequency       | Retention          |
+| ------------- | --------------- | ------------------ |
+| Database      | Every 6 hours   | 7 days             |
+| Configuration | On change       | 30 days            |
+| Functions     | With deployment | Version controlled |
 
 ### Recovery Procedure
 
 1. **Stop the service**
+
    ```bash
    systemctl stop tinybase
    ```
 
-2. **Restore database**
+1. **Restore database**
+
    ```bash
    cp /var/backups/tinybase/tinybase-latest.db /var/lib/tinybase/tinybase.db
    chown tinybase:tinybase /var/lib/tinybase/tinybase.db
    ```
 
-3. **Verify integrity**
+1. **Verify integrity**
+
    ```bash
    sqlite3 /var/lib/tinybase/tinybase.db "PRAGMA integrity_check;"
    ```
 
-4. **Start the service**
+1. **Start the service**
+
    ```bash
    systemctl start tinybase
    ```
 
-5. **Verify operation**
+1. **Verify operation**
+
    ```bash
    curl http://localhost:8000/docs
    ```
@@ -388,9 +396,9 @@ export TINYBASE_ADMIN_PASSWORD=$(vault kv get -field=password secret/tinybase)
 ### Zero-Downtime Upgrades
 
 1. Deploy new version alongside old
-2. Run database migrations
-3. Switch traffic to new version
-4. Remove old version
+1. Run database migrations
+1. Switch traffic to new version
+1. Remove old version
 
 ### Rolling Updates (Docker)
 
@@ -443,11 +451,10 @@ TINYBASE_DEBUG=true TINYBASE_LOG_LEVEL=debug tinybase serve
 ```
 
 !!! danger "Never in Production"
-    Disable debug mode after troubleshooting. It exposes sensitive information.
+Disable debug mode after troubleshooting. It exposes sensitive information.
 
 ## See Also
 
 - [Docker Deployment](docker.md) - Container setup
 - [Configuration](../getting-started/configuration.md) - All options
 - [CLI Reference](../reference/cli.md) - Management commands
-

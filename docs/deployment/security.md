@@ -53,7 +53,7 @@ Implement proper token refresh flow:
 # Client-side example
 def make_request(url, access_token, refresh_token):
     response = requests.get(url, headers={"Authorization": f"Bearer {access_token}"})
-    
+
     if response.status_code == 401:
         # Access token expired, refresh it
         refresh_response = requests.post(
@@ -63,7 +63,7 @@ def make_request(url, access_token, refresh_token):
         new_tokens = refresh_response.json()
         # Retry request with new access token
         response = requests.get(url, headers={"Authorization": f"Bearer {new_tokens['access_token']}"})
-    
+
     return response
 ```
 
@@ -418,7 +418,7 @@ Before deploying to production:
 
 If you discover a security vulnerability in TinyBase, please report it to:
 
-- **Email:** security@tinybase.example.com (update with actual contact)
+- **Email:** <security@tinybase.example.com> (update with actual contact)
 - **Private disclosure:** Use GitHub Security Advisories
 
 Do not publicly disclose security issues until a fix is available.

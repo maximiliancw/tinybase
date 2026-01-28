@@ -6,29 +6,29 @@ This guide covers all the features of TinyBase in depth. Whether you're building
 
 <div class="grid cards" markdown>
 
--   :material-database: [**Collections**](collections.md)
+- :material-database: [**Collections**](collections.md)
 
-    Create schema-driven data collections with validation, access control, and CRUD operations.
+  Create schema-driven data collections with validation, access control, and CRUD operations.
 
--   :material-function: [**Functions**](functions.md)
+- :material-function: [**Functions**](functions.md)
 
-    Build typed server-side functions with Pydantic models, automatic API exposure, and execution tracking.
+  Build typed server-side functions with Pydantic models, automatic API exposure, and execution tracking.
 
--   :material-clock: [**Scheduling**](scheduling.md)
+- :material-clock: [**Scheduling**](scheduling.md)
 
-    Schedule functions to run once, at intervals, or with cron expressions.
+  Schedule functions to run once, at intervals, or with cron expressions.
 
--   :material-shield-account: [**Authentication**](authentication.md)
+- :material-shield-account: [**Authentication**](authentication.md)
 
-    User management, token-based auth, and role-based access control.
+  User management, token-based auth, and role-based access control.
 
--   :material-view-dashboard: [**Admin UI**](admin-ui.md)
+- :material-view-dashboard: [**Admin UI**](admin-ui.md)
 
-    Manage your application through a modern web interface.
+  Manage your application through a modern web interface.
 
--   :material-puzzle: [**Extensions**](extensions.md)
+- :material-puzzle: [**Extensions**](extensions.md)
 
-    Extend TinyBase with hooks, lifecycle events, and third-party integrations.
+  Extend TinyBase with hooks, lifecycle events, and third-party integrations.
 
 </div>
 
@@ -41,7 +41,7 @@ graph TB
         B[Mobile App]
         C[CLI Tool]
     end
-    
+
     subgraph TinyBase
         D[FastAPI Server]
         E[Function Registry]
@@ -49,11 +49,11 @@ graph TB
         G[Scheduler]
         H[Extension Loader]
     end
-    
+
     subgraph Storage
         I[(SQLite Database)]
     end
-    
+
     A --> D
     B --> D
     C --> D
@@ -69,24 +69,24 @@ graph TB
 
 TinyBase is built on these core components:
 
-| Component | Purpose |
-|-----------|---------|
-| **FastAPI Server** | HTTP handling, routing, OpenAPI |
-| **Function Registry** | Stores and executes registered functions |
-| **Collection Service** | CRUD operations with schema validation |
-| **Scheduler** | Background job execution |
-| **Extension Loader** | Loads and manages extensions |
-| **SQLite Database** | Persistent storage for all data |
+| Component              | Purpose                                  |
+| ---------------------- | ---------------------------------------- |
+| **FastAPI Server**     | HTTP handling, routing, OpenAPI          |
+| **Function Registry**  | Stores and executes registered functions |
+| **Collection Service** | CRUD operations with schema validation   |
+| **Scheduler**          | Background job execution                 |
+| **Extension Loader**   | Loads and manages extensions             |
+| **SQLite Database**    | Persistent storage for all data          |
 
 ## Request Flow
 
 When a request comes in to TinyBase:
 
 1. **Authentication** - Token is validated (if required)
-2. **Routing** - Request is routed to the appropriate handler
-3. **Validation** - Input is validated against Pydantic models
-4. **Execution** - Business logic runs (function or CRUD operation)
-5. **Response** - Result is serialized and returned
+1. **Routing** - Request is routed to the appropriate handler
+1. **Validation** - Input is validated against Pydantic models
+1. **Execution** - Business logic runs (function or CRUD operation)
+1. **Response** - Result is serialized and returned
 
 ```mermaid
 sequenceDiagram
@@ -95,7 +95,7 @@ sequenceDiagram
     participant A as Auth
     participant H as Handler
     participant D as Database
-    
+
     C->>S: POST /api/functions/my_func
     S->>A: Validate token
     A-->>S: User info
@@ -158,38 +158,46 @@ def notify_order(event: RecordCreateEvent):
 ### Common Issues
 
 ??? question "Server won't start"
-    
-    1. Check if port 8000 is already in use:
-       ```bash
-       lsof -i :8000
-       ```
-    2. Verify your configuration file is valid TOML
-    3. Check logs for specific error messages
+
+````
+1. Check if port 8000 is already in use:
+   ```bash
+   lsof -i :8000
+   ```
+2. Verify your configuration file is valid TOML
+3. Check logs for specific error messages
+````
 
 ??? question "Functions not loading"
-    
-    1. Ensure `functions/` directory exists in your project directory
-    2. Check for Python syntax errors:
-       ```bash
-       python -c "import functions"
-       ```
-    3. Verify the `@register` decorator is imported correctly
+
+````
+1. Ensure `functions/` directory exists in your project directory
+2. Check for Python syntax errors:
+   ```bash
+   python -c "import functions"
+   ```
+3. Verify the `@register` decorator is imported correctly
+````
 
 ??? question "Database errors"
-    
-    1. Delete `tinybase.db` and reinitialize:
-       ```bash
-       rm tinybase.db
-       tinybase init
-       ```
-    2. Check file permissions on the database file
-    3. Ensure SQLite is properly installed
+
+````
+1. Delete `tinybase.db` and reinitialize:
+   ```bash
+   rm tinybase.db
+   tinybase init
+   ```
+2. Check file permissions on the database file
+3. Ensure SQLite is properly installed
+````
 
 ??? question "Authentication issues"
-    
-    1. Verify the token hasn't expired
-    2. Check the `Authorization: Bearer <token>` header format
-    3. Ensure the user has the required role (admin vs. regular user)
+
+```
+1. Verify the token hasn't expired
+2. Check the `Authorization: Bearer <token>` header format
+3. Ensure the user has the required role (admin vs. regular user)
+```
 
 ### Debug Mode
 
@@ -217,6 +225,5 @@ TINYBASE_DEBUG=true TINYBASE_LOG_LEVEL=debug tinybase serve
 Dive into specific features:
 
 1. [Collections](collections.md) - Start storing data
-2. [Functions](functions.md) - Add business logic
-3. [Authentication](authentication.md) - Secure your API
-
+1. [Functions](functions.md) - Add business logic
+1. [Authentication](authentication.md) - Secure your API

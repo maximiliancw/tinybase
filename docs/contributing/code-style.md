@@ -33,8 +33,8 @@ ignore = ["E501"]
 Organize imports in this order:
 
 1. Standard library
-2. Third-party packages
-3. Local imports
+1. Third-party packages
+1. Local imports
 
 ```python
 # Standard library
@@ -90,15 +90,15 @@ def create_record(
 ) -> Record:
     """
     Create a new record in a collection.
-    
+
     Args:
         collection: The collection to add the record to.
         data: Record data (will be validated against schema).
         owner_id: Optional owner user ID.
-    
+
     Returns:
         The created Record object.
-    
+
     Raises:
         ValidationError: If data doesn't match the collection schema.
     """
@@ -107,13 +107,13 @@ def create_record(
 
 ### Naming Conventions
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Functions | `snake_case` | `get_user_by_id` |
-| Variables | `snake_case` | `user_count` |
-| Classes | `PascalCase` | `CollectionService` |
-| Constants | `UPPER_SNAKE_CASE` | `DEFAULT_PAGE_SIZE` |
-| Private | `_leading_underscore` | `_internal_cache` |
+| Type      | Convention            | Example             |
+| --------- | --------------------- | ------------------- |
+| Functions | `snake_case`          | `get_user_by_id`    |
+| Variables | `snake_case`          | `user_count`        |
+| Classes   | `PascalCase`          | `CollectionService` |
+| Constants | `UPPER_SNAKE_CASE`    | `DEFAULT_PAGE_SIZE` |
+| Private   | `_leading_underscore` | `_internal_cache`   |
 
 ### Classes
 
@@ -129,10 +129,10 @@ class UserInput(BaseModel):
 # For services with methods
 class CollectionService:
     """Service class for collection operations."""
-    
+
     def __init__(self, session: Session) -> None:
         self.session = session
-    
+
     def list_collections(self) -> list[Collection]:
         ...
 ```
@@ -270,12 +270,12 @@ onMounted(() => {
 
 ### Naming
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Components | `PascalCase` | `UserList.vue` |
-| Composables | `camelCase` | `useAuth.ts` |
-| Stores | `camelCase` | `userStore.ts` |
-| Views | `PascalCase` | `Dashboard.vue` |
+| Type        | Convention   | Example         |
+| ----------- | ------------ | --------------- |
+| Components  | `PascalCase` | `UserList.vue`  |
+| Composables | `camelCase`  | `useAuth.ts`    |
+| Stores      | `camelCase`  | `userStore.ts`  |
+| Views       | `PascalCase` | `Dashboard.vue` |
 
 ## Git Conventions
 
@@ -377,16 +377,16 @@ from tinybase.collections.service import CollectionService
 
 class TestCollectionService:
     """Test suite for CollectionService."""
-    
+
     def test_list_collections_empty(self, session):
         """Test listing when no collections exist."""
         service = CollectionService(session)
         assert service.list_collections() == []
-    
+
     def test_create_collection_success(self, session):
         """Test successful collection creation."""
         ...
-    
+
     def test_create_collection_duplicate_name(self, session):
         """Test that duplicate names raise error."""
         ...
@@ -448,4 +448,3 @@ else:
 - [Development Setup](development.md)
 - [Testing Guide](testing.md)
 - [Architecture](architecture.md)
-

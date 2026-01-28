@@ -16,7 +16,7 @@ Most endpoints require authentication via Bearer token:
 curl -H "Authorization: Bearer tb_your_token" http://localhost:8000/api/...
 ```
 
----
+______________________________________________________________________
 
 ## Auth Endpoints
 
@@ -48,7 +48,7 @@ POST /api/auth/register
 }
 ```
 
----
+______________________________________________________________________
 
 ### Login
 
@@ -81,7 +81,7 @@ POST /api/auth/login
 }
 ```
 
----
+______________________________________________________________________
 
 ### Get Current User
 
@@ -104,7 +104,7 @@ GET /api/auth/me
 }
 ```
 
----
+______________________________________________________________________
 
 ## Collections Endpoints
 
@@ -133,7 +133,7 @@ GET /api/collections
 }
 ```
 
----
+______________________________________________________________________
 
 ### Get Collection
 
@@ -164,7 +164,7 @@ GET /api/collections/{name}
 }
 ```
 
----
+______________________________________________________________________
 
 ### Create Collection
 
@@ -199,7 +199,7 @@ POST /api/collections
 
 **Response:** `201 Created`
 
----
+______________________________________________________________________
 
 ## Records Endpoints
 
@@ -213,12 +213,12 @@ GET /api/collections/{name}/records
 
 **Query Parameters:**
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `limit` | int | 100 | Max records to return |
-| `offset` | int | 0 | Records to skip |
-| `sort_by` | string | `created_at` | Sort field |
-| `sort_order` | string | `desc` | `asc` or `desc` |
+| Parameter    | Type   | Default      | Description           |
+| ------------ | ------ | ------------ | --------------------- |
+| `limit`      | int    | 100          | Max records to return |
+| `offset`     | int    | 0            | Records to skip       |
+| `sort_by`    | string | `created_at` | Sort field            |
+| `sort_order` | string | `desc`       | `asc` or `desc`       |
 
 **Response:** `200 OK`
 
@@ -243,7 +243,7 @@ GET /api/collections/{name}/records
 }
 ```
 
----
+______________________________________________________________________
 
 ### Get Record
 
@@ -268,7 +268,7 @@ GET /api/collections/{name}/records/{id}
 }
 ```
 
----
+______________________________________________________________________
 
 ### Create Record
 
@@ -303,7 +303,7 @@ POST /api/collections/{name}/records
 }
 ```
 
----
+______________________________________________________________________
 
 ### Update Record
 
@@ -323,7 +323,7 @@ PATCH /api/collections/{name}/records/{id}
 
 **Response:** `200 OK`
 
----
+______________________________________________________________________
 
 ### Delete Record
 
@@ -335,7 +335,7 @@ DELETE /api/collections/{name}/records/{id}
 
 **Response:** `204 No Content`
 
----
+______________________________________________________________________
 
 ## Functions Endpoints
 
@@ -364,7 +364,7 @@ GET /api/functions
 }
 ```
 
----
+______________________________________________________________________
 
 ### Call Function
 
@@ -406,7 +406,7 @@ POST /api/functions/{name}
 }
 ```
 
----
+______________________________________________________________________
 
 ## Admin Endpoints
 
@@ -444,7 +444,7 @@ PATCH /api/admin/users/{id}
 DELETE /api/admin/users/{id}
 ```
 
----
+______________________________________________________________________
 
 ### Schedules
 
@@ -512,7 +512,7 @@ PATCH /api/admin/schedules/{id}
 DELETE /api/admin/schedules/{id}
 ```
 
----
+______________________________________________________________________
 
 ### Function Calls
 
@@ -524,13 +524,13 @@ GET /api/admin/function-calls
 
 **Query Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `function_name` | string | Filter by function |
-| `status` | string | `succeeded` or `failed` |
-| `trigger_type` | string | `manual` or `schedule` |
-| `limit` | int | Max results |
-| `offset` | int | Skip results |
+| Parameter       | Type   | Description             |
+| --------------- | ------ | ----------------------- |
+| `function_name` | string | Filter by function      |
+| `status`        | string | `succeeded` or `failed` |
+| `trigger_type`  | string | `manual` or `schedule`  |
+| `limit`         | int    | Max results             |
+| `offset`        | int    | Skip results            |
 
 #### Get Function Call
 
@@ -538,7 +538,7 @@ GET /api/admin/function-calls
 GET /api/admin/function-calls/{id}
 ```
 
----
+______________________________________________________________________
 
 ## Error Responses
 
@@ -607,4 +607,3 @@ Retry-After: 60
   "detail": "Rate limit exceeded"
 }
 ```
-

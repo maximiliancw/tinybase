@@ -60,9 +60,9 @@ make repo version bump patch
 When adding new scripts:
 
 1. Create the script in this directory
-2. Add a corresponding Make target if appropriate
-3. Document the script in this README
-4. If the script has CLI options, use Typer for consistency
+1. Add a corresponding Make target if appropriate
+1. Document the script in this README
+1. If the script has CLI options, use Typer for consistency
 
 Example:
 

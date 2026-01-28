@@ -114,7 +114,7 @@ tinybase serve --reload
 **3. Access your instance:**
 
 | Service         | URL                           |
-| --------------  | ----------------------------- |
+| --------------- | ----------------------------- |
 | 🎨 **Admin UI** | <http://localhost:8000/admin> |
 | 📚 **API Docs** | <http://localhost:8000/docs>  |
 | 🔌 **REST API** | <http://localhost:8000/api>   |
@@ -138,9 +138,10 @@ TinyBase uses a **two-layer configuration system**:
 File-based configuration loaded once at startup. Changes require a server restart.
 
 **Sources** (in order of precedence):
+
 1. Environment variables (`TINYBASE_*`)
-2. `tinybase.toml` in the current directory
-3. Internal defaults
+1. `tinybase.toml` in the current directory
+1. Internal defaults
 
 ```toml
 [server]
@@ -199,20 +200,20 @@ enabled = false
 
 **Environment variables** (override TOML values):
 
-| Variable | Description |
-| -------- | ----------- |
-| `TINYBASE_SERVER_HOST` | Server bind host |
-| `TINYBASE_SERVER_PORT` | Server bind port |
-| `TINYBASE_DEBUG` | Enable debug mode |
-| `TINYBASE_LOG_LEVEL` | Logging level |
-| `TINYBASE_DB_URL` | Database connection URL |
-| `TINYBASE_JWT_SECRET_KEY` | JWT signing secret (auto-generated if not set) |
-| `TINYBASE_FUNCTIONS_PATH` | Path to functions directory |
-| `TINYBASE_SCHEDULER_ENABLED` | Enable/disable scheduler |
-| `TINYBASE_RATE_LIMIT_BACKEND` | Rate limit backend (`diskcache` or `redis`) |
-| `TINYBASE_CORS_ALLOW_ORIGINS` | Comma-separated list of allowed origins |
-| `TINYBASE_ADMIN_EMAIL` | Admin email for bootstrap |
-| `TINYBASE_ADMIN_PASSWORD` | Admin password for bootstrap |
+| Variable                      | Description                                    |
+| ----------------------------- | ---------------------------------------------- |
+| `TINYBASE_SERVER_HOST`        | Server bind host                               |
+| `TINYBASE_SERVER_PORT`        | Server bind port                               |
+| `TINYBASE_DEBUG`              | Enable debug mode                              |
+| `TINYBASE_LOG_LEVEL`          | Logging level                                  |
+| `TINYBASE_DB_URL`             | Database connection URL                        |
+| `TINYBASE_JWT_SECRET_KEY`     | JWT signing secret (auto-generated if not set) |
+| `TINYBASE_FUNCTIONS_PATH`     | Path to functions directory                    |
+| `TINYBASE_SCHEDULER_ENABLED`  | Enable/disable scheduler                       |
+| `TINYBASE_RATE_LIMIT_BACKEND` | Rate limit backend (`diskcache` or `redis`)    |
+| `TINYBASE_CORS_ALLOW_ORIGINS` | Comma-separated list of allowed origins        |
+| `TINYBASE_ADMIN_EMAIL`        | Admin email for bootstrap                      |
+| `TINYBASE_ADMIN_PASSWORD`     | Admin password for bootstrap                   |
 
 ### Runtime Settings (`settings`)
 
@@ -238,15 +239,15 @@ settings.set("ext.my_extension.api_key", "xxx")
 
 **Core runtime settings:**
 
-| Setting | Default | Description |
-| ------- | ------- | ----------- |
-| `core.instance_name` | `"TinyBase"` | Instance display name |
-| `core.auth.allow_public_registration` | `true` | Allow public user registration |
-| `core.auth.portal.*` | — | Auth portal customization (logo, colors, redirects) |
-| `core.storage.*` | — | S3-compatible storage configuration |
-| `core.scheduler.function_timeout_seconds` | `1800` | Max function execution time |
-| `core.limits.max_concurrent_functions_per_user` | `10` | Concurrent function limit per user |
-| `core.jobs.admin_report.enabled` | `true` | Enable periodic admin report emails |
+| Setting                                         | Default      | Description                                         |
+| ----------------------------------------------- | ------------ | --------------------------------------------------- |
+| `core.instance_name`                            | `"TinyBase"` | Instance display name                               |
+| `core.auth.allow_public_registration`           | `true`       | Allow public user registration                      |
+| `core.auth.portal.*`                            | —            | Auth portal customization (logo, colors, redirects) |
+| `core.storage.*`                                | —            | S3-compatible storage configuration                 |
+| `core.scheduler.function_timeout_seconds`       | `1800`       | Max function execution time                         |
+| `core.limits.max_concurrent_functions_per_user` | `10`         | Concurrent function limit per user                  |
+| `core.jobs.admin_report.enabled`                | `true`       | Enable periodic admin report emails                 |
 
 Extensions can register their own settings under the `ext.*` namespace.
 
@@ -549,7 +550,7 @@ uv run ruff check .
 Test coverage includes:
 
 - ✅ Function execution and isolation
-- ✅ Authentication and JWT flows  
+- ✅ Authentication and JWT flows
 - ✅ Collection CRUD operations
 - ✅ Scheduling and cron parsing
 - ✅ Rate limiting and resource management
@@ -580,8 +581,8 @@ docker run -p 8000:8000 \
 The multi-stage build:
 
 1. Builds the Vue admin UI with yarn
-2. Creates a minimal Python runtime using uv
-3. Bundles everything into a single optimized image
+1. Creates a minimal Python runtime using uv
+1. Bundles everything into a single optimized image
 
 > 📖 **[View deployment guides](https://maximiliancw.github.io/TinyBase/deployment/)**
 
@@ -631,4 +632,3 @@ If you find TinyBase useful, please consider:
 - 💡 Suggesting new features
 - 📖 Improving documentation
 - 🔀 Contributing code
-

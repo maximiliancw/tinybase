@@ -3,7 +3,7 @@
 TinyBase uses a **two-layer configuration system**:
 
 1. **Static Config** (`config`) – File-based settings loaded at startup. Changes require a server restart.
-2. **Runtime Settings** (`settings`) – Database-backed settings that can be changed at runtime via Admin UI or API.
+1. **Runtime Settings** (`settings`) – Database-backed settings that can be changed at runtime via Admin UI or API.
 
 ## Static Configuration
 
@@ -12,8 +12,8 @@ TinyBase uses a **two-layer configuration system**:
 Settings are loaded in this order (later sources override earlier ones):
 
 1. **Built-in defaults**
-2. **`tinybase.toml`** in the current directory
-3. **Environment variables** (prefixed with `TINYBASE_`)
+1. **`tinybase.toml`** in the current directory
+1. **Environment variables** (prefixed with `TINYBASE_`)
 
 ### Configuration File
 
@@ -71,25 +71,25 @@ enabled = false
 All static configuration options with their types, defaults, and descriptions:
 
 ::: tinybase.settings.static.Config
-    options:
-      show_root_heading: false
-      show_source: false
-      show_bases: false
-      members_order: source
-      show_docstring_description: false
-      show_docstring_attributes: true
-      heading_level: 4
+options:
+show_root_heading: false
+show_source: false
+show_bases: false
+members_order: source
+show_docstring_description: false
+show_docstring_attributes: true
+heading_level: 4
 
 ### Bootstrap Variables
 
 These environment variables are used during `tinybase init`:
 
-| Environment Variable | Purpose |
-|---------------------|---------|
-| `TINYBASE_ADMIN_EMAIL` | Admin user email for bootstrap |
+| Environment Variable      | Purpose                           |
+| ------------------------- | --------------------------------- |
+| `TINYBASE_ADMIN_EMAIL`    | Admin user email for bootstrap    |
 | `TINYBASE_ADMIN_PASSWORD` | Admin user password for bootstrap |
 
----
+______________________________________________________________________
 
 ## Runtime Settings
 
@@ -123,31 +123,31 @@ api_key = settings.get("ext.my_extension.api_key")
 
 ### Core Runtime Settings
 
-| Setting Key | Default | Description |
-|-------------|---------|-------------|
-| `core.instance_name` | `"TinyBase"` | Display name for the instance |
-| `core.server_timezone` | `"UTC"` | Server timezone |
-| `core.auth.allow_public_registration` | `true` | Allow public user registration |
-| `core.auth.portal.enabled` | `false` | Enable auth portal UI |
-| `core.auth.portal.logo_url` | — | Custom logo URL |
-| `core.auth.portal.primary_color` | — | Primary brand color |
-| `core.auth.portal.background_image_url` | — | Background image URL |
-| `core.auth.portal.login_redirect_url` | — | Post-login redirect URL |
-| `core.auth.portal.register_redirect_url` | — | Post-registration redirect URL |
-| `core.storage.enabled` | `false` | Enable S3-compatible file storage |
-| `core.storage.url` | — | S3 endpoint URL |
-| `core.storage.bucket` | — | S3 bucket name |
-| `core.storage.access_key` | — | S3 access key |
-| `core.storage.secret_key` | — | S3 secret key |
-| `core.storage.region` | — | S3 region |
-| `core.scheduler.function_timeout_seconds` | `1800` | Max function execution time |
-| `core.scheduler.max_schedules_per_tick` | `100` | Max schedules processed per interval |
-| `core.scheduler.max_concurrent_executions` | `10` | Max concurrent scheduled executions |
-| `core.limits.max_concurrent_functions_per_user` | `10` | Concurrent function limit per user |
-| `core.jobs.token_cleanup.interval` | `60` | Token cleanup job interval (seconds) |
-| `core.jobs.metrics.interval` | `360` | Metrics collection interval (seconds) |
-| `core.jobs.admin_report.enabled` | `true` | Enable periodic admin reports |
-| `core.jobs.admin_report.interval_days` | `7` | Admin report frequency (days) |
+| Setting Key                                     | Default      | Description                           |
+| ----------------------------------------------- | ------------ | ------------------------------------- |
+| `core.instance_name`                            | `"TinyBase"` | Display name for the instance         |
+| `core.server_timezone`                          | `"UTC"`      | Server timezone                       |
+| `core.auth.allow_public_registration`           | `true`       | Allow public user registration        |
+| `core.auth.portal.enabled`                      | `false`      | Enable auth portal UI                 |
+| `core.auth.portal.logo_url`                     | —            | Custom logo URL                       |
+| `core.auth.portal.primary_color`                | —            | Primary brand color                   |
+| `core.auth.portal.background_image_url`         | —            | Background image URL                  |
+| `core.auth.portal.login_redirect_url`           | —            | Post-login redirect URL               |
+| `core.auth.portal.register_redirect_url`        | —            | Post-registration redirect URL        |
+| `core.storage.enabled`                          | `false`      | Enable S3-compatible file storage     |
+| `core.storage.url`                              | —            | S3 endpoint URL                       |
+| `core.storage.bucket`                           | —            | S3 bucket name                        |
+| `core.storage.access_key`                       | —            | S3 access key                         |
+| `core.storage.secret_key`                       | —            | S3 secret key                         |
+| `core.storage.region`                           | —            | S3 region                             |
+| `core.scheduler.function_timeout_seconds`       | `1800`       | Max function execution time           |
+| `core.scheduler.max_schedules_per_tick`         | `100`        | Max schedules processed per interval  |
+| `core.scheduler.max_concurrent_executions`      | `10`         | Max concurrent scheduled executions   |
+| `core.limits.max_concurrent_functions_per_user` | `10`         | Concurrent function limit per user    |
+| `core.jobs.token_cleanup.interval`              | `60`         | Token cleanup job interval (seconds)  |
+| `core.jobs.metrics.interval`                    | `360`        | Metrics collection interval (seconds) |
+| `core.jobs.admin_report.enabled`                | `true`       | Enable periodic admin reports         |
+| `core.jobs.admin_report.interval_days`          | `7`          | Admin report frequency (days)         |
 
 ### Extension Settings
 
@@ -160,7 +160,7 @@ settings.set("ext.my_extension.enabled", True)
 settings.set("ext.my_extension.config", {"timeout": 30})
 ```
 
----
+______________________________________________________________________
 
 ## Deployment Environments
 
@@ -182,7 +182,7 @@ These are used by the `tinybase functions deploy` command:
 tinybase functions deploy my_function --env production
 ```
 
----
+______________________________________________________________________
 
 ## Example Configurations
 
@@ -247,7 +247,7 @@ ENV TINYBASE_RATE_LIMIT_BACKEND=redis
 ENV TINYBASE_RATE_LIMIT_REDIS_URL=redis://redis:6379/0
 ```
 
----
+______________________________________________________________________
 
 ## See Also
 

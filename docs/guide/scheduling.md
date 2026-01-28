@@ -3,7 +3,7 @@
 TinyBase includes a built-in scheduler for running functions automatically. Schedule one-time tasks, recurring jobs, or complex cron-based schedules.
 
 !!! note "Function Format"
-    The examples on this page use simplified function signatures for clarity. In practice, user functions should use the [TinyBase SDK format](functions.md#defining-functions) with isolated execution. The scheduling API works the same regardless of function format.
+The examples on this page use simplified function signatures for clarity. In practice, user functions should use the [TinyBase SDK format](functions.md#defining-functions) with isolated execution. The scheduling API works the same regardless of function format.
 
 ## Overview
 
@@ -30,12 +30,12 @@ Run a function at a specific date and time:
 }
 ```
 
-| Field | Description |
-|-------|-------------|
-| `method` | `"once"` |
-| `timezone` | IANA timezone name |
-| `date` | Date in `YYYY-MM-DD` format |
-| `time` | Time in `HH:MM:SS` format |
+| Field      | Description                 |
+| ---------- | --------------------------- |
+| `method`   | `"once"`                    |
+| `timezone` | IANA timezone name          |
+| `date`     | Date in `YYYY-MM-DD` format |
+| `time`     | Time in `HH:MM:SS` format   |
 
 ### Interval Schedule
 
@@ -50,12 +50,12 @@ Run a function at regular intervals:
 }
 ```
 
-| Field | Description |
-|-------|-------------|
-| `method` | `"interval"` |
-| `timezone` | IANA timezone name |
-| `unit` | `"seconds"`, `"minutes"`, `"hours"`, or `"days"` |
-| `value` | Number of units between runs |
+| Field      | Description                                      |
+| ---------- | ------------------------------------------------ |
+| `method`   | `"interval"`                                     |
+| `timezone` | IANA timezone name                               |
+| `unit`     | `"seconds"`, `"minutes"`, `"hours"`, or `"days"` |
+| `value`    | Number of units between runs                     |
 
 ### Cron Schedule
 
@@ -70,11 +70,11 @@ Run a function using cron expressions:
 }
 ```
 
-| Field | Description |
-|-------|-------------|
-| `method` | `"cron"` |
-| `timezone` | IANA timezone name |
-| `cron` | Standard cron expression |
+| Field         | Description                         |
+| ------------- | ----------------------------------- |
+| `method`      | `"cron"`                            |
+| `timezone`    | IANA timezone name                  |
+| `cron`        | Standard cron expression            |
 | `description` | Optional human-readable description |
 
 ## Cron Expression Reference
@@ -91,28 +91,28 @@ Run a function using cron expressions:
 
 ### Common Patterns
 
-| Pattern | Description |
-|---------|-------------|
-| `* * * * *` | Every minute |
-| `0 * * * *` | Every hour |
-| `0 0 * * *` | Daily at midnight |
-| `0 9 * * *` | Daily at 9 AM |
-| `0 9 * * 1` | Every Monday at 9 AM |
-| `0 9 * * 1-5` | Weekdays at 9 AM |
-| `0 0 1 * *` | First of every month |
-| `0 0 1 1 *` | January 1st |
-| `*/5 * * * *` | Every 5 minutes |
-| `0 */2 * * *` | Every 2 hours |
+| Pattern       | Description          |
+| ------------- | -------------------- |
+| `* * * * *`   | Every minute         |
+| `0 * * * *`   | Every hour           |
+| `0 0 * * *`   | Daily at midnight    |
+| `0 9 * * *`   | Daily at 9 AM        |
+| `0 9 * * 1`   | Every Monday at 9 AM |
+| `0 9 * * 1-5` | Weekdays at 9 AM     |
+| `0 0 1 * *`   | First of every month |
+| `0 0 1 1 *`   | January 1st          |
+| `*/5 * * * *` | Every 5 minutes      |
+| `0 */2 * * *` | Every 2 hours        |
 
 ## Creating Schedules
 
 ### Via Admin UI
 
 1. Go to **Schedules** in the sidebar
-2. Click **New Schedule**
-3. Select a function
-4. Configure the schedule
-5. Enable and save
+1. Click **New Schedule**
+1. Select a function
+1. Configure the schedule
+1. Enable and save
 
 ### Via API
 
@@ -191,22 +191,22 @@ curl -X DELETE http://localhost:8000/api/admin/schedules/$SCHEDULE_ID \
 The schedule configuration uses Pydantic models for validation:
 
 ::: tinybase.schedule.utils.OnceScheduleConfig
-    options:
-      show_source: false
-      show_bases: false
-      heading_level: 4
+options:
+show_source: false
+show_bases: false
+heading_level: 4
 
 ::: tinybase.schedule.utils.IntervalScheduleConfig
-    options:
-      show_source: false
-      show_bases: false
-      heading_level: 4
+options:
+show_source: false
+show_bases: false
+heading_level: 4
 
 ::: tinybase.schedule.utils.CronScheduleConfig
-    options:
-      show_source: false
-      show_bases: false
-      heading_level: 4
+options:
+show_source: false
+show_bases: false
+heading_level: 4
 
 ### Schedule Record Example
 
@@ -235,9 +235,9 @@ A full schedule record from the API:
 Functions that will be scheduled should:
 
 1. **Accept empty payloads** or have defaults
-2. **Be idempotent** when possible
-3. **Handle errors gracefully**
-4. **Log progress** for debugging
+1. **Be idempotent** when possible
+1. **Handle errors gracefully**
+1. **Log progress** for debugging
 
 ```python
 from pydantic import BaseModel
@@ -269,24 +269,24 @@ class CleanupOutput(BaseModel):
 def cleanup_old_records(ctx: Context, payload: CleanupInput) -> CleanupOutput:
     """
     Clean up old records from the database.
-    
+
     This function is designed to run on a schedule.
     """
     from datetime import timedelta
     from sqlmodel import select
     from tinybase.db.models import Record
-    
+
     cutoff = ctx.now - timedelta(days=payload.days)
     logger.info(f"Cleaning records older than {cutoff}")
-    
+
     # Find old records
     old_records = ctx.db.exec(
         select(Record).where(Record.created_at < cutoff)
     ).all()
-    
+
     deleted = 0
     errors = []
-    
+
     for record in old_records:
         try:
             ctx.db.delete(record)
@@ -294,10 +294,10 @@ def cleanup_old_records(ctx: Context, payload: CleanupInput) -> CleanupOutput:
         except Exception as e:
             errors.append(f"Failed to delete {record.id}: {e}")
             logger.error(f"Cleanup error: {e}")
-    
+
     ctx.db.commit()
     logger.info(f"Cleaned up {deleted} records")
-    
+
     return CleanupOutput(deleted_count=deleted, errors=errors)
 ```
 
@@ -314,7 +314,7 @@ def my_task(ctx: Context, payload: Input) -> Output:
     else:
         # Manual invocation
         logger.info(f"Manual run by user: {ctx.user_id}")
-    
+
     # ... rest of function
 ```
 
@@ -329,7 +329,7 @@ def send_report(ctx: Context, payload: ReportInput) -> ReportOutput:
     else:
         # Manual: send only to requesting user
         recipients = [get_user_email(ctx.user_id)]
-    
+
     send_email(recipients, generate_report())
     return ReportOutput(sent_to=len(recipients))
 ```
@@ -346,12 +346,12 @@ interval_seconds = 5     # How often to check for due tasks
 
 Additional scheduler settings are available as **runtime settings** (configurable via Admin UI or API):
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `core.scheduler.function_timeout_seconds` | `1800` | Max execution time for scheduled functions |
-| `core.scheduler.max_schedules_per_tick` | `100` | Max schedules processed per interval |
-| `core.scheduler.max_concurrent_executions` | `10` | Max concurrent scheduled executions |
-| `core.jobs.token_cleanup.interval` | `60` | Token cleanup job interval (seconds) |
+| Setting                                    | Default | Description                                |
+| ------------------------------------------ | ------- | ------------------------------------------ |
+| `core.scheduler.function_timeout_seconds`  | `1800`  | Max execution time for scheduled functions |
+| `core.scheduler.max_schedules_per_tick`    | `100`   | Max schedules processed per interval       |
+| `core.scheduler.max_concurrent_executions` | `10`    | Max concurrent scheduled executions        |
+| `core.jobs.token_cleanup.interval`         | `60`    | Token cleanup job interval (seconds)       |
 
 See [Configuration](../getting-started/configuration.md#runtime-settings) for more on runtime settings.
 
@@ -394,15 +394,15 @@ TinyBase uses IANA timezone names (e.g., `America/New_York`, `Europe/London`).
 
 ### Common Timezones
 
-| Zone | Description |
-|------|-------------|
-| `UTC` | Coordinated Universal Time |
-| `America/New_York` | US Eastern |
-| `America/Los_Angeles` | US Pacific |
-| `Europe/London` | UK |
-| `Europe/Berlin` | Central Europe |
-| `Asia/Tokyo` | Japan |
-| `Australia/Sydney` | Australia Eastern |
+| Zone                  | Description                |
+| --------------------- | -------------------------- |
+| `UTC`                 | Coordinated Universal Time |
+| `America/New_York`    | US Eastern                 |
+| `America/Los_Angeles` | US Pacific                 |
+| `Europe/London`       | UK                         |
+| `Europe/Berlin`       | Central Europe             |
+| `Asia/Tokyo`          | Japan                      |
+| `Australia/Sydney`    | Australia Eastern          |
 
 ### Daylight Saving Time
 
@@ -429,7 +429,7 @@ def sync_data(ctx: Context, payload: Input) -> Output:
     last_sync = get_last_sync_time()
     if last_sync and (ctx.now - last_sync).seconds < 300:
         return Output(synced=0, message="Recently synced")
-    
+
     # Perform sync...
 ```
 
@@ -440,19 +440,19 @@ def sync_data(ctx: Context, payload: Input) -> Output:
 def process_batch(ctx: Context, payload: BatchInput) -> BatchOutput:
     processed = 0
     batch_size = 100
-    
+
     while True:
         items = get_unprocessed_items(limit=batch_size)
         if not items:
             break
-        
+
         for item in items:
             process_item(item)
             processed += 1
-        
+
         # Commit progress periodically
         ctx.db.commit()
-    
+
     return BatchOutput(processed=processed)
 ```
 
@@ -475,4 +475,3 @@ def critical_task(ctx: Context, payload: Input) -> Output:
 - [Functions Guide](functions.md) - Writing functions
 - [Extensions Guide](extensions.md) - Hook into scheduled executions
 - [CLI Reference](../reference/cli.md) - Scheduler commands
-

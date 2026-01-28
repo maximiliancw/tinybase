@@ -16,9 +16,9 @@ A collection in TinyBase is:
 ### Via Admin UI
 
 1. Navigate to **Collections** in the sidebar
-2. Click **New Collection**
-3. Enter a name and label
-4. Define the schema
+1. Click **New Collection**
+1. Enter a name and label
+1. Define the schema
 
 ### Via API
 
@@ -46,38 +46,40 @@ The schema defines the structure and validation rules for records.
 
 ### Field Types
 
-| Type | Description | Additional Options |
-|------|-------------|-------------------|
-| `string` | Text data | `max_length`, `min_length`, `pattern` |
-| `number` | Decimal numbers | `min`, `max` |
-| `boolean` | True/false | - |
-| `array` | Array of values | - |
-| `object` | Nested object | - |
-| `date` | Date/time values | Stored as ISO 8601 strings |
-| `reference` | Foreign key to another collection | `collection` (required) |
+| Type        | Description                       | Additional Options                    |
+| ----------- | --------------------------------- | ------------------------------------- |
+| `string`    | Text data                         | `max_length`, `min_length`, `pattern` |
+| `number`    | Decimal numbers                   | `min`, `max`                          |
+| `boolean`   | True/false                        | -                                     |
+| `array`     | Array of values                   | -                                     |
+| `object`    | Nested object                     | -                                     |
+| `date`      | Date/time values                  | Stored as ISO 8601 strings            |
+| `reference` | Foreign key to another collection | `collection` (required)               |
 
 ### Field Options
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `required` | boolean | Field must be provided (default: `false`) |
-| `unique` | boolean | Values must be unique within the collection (default: `false`) |
-| `default` | any | Default value if not provided |
-| `description` | string | Human-readable field description |
-| `max_length` | integer | Maximum string length (string only) |
-| `min_length` | integer | Minimum string length (string only) |
-| `pattern` | string | Regex pattern for validation (string only) |
-| `min` | number | Minimum numeric value (number only) |
-| `max` | number | Maximum numeric value (number only) |
-| `collection` | string | Target collection name (reference only) |
+| Option        | Type    | Description                                                    |
+| ------------- | ------- | -------------------------------------------------------------- |
+| `required`    | boolean | Field must be provided (default: `false`)                      |
+| `unique`      | boolean | Values must be unique within the collection (default: `false`) |
+| `default`     | any     | Default value if not provided                                  |
+| `description` | string  | Human-readable field description                               |
+| `max_length`  | integer | Maximum string length (string only)                            |
+| `min_length`  | integer | Minimum string length (string only)                            |
+| `pattern`     | string  | Regex pattern for validation (string only)                     |
+| `min`         | number  | Minimum numeric value (number only)                            |
+| `max`         | number  | Maximum numeric value (number only)                            |
+| `collection`  | string  | Target collection name (reference only)                        |
 
 !!! note "Type-Specific Options"
-    Field options are validated based on the field type:
-    
-    - `min`/`max` can only be used with `number` type
-    - `min_length`/`max_length`/`pattern` can only be used with `string` type
-    - `unique` cannot be used with `array` or `object` types
-    - `collection` is required when type is `reference`
+Field options are validated based on the field type:
+
+```
+- `min`/`max` can only be used with `number` type
+- `min_length`/`max_length`/`pattern` can only be used with `string` type
+- `unique` cannot be used with `array` or `object` types
+- `collection` is required when type is `reference`
+```
 
 ### Example Schema
 
@@ -192,12 +194,12 @@ GET /api/collections/{name}/records
 
 Query parameters:
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `limit` | Max records to return | 100 |
-| `offset` | Records to skip | 0 |
-| `sort_by` | Sort field (`created_at`, `updated_at`) | `created_at` |
-| `sort_order` | Sort direction (`asc`, `desc`) | `desc` |
+| Parameter    | Description                             | Default      |
+| ------------ | --------------------------------------- | ------------ |
+| `limit`      | Max records to return                   | 100          |
+| `offset`     | Records to skip                         | 0            |
+| `sort_by`    | Sort field (`created_at`, `updated_at`) | `created_at` |
+| `sort_order` | Sort direction (`asc`, `desc`)          | `desc`       |
 
 Example:
 
@@ -273,12 +275,12 @@ Collections support fine-grained access control for each operation.
 
 ### Access Rules
 
-| Rule | Description |
-|------|-------------|
-| `public` | Anyone can access |
-| `auth` | Authenticated users only |
-| `owner` | Only the record owner |
-| `admin` | Admin users only |
+| Rule     | Description              |
+| -------- | ------------------------ |
+| `public` | Anyone can access        |
+| `auth`   | Authenticated users only |
+| `owner`  | Only the record owner    |
+| `admin`  | Admin users only         |
 
 ### Configuring Access
 
@@ -305,13 +307,13 @@ Set access rules in the collection options:
 
 If not specified, collections use these defaults:
 
-| Operation | Default |
-|-----------|---------|
-| `list` | `public` |
-| `read` | `public` |
-| `create` | `auth` |
-| `update` | `owner` |
-| `delete` | `owner` |
+| Operation | Default  |
+| --------- | -------- |
+| `list`    | `public` |
+| `read`    | `public` |
+| `create`  | `auth`   |
+| `update`  | `owner`  |
+| `delete`  | `owner`  |
 
 ## Record Ownership
 
@@ -330,7 +332,7 @@ curl http://localhost:8000/api/collections/posts/records \
 ## Working with Records in Functions
 
 !!! note "Function Format"
-    The examples below show internal API usage for extensions. User functions should use the [TinyBase SDK format](functions.md#defining-functions) and access collections via the `client` API object instead of direct database access.
+The examples below show internal API usage for extensions. User functions should use the [TinyBase SDK format](functions.md#defining-functions) and access collections via the `client` API object instead of direct database access.
 
 Access collections from within functions using the context:
 
@@ -345,17 +347,17 @@ from tinybase.collections.service import CollectionService
 def get_featured_products(ctx: Context, payload: Input) -> Output:
     # Use the CollectionService
     service = CollectionService(ctx.db)
-    
+
     # Get the collection
     collection = service.get_collection_by_name("products")
-    
+
     # List records
     records, total = service.list_records(
         collection,
         limit=10,
         filters={"featured": True}
     )
-    
+
     return Output(products=[r.data for r in records])
 ```
 
@@ -369,13 +371,13 @@ def search_products(ctx: Context, payload: SearchInput) -> SearchOutput:
         Record.collection_id == collection.id
     )
     records = ctx.db.exec(stmt).all()
-    
+
     # Filter in Python for complex queries
     results = [
-        r for r in records 
+        r for r in records
         if payload.query.lower() in r.data.get("title", "").lower()
     ]
-    
+
     return SearchOutput(items=results)
 ```
 
@@ -384,19 +386,21 @@ def search_products(ctx: Context, payload: SearchInput) -> SearchOutput:
 When you update a collection's schema:
 
 1. **Adding fields**: New fields get default values for existing records
-2. **Removing fields**: Old data is preserved but ignored
-3. **Changing types**: May cause validation errors for existing records
-4. **Adding unique constraints**: Indexes are automatically created
-5. **Removing unique constraints**: Indexes are automatically dropped
+1. **Removing fields**: Old data is preserved but ignored
+1. **Changing types**: May cause validation errors for existing records
+1. **Adding unique constraints**: Indexes are automatically created
+1. **Removing unique constraints**: Indexes are automatically dropped
 
 !!! info "Automatic Index Management"
-    TinyBase automatically manages database indexes for unique fields. When you add or remove the `unique` property from a field, the corresponding index is created or dropped without any manual intervention.
-    
-    - Adding `unique: true` to a field with duplicate values will fail with an error
-    - All index operations are logged for debugging purposes
+TinyBase automatically manages database indexes for unique fields. When you add or remove the `unique` property from a field, the corresponding index is created or dropped without any manual intervention.
+
+```
+- Adding `unique: true` to a field with duplicate values will fail with an error
+- All index operations are logged for debugging purposes
+```
 
 !!! warning "Schema Changes"
-    Changing field types or adding required fields without defaults may break existing records. Always backup your database before schema changes.
+Changing field types or adding required fields without defaults may break existing records. Always backup your database before schema changes.
 
 ### Safe Schema Updates
 
@@ -501,4 +505,3 @@ Returns detailed status including:
 - [Functions Guide](functions.md) - Access collections from functions
 - [Authentication Guide](authentication.md) - User and access control
 - [REST API Reference](../reference/rest-api.md) - Complete endpoint documentation
-

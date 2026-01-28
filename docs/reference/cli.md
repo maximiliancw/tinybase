@@ -10,8 +10,8 @@ tinybase [OPTIONS] COMMAND [ARGS]
 
 ## Global Options
 
-| Option | Description |
-|--------|-------------|
+| Option   | Description       |
+| -------- | ----------------- |
 | `--help` | Show help message |
 
 ## Commands
@@ -30,7 +30,7 @@ tinybase version
 TinyBase v0.3.0
 ```
 
----
+______________________________________________________________________
 
 ### init
 
@@ -42,15 +42,15 @@ tinybase init [DIRECTORY] [OPTIONS]
 
 **Arguments:**
 
-| Argument | Description | Default |
-|----------|-------------|---------|
+| Argument    | Description             | Default       |
+| ----------- | ----------------------- | ------------- |
 | `DIRECTORY` | Directory to initialize | `.` (current) |
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--admin-email, -e` | Admin user email |
+| Option                 | Description         |
+| ---------------------- | ------------------- |
+| `--admin-email, -e`    | Admin user email    |
 | `--admin-password, -p` | Admin user password |
 
 **Examples:**
@@ -73,7 +73,7 @@ tinybase init ./my-app
 - `functions/` - Functions directory (each function in its own file)
   - `__init__.py` - Package marker
 
----
+______________________________________________________________________
 
 ### serve
 
@@ -85,11 +85,11 @@ tinybase serve [OPTIONS]
 
 **Options:**
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--host, -h` | Host to bind to | From config |
-| `--port, -p` | Port to bind to | From config |
-| `--reload, -r` | Enable auto-reload | `false` |
+| Option         | Description        | Default     |
+| -------------- | ------------------ | ----------- |
+| `--host, -h`   | Host to bind to    | From config |
+| `--port, -p`   | Port to bind to    | From config |
+| `--reload, -r` | Enable auto-reload | `false`     |
 
 **Examples:**
 
@@ -104,7 +104,7 @@ tinybase serve --host 127.0.0.1 --port 3000
 tinybase serve --reload
 ```
 
----
+______________________________________________________________________
 
 ## functions
 
@@ -120,14 +120,14 @@ tinybase functions new NAME [OPTIONS]
 
 **Arguments:**
 
-| Argument | Description |
-|----------|-------------|
-| `NAME` | Function name (snake_case) |
+| Argument | Description                |
+| -------- | -------------------------- |
+| `NAME`   | Function name (snake_case) |
 
 **Options:**
 
-| Option | Description | Default |
-|--------|-------------|---------|
+| Option              | Description          | Default                 |
+| ------------------- | -------------------- | ----------------------- |
 | `--description, -d` | Function description | `TODO: Add description` |
 
 **Examples:**
@@ -153,14 +153,14 @@ tinybase functions deploy [OPTIONS]
 
 **Options:**
 
-| Option | Description | Default |
-|--------|-------------|---------|
+| Option      | Description      | Default      |
+| ----------- | ---------------- | ------------ |
 | `--env, -e` | Environment name | `production` |
 
 !!! note
-    Remote deployment is not yet fully implemented.
+Remote deployment is not yet fully implemented.
 
----
+______________________________________________________________________
 
 ## db
 
@@ -176,8 +176,8 @@ tinybase db migrate [OPTIONS]
 
 **Options:**
 
-| Option | Description | Default |
-|--------|-------------|---------|
+| Option          | Description       | Default          |
+| --------------- | ----------------- | ---------------- |
 | `--message, -m` | Migration message | `auto migration` |
 
 **Example:**
@@ -196,9 +196,9 @@ tinybase db upgrade [REVISION]
 
 **Arguments:**
 
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `REVISION` | Target revision | `head` |
+| Argument   | Description     | Default |
+| ---------- | --------------- | ------- |
+| `REVISION` | Target revision | `head`  |
 
 **Examples:**
 
@@ -220,9 +220,9 @@ tinybase db downgrade [REVISION]
 
 **Arguments:**
 
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `REVISION` | Target revision | `-1` |
+| Argument   | Description     | Default |
+| ---------- | --------------- | ------- |
+| `REVISION` | Target revision | `-1`    |
 
 **Examples:**
 
@@ -250,7 +250,7 @@ Show current database revision.
 tinybase db current
 ```
 
----
+______________________________________________________________________
 
 ## admin
 
@@ -266,10 +266,10 @@ tinybase admin add EMAIL PASSWORD
 
 **Arguments:**
 
-| Argument | Description |
-|----------|-------------|
-| `EMAIL` | Admin email address |
-| `PASSWORD` | Admin password |
+| Argument   | Description         |
+| ---------- | ------------------- |
+| `EMAIL`    | Admin email address |
+| `PASSWORD` | Admin password      |
 
 **Examples:**
 
@@ -281,7 +281,7 @@ tinybase admin add admin@example.com secretpassword
 tinybase admin add user@example.com newpassword
 ```
 
----
+______________________________________________________________________
 
 ## extensions
 
@@ -297,14 +297,14 @@ tinybase extensions install URL [OPTIONS]
 
 **Arguments:**
 
-| Argument | Description |
-|----------|-------------|
-| `URL` | GitHub repository URL |
+| Argument | Description           |
+| -------- | --------------------- |
+| `URL`    | GitHub repository URL |
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
+| Option      | Description       |
+| ----------- | ----------------- |
 | `--yes, -y` | Skip confirmation |
 
 **Examples:**
@@ -327,8 +327,8 @@ tinybase extensions uninstall NAME [OPTIONS]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
+| Option      | Description       |
+| ----------- | ----------------- |
 | `--yes, -y` | Skip confirmation |
 
 **Example:**
@@ -383,23 +383,23 @@ tinybase extensions check-updates [NAME]
 
 **Arguments:**
 
-| Argument | Description |
-|----------|-------------|
-| `NAME` | Extension name (optional, omit to check all) |
+| Argument | Description                                  |
+| -------- | -------------------------------------------- |
+| `NAME`   | Extension name (optional, omit to check all) |
 
----
+______________________________________________________________________
 
 ## Environment Variables
 
 The CLI respects these environment variables:
 
-| Variable | Description |
-|----------|-------------|
-| `TINYBASE_ADMIN_EMAIL` | Default admin email for init |
+| Variable                  | Description                     |
+| ------------------------- | ------------------------------- |
+| `TINYBASE_ADMIN_EMAIL`    | Default admin email for init    |
 | `TINYBASE_ADMIN_PASSWORD` | Default admin password for init |
-| `TINYBASE_SERVER_HOST` | Server bind host |
-| `TINYBASE_SERVER_PORT` | Server bind port |
-| `TINYBASE_DB_URL` | Database connection URL |
+| `TINYBASE_SERVER_HOST`    | Server bind host                |
+| `TINYBASE_SERVER_PORT`    | Server bind port                |
+| `TINYBASE_DB_URL`         | Database connection URL         |
 
 **Example:**
 
@@ -411,11 +411,11 @@ tinybase init  # Uses env vars for admin creation
 
 ## Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| `0` | Success |
-| `1` | General error |
-| `2` | Invalid arguments |
+| Code | Meaning           |
+| ---- | ----------------- |
+| `0`  | Success           |
+| `1`  | General error     |
+| `2`  | Invalid arguments |
 
 ## Shell Completion
 
@@ -437,4 +437,3 @@ tinybase --install-completion fish
 - [Configuration Guide](../getting-started/configuration.md)
 - [REST API Reference](rest-api.md)
 - [Python API Reference](python-api.md)
-

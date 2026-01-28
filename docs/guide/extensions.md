@@ -21,7 +21,7 @@ tinybase extensions install https://github.com/user/tinybase-extension
 ```
 
 !!! warning "Security Notice"
-    Extensions execute arbitrary Python code. Only install extensions from trusted sources.
+Extensions execute arbitrary Python code. Only install extensions from trusted sources.
 
 ### Managing Extensions
 
@@ -39,105 +39,105 @@ tinybase extensions enable my-extension
 tinybase extensions uninstall my-extension
 ```
 
----
+______________________________________________________________________
 
 ## Hook Decorators
 
 ### Lifecycle Hooks
 
 ::: tinybase.extensions.hooks.on_startup
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ::: tinybase.extensions.hooks.on_shutdown
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ### Authentication Hooks
 
 ::: tinybase.extensions.hooks.on_user_login
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ::: tinybase.extensions.hooks.on_user_register
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ### Data Hooks
 
 ::: tinybase.extensions.hooks.on_record_create
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ::: tinybase.extensions.hooks.on_record_update
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ::: tinybase.extensions.hooks.on_record_delete
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ### Function Hooks
 
 ::: tinybase.extensions.hooks.on_function_call
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ::: tinybase.extensions.hooks.on_function_complete
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
----
+______________________________________________________________________
 
 ## Event Data Classes
 
 These dataclasses are passed to hook functions:
 
 ::: tinybase.extensions.hooks.UserLoginEvent
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ::: tinybase.extensions.hooks.UserRegisterEvent
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ::: tinybase.extensions.hooks.RecordCreateEvent
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ::: tinybase.extensions.hooks.RecordUpdateEvent
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ::: tinybase.extensions.hooks.RecordDeleteEvent
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ::: tinybase.extensions.hooks.FunctionCallEvent
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
 ::: tinybase.extensions.hooks.FunctionCompleteEvent
-    options:
-      show_source: false
-      heading_level: 4
+options:
+show_source: false
+heading_level: 4
 
----
+______________________________________________________________________
 
 ## Creating Extensions
 
@@ -243,14 +243,14 @@ def sync_all_records(client, payload: SyncInput) -> SyncOutput:
     records = client.collections.list_records("my_collection")
     synced = 0
     errors = []
-    
+
     for record in records:
         try:
             send_to_external(record["data"])
             synced += 1
         except Exception as e:
             errors.append(f"{record['id']}: {e}")
-    
+
     return SyncOutput(synced_count=synced, errors=errors)
 
 
@@ -258,7 +258,7 @@ if __name__ == "__main__":
     run()
 ```
 
----
+______________________________________________________________________
 
 ## Extension Configuration
 
@@ -287,26 +287,26 @@ export MY_EXT_API_KEY=secret123
 tinybase serve
 ```
 
----
+______________________________________________________________________
 
 ## Publishing Extensions
 
 ### GitHub Repository
 
 1. Create a public GitHub repository
-2. Include `extension.toml` manifest
-3. Include installation instructions in README
-4. Tag releases with semantic versions
+1. Include `extension.toml` manifest
+1. Include installation instructions in README
+1. Tag releases with semantic versions
 
 ### Best Practices
 
 1. **Document thoroughly** - README with examples
-2. **Version correctly** - Follow semver
-3. **Handle errors** - Don't crash TinyBase
-4. **Test thoroughly** - Include tests
-5. **Minimize dependencies** - Keep it lightweight
+1. **Version correctly** - Follow semver
+1. **Handle errors** - Don't crash TinyBase
+1. **Test thoroughly** - Include tests
+1. **Minimize dependencies** - Keep it lightweight
 
----
+______________________________________________________________________
 
 ## Extension Security
 
@@ -324,7 +324,7 @@ tinybase serve
 - **Handle errors gracefully**
 - **Document permissions needed**
 
----
+______________________________________________________________________
 
 ## Debugging Extensions
 
@@ -356,23 +356,23 @@ def initialize():
     logger.info("Extension ready")
 ```
 
----
+______________________________________________________________________
 
 ## Hook Summary
 
-| Hook | Event Type | When |
-|------|------------|------|
-| `@on_startup` | None | Server starts |
-| `@on_shutdown` | None | Server stops |
-| `@on_user_login` | `UserLoginEvent` | User logs in |
-| `@on_user_register` | `UserRegisterEvent` | User registers |
-| `@on_record_create` | `RecordCreateEvent` | Record created |
-| `@on_record_update` | `RecordUpdateEvent` | Record updated |
-| `@on_record_delete` | `RecordDeleteEvent` | Record deleted |
-| `@on_function_call` | `FunctionCallEvent` | Before function |
-| `@on_function_complete` | `FunctionCompleteEvent` | After function |
+| Hook                    | Event Type              | When            |
+| ----------------------- | ----------------------- | --------------- |
+| `@on_startup`           | None                    | Server starts   |
+| `@on_shutdown`          | None                    | Server stops    |
+| `@on_user_login`        | `UserLoginEvent`        | User logs in    |
+| `@on_user_register`     | `UserRegisterEvent`     | User registers  |
+| `@on_record_create`     | `RecordCreateEvent`     | Record created  |
+| `@on_record_update`     | `RecordUpdateEvent`     | Record updated  |
+| `@on_record_delete`     | `RecordDeleteEvent`     | Record deleted  |
+| `@on_function_call`     | `FunctionCallEvent`     | Before function |
+| `@on_function_complete` | `FunctionCompleteEvent` | After function  |
 
----
+______________________________________________________________________
 
 ## See Also
 

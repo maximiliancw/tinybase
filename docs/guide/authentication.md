@@ -20,18 +20,18 @@ sequenceDiagram
     participant C as Client
     participant A as Auth API
     participant D as Database
-    
+
     C->>A: POST /api/auth/register
     A->>D: Create user
     D-->>A: User created
     A-->>C: 201 Created
-    
+
     C->>A: POST /api/auth/login
     A->>D: Verify credentials
     D-->>A: User found
     A->>D: Create token
     A-->>C: 200 OK + token
-    
+
     C->>A: GET /api/... (with token)
     A->>D: Validate token
     D-->>A: Token valid
@@ -104,6 +104,7 @@ TinyBase uses JWT (JSON Web Tokens) for authentication:
 - **Stored in database**: For revocation tracking
 
 JWT claims include:
+
 - `sub`: User ID
 - `exp`: Expiration timestamp
 - `iat`: Issued at timestamp
@@ -254,12 +255,12 @@ Admin users can:
 
 ### Access Levels
 
-| Level | Description |
-|-------|-------------|
+| Level    | Description                |
+| -------- | -------------------------- |
 | `public` | No authentication required |
-| `auth` | Any authenticated user |
-| `owner` | Record owner only |
-| `admin` | Admin users only |
+| `auth`   | Any authenticated user     |
+| `owner`  | Record owner only          |
+| `admin`  | Admin users only           |
 
 ## User Management (Admin)
 
@@ -302,16 +303,16 @@ Access user information via the Context:
 def user_action(ctx: Context, payload: Input) -> Output:
     # Get current user ID
     user_id = ctx.user_id
-    
+
     # Check admin status
     if ctx.is_admin:
         # Admin-specific logic
         pass
-    
+
     # Query user from database
     from tinybase.db.models import User
     user = ctx.db.get(User, user_id)
-    
+
     return Output(user_email=user.email)
 ```
 
@@ -326,7 +327,7 @@ def get_data(ctx: Context, payload: Input) -> Output:
     else:
         # Return only user's data
         data = get_user_data(ctx.user_id)
-    
+
     return Output(data=data)
 ```
 
@@ -343,7 +344,7 @@ from pydantic import BaseModel, field_validator
 class RegisterInput(BaseModel):
     email: str
     password: str
-    
+
     @field_validator("password")
     @classmethod
     def validate_password(cls, v):
@@ -393,10 +394,10 @@ Monitor function calls and user activity:
 def sensitive_action(ctx: Context, payload: Input) -> Output:
     # Log the action
     logger.info(f"Sensitive action by {ctx.user_id}: {payload}")
-    
+
     # Perform action
     result = do_sensitive_thing()
-    
+
     return Output(result=result)
 ```
 
@@ -452,4 +453,3 @@ This deletes all access and refresh tokens from the database, forcing the user t
 - [Collections Guide](collections.md) - Access control for data
 - [Functions Guide](functions.md) - Auth levels for functions
 - [REST API Reference](../reference/rest-api.md) - Complete auth endpoints
-

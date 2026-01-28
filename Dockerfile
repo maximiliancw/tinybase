@@ -1,5 +1,5 @@
 # TinyBase Dockerfile
-# 
+#
 # Multi-stage build that:
 # 1. Builds the Vue admin UI
 # 2. Creates a minimal Python runtime image
@@ -64,4 +64,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Default command
 CMD ["tinybase", "serve", "--host", "0.0.0.0", "--port", "8000"]
-

@@ -64,22 +64,22 @@ if __name__ == "__main__":
 
 The SDK's `@register` decorator automatically extracts type hints from your function signature to generate JSON schemas for input and output validation.
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `name` | `str` | Unique function identifier |
-| `description` | `str` | Human-readable description |
-| `auth` | `str` | Access level: `"public"`, `"auth"`, `"admin"` |
-| `tags` | `list[str]` | Categorization tags |
+| Parameter     | Type        | Description                                   |
+| ------------- | ----------- | --------------------------------------------- |
+| `name`        | `str`       | Unique function identifier                    |
+| `description` | `str`       | Human-readable description                    |
+| `auth`        | `str`       | Access level: `"public"`, `"auth"`, `"admin"` |
+| `tags`        | `list[str]` | Categorization tags                           |
 
 **Note:** Input and output schemas are automatically generated from Python type hints. You can use Pydantic models or basic types (str, int, dict, list, etc.).
 
 ### Authentication Levels
 
-| Level | Description |
-|-------|-------------|
+| Level    | Description                |
+| -------- | -------------------------- |
 | `public` | No authentication required |
-| `auth` | Any authenticated user |
-| `admin` | Admin users only |
+| `auth`   | Any authenticated user     |
+| `admin`  | Admin users only           |
 
 ## The Client Object
 
@@ -93,11 +93,12 @@ def my_function(client: Client, payload: MyInput) -> MyOutput:
     # Use client to make API calls
     response = client.get("/api/collections")
     collections = response.json()
-    
+
     return MyOutput(result="ok")
 ```
 
 The client is pre-configured with:
+
 - Base URL pointing to the TinyBase API
 - Authentication token with the same permissions as the calling user
 - Automatic request/response handling
@@ -118,11 +119,11 @@ def logged_function(client, payload: dict) -> dict:
         request_id="...",  # Automatically provided
         user_id="...",     # Automatically provided
     )
-    
+
     logger.info("Processing request", extra_data=payload)
     logger.debug("Debug information")
     logger.error("Error occurred", exc_info=True)
-    
+
     return {"result": "ok"}
 ```
 
@@ -143,7 +144,7 @@ class OrderInput(BaseModel):
     product_id: str = Field(..., description="Product UUID")
     quantity: int = Field(ge=1, le=100, description="Quantity (1-100)")
     notes: Optional[str] = Field(None, max_length=500)
-    
+
     @field_validator("quantity")
     @classmethod
     def validate_quantity(cls, v):
@@ -206,12 +207,12 @@ Response:
 
 ### Response Structure
 
-| Field | Description |
-|-------|-------------|
-| `call_id` | Unique execution ID |
-| `status` | `"succeeded"` or `"failed"` |
-| `result` | Output data (on success) |
-| `error` | Error message (on failure) |
+| Field        | Description                 |
+| ------------ | --------------------------- |
+| `call_id`    | Unique execution ID         |
+| `status`     | `"succeeded"` or `"failed"` |
+| `result`     | Output data (on success)    |
+| `error`      | Error message (on failure)  |
 | `error_type` | Exception type (on failure) |
 
 ### Error Responses
@@ -235,11 +236,11 @@ def user_stats(client, payload: dict) -> dict:
     # Get collections
     collections_response = client.get("/api/collections")
     collections = collections_response.json()
-    
+
     # Get users (admin endpoint)
     users_response = client.get("/api/admin/users")
     users = users_response.json()
-    
+
     return {
         "total_users": len(users),
         "total_collections": len(collections)
@@ -256,7 +257,7 @@ def create_item(client, payload: CreateInput) -> CreateOutput:
         "/api/collections/items/records",
         json={"data": {"title": payload.title, "value": payload.value}}
     )
-    
+
     record = response.json()
     return CreateOutput(id=record["id"])
 ```
@@ -270,7 +271,7 @@ Raise exceptions to report errors:
 def divide(ctx: Context, payload: DivideInput) -> DivideOutput:
     if payload.divisor == 0:
         raise ValueError("Cannot divide by zero")
-    
+
     return DivideOutput(result=payload.dividend / payload.divisor)
 ```
 
@@ -285,12 +286,12 @@ class InsufficientFundsError(Exception):
 @register(name="withdraw", auth="auth", ...)
 def withdraw(ctx: Context, payload: WithdrawInput) -> WithdrawOutput:
     balance = get_balance(ctx.user_id)
-    
+
     if payload.amount > balance:
         raise InsufficientFundsError(
             f"Balance ({balance}) is less than withdrawal ({payload.amount})"
         )
-    
+
     # Process withdrawal...
 ```
 
@@ -424,7 +425,7 @@ class CalculateTaxOutput(BaseModel):
 def calculate_tax(client, payload: CalculateTaxInput) -> CalculateTaxOutput:
     """
     Calculate tax for an order
-    
+
     TODO: Implement function logic
     """
     return CalculateTaxOutput()
@@ -566,13 +567,13 @@ def register_user_and_send_email_and_create_profile(...):
 def process_refund(ctx: Context, payload: RefundInput) -> RefundOutput:
     """
     Process a refund for an order.
-    
+
     This function:
     1. Validates the order exists and is eligible
     2. Calculates the refund amount
     3. Updates the order status
     4. Triggers payment processor refund
-    
+
     Raises:
         ValueError: If order not found or not eligible
         PaymentError: If refund processing fails
@@ -599,4 +600,3 @@ def external_api_call(ctx: Context, payload: Input) -> Output:
 - [Scheduling Guide](scheduling.md) - Run functions automatically
 - [Extensions Guide](extensions.md) - Hook into function lifecycle
 - [Python API Reference](../reference/python-api.md) - Full API documentation
-
