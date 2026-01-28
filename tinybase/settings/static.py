@@ -3,7 +3,7 @@ File-based configuration. Loaded once at startup from environment variables.
 
 Usage:
     from tinybase.settings import config
-    
+
     host = config.server_host
     debug = config.debug
 """
@@ -50,7 +50,7 @@ def _load_toml(toml_path: Path | None = None) -> dict[str, Any]:
 class Config(BaseSettings):
     """
     Static configuration from environment variables and TOML file.
-    
+
     These settings require a server restart to take effect.
     Environment variables (TINYBASE_*) override TOML values.
     """
@@ -277,7 +277,7 @@ config = Config()  # Singleton instance
 def _reset_config() -> "Config":
     """
     Reset the config singleton (for testing only).
-    
+
     Creates a new Config instance with fresh environment variables.
     Returns the new config instance (since imports may be cached).
     """

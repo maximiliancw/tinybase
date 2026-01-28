@@ -13,6 +13,7 @@ from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from pydantic import BaseModel, Field, ValidationError
 
+from tinybase.activity import Actions, log_activity
 from tinybase.auth import CurrentAdminUser, CurrentUser, CurrentUserOptional, DBSession
 from tinybase.collections.service import CollectionService, check_access
 from tinybase.extensions.hooks import (
@@ -23,7 +24,6 @@ from tinybase.extensions.hooks import (
     run_record_delete_hooks,
     run_record_update_hooks,
 )
-from tinybase.activity import Actions, log_activity
 
 router = APIRouter(prefix="/collections", tags=["collections"])
 

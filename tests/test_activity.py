@@ -9,18 +9,12 @@ Covers:
 """
 
 from unittest.mock import patch
-from uuid import uuid4
 
-import pytest
 from sqlmodel import Session, select
 
 from tests.utils import (
-    create_collection,
-    create_record,
-    get_admin_token,
     get_user_token,
 )
-
 
 # =============================================================================
 # Helper Function Tests
@@ -117,7 +111,7 @@ def test_list_activity_requires_admin(client):
 
 def test_list_activity_returns_paginated_response(client, admin_token):
     """Test that list activity returns proper paginated response structure."""
-    from tinybase.activity import Actions, log_activity
+    from tinybase.activity import log_activity
 
     # Create some activity entries
     for i in range(3):
@@ -265,8 +259,9 @@ def test_list_activity_user_email_lookup(client, admin_token):
 
 def test_list_activity_ordering_newest_first(client, admin_token):
     """Test that activities are ordered newest first."""
-    from tinybase.activity import log_activity
     import time
+
+    from tinybase.activity import log_activity
 
     # Create activities in sequence
     log_activity(action="ordering.test.first")
@@ -286,7 +281,7 @@ def test_list_activity_ordering_newest_first(client, admin_token):
 
     # Find our test activities
     ordering_activities = [a for a in activities if a["action"].startswith("ordering.test")]
-    
+
     if len(ordering_activities) >= 3:
         # Should be in reverse order (newest first)
         assert ordering_activities[0]["action"] == "ordering.test.third"

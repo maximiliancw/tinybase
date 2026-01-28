@@ -6,7 +6,7 @@ Tests cold start optimization, TTL, cleanup, and pool management.
 
 import time
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from tinybase.functions.pool import FunctionProcessPool, WarmProcess, get_pool, utcnow
 

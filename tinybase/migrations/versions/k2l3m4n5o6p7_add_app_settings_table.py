@@ -31,18 +31,18 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("key"),
     )
-    
+
     # Migrate data from instance_settings to app_settings
     # This is done via raw SQL to handle the data transformation
     connection = op.get_bind()
-    
+
     # Check if instance_settings table exists and has data
     inspector = sa.inspect(connection)
     if "instance_settings" in inspector.get_table_names():
         result = connection.execute(
             sa.text("SELECT * FROM instance_settings WHERE id = 1")
         ).fetchone()
-        
+
         if result:
             # Map instance_settings columns to app_settings keys
             # We'll use a dictionary to map column names to keys
@@ -71,16 +71,16 @@ def upgrade() -> None:
                 "admin_report_email_enabled": ("core.jobs.admin_report.enabled", "bool"),
                 "admin_report_email_interval_days": ("core.jobs.admin_report.interval_days", "int"),
             }
-            
+
             # Get column names from result
             columns = result.keys()
-            
+
             # Insert migrated data
             for col_name in columns:
                 if col_name in mappings and col_name not in ("id", "created_at", "updated_at", "last_admin_report_sent_at"):
                     key, value_type = mappings[col_name]
                     value = result[col_name]
-                    
+
                     # Convert value to string based on type
                     if value is None:
                         value_str = None
@@ -90,7 +90,7 @@ def upgrade() -> None:
                         value_str = str(value) if value is not None else None
                     else:
                         value_str = str(value) if value is not None else None
-                    
+
                     if value_str is not None:
                         connection.execute(
                             sa.text("""
@@ -99,7 +99,7 @@ def upgrade() -> None:
                             """),
                             {"key": key, "value": value_str, "value_type": value_type}
                         )
-            
+
             connection.commit()
 
 

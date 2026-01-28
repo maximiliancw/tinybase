@@ -17,6 +17,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlmodel import select
 
+from tinybase.activity import Actions, log_activity
 from tinybase.auth import (
     CurrentUser,
     CurrentUserOptional,
@@ -30,7 +31,6 @@ from tinybase.auth import (
     verify_password,
 )
 from tinybase.db.models import PasswordResetToken, User
-from tinybase.settings import settings
 from tinybase.email import send_password_reset_email
 from tinybase.extensions.hooks import (
     UserLoginEvent,
@@ -38,7 +38,7 @@ from tinybase.extensions.hooks import (
     run_user_login_hooks,
     run_user_register_hooks,
 )
-from tinybase.activity import Actions, log_activity
+from tinybase.settings import settings
 from tinybase.utils import utcnow
 
 router = APIRouter(prefix="/auth", tags=["auth"])

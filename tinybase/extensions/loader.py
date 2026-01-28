@@ -94,8 +94,8 @@ def load_enabled_extensions(session: "Session") -> int:
     """
     from sqlmodel import select
 
-    from tinybase.settings import config
     from tinybase.db.models import Extension
+    from tinybase.settings import config
 
     if not config.extensions_enabled:
         logger.info("Extensions are disabled in configuration")

@@ -7,14 +7,11 @@ Covers:
 - Integration with API routes
 """
 
-import os
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from fastapi import FastAPI
-
 
 # =============================================================================
 # get_user_static_dir() Tests
@@ -189,7 +186,6 @@ def test_api_routes_accessible_with_custom_static_app():
 
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
-    from starlette.routing import Mount
 
     from tinybase.api.routes.static_user import mount_user_static_files
 

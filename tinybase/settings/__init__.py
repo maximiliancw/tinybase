@@ -3,11 +3,11 @@ Settings package - provides both file-based config and database-backed settings.
 
 Usage:
     from tinybase.settings import config, settings
-    
+
     # Static config (env vars)
     config.server_host
     config.db_url
-    
+
     # Runtime settings (database)
     settings.instance_name          # Returns "TinyBase" (str)
     settings.storage.enabled        # Returns False (bool)
@@ -15,7 +15,7 @@ Usage:
 """
 
 from tinybase.settings import static as _static_module
-from tinybase.settings.core import settings, Settings
+from tinybase.settings.core import Settings, settings
 
 # Re-export Config class directly
 Config = _static_module.Config

@@ -12,8 +12,8 @@ from uuid import UUID, uuid4
 import jwt
 from sqlmodel import Session
 
-from tinybase.settings import config
 from tinybase.db.models import AuthToken, User
+from tinybase.settings import config
 from tinybase.utils import utcnow
 
 logger = logging.getLogger(__name__)

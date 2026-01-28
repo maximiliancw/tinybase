@@ -11,10 +11,9 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
-from tinybase.settings import config as app_config
-
 # Import all models so they're registered with SQLModel
 from tinybase.db import models  # noqa: F401
+from tinybase.settings import config as app_config
 
 # This is the Alembic Config object
 config = context.config

@@ -207,13 +207,13 @@ def execute_function(
         FunctionCallResult with execution status and result/error
     """
     from tinybase.auth import create_internal_token
-    from tinybase.settings import config
     from tinybase.extensions.hooks import (
         FunctionCallEvent,
         FunctionCompleteEvent,
         run_function_call_hooks,
         run_function_complete_hooks,
     )
+    from tinybase.settings import config
 
     # Generate request ID for this execution
     request_id = uuid4()

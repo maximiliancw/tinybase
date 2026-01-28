@@ -16,7 +16,6 @@ from sqlalchemy import func
 from sqlmodel import select
 
 from tinybase.auth import CurrentAdminUser, DBSession, hash_password
-from tinybase.settings import settings
 from tinybase.db.models import (
     ActivityLog,
     ApplicationToken,
@@ -25,6 +24,7 @@ from tinybase.db.models import (
     Metrics,
     User,
 )
+from tinybase.settings import settings
 from tinybase.utils import FunctionCallStatus, TriggerType, utcnow
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -1107,7 +1107,6 @@ def upload_function(
     """
     from pathlib import Path
 
-    from tinybase.settings import config
     from tinybase.functions.deployment import (
         FunctionValidationError,
         calculate_content_hash,
@@ -1116,6 +1115,7 @@ def upload_function(
         write_function_file,
     )
     from tinybase.functions.loader import extract_function_metadata, reload_single_function
+    from tinybase.settings import config
 
     # Step 1: Validate function file
     try:
@@ -1378,7 +1378,7 @@ def get_all_collections_status(
     """Get status summary for all collections."""
     from tinybase.collections.schemas import CollectionSchema
     from tinybase.collections.service import CollectionService
-    from tinybase.db.models import Collection, Record
+    from tinybase.db.models import Record
 
     service = CollectionService(session)
     collections = service.list_collections()
@@ -1437,7 +1437,7 @@ def get_collection_status(
     """Get detailed status for a specific collection."""
     from tinybase.collections.schemas import CollectionSchema
     from tinybase.collections.service import CollectionService
-    from tinybase.db.models import Collection, Record
+    from tinybase.db.models import Record
 
     service = CollectionService(session)
     collection = service.get_collection_by_name(collection_name)

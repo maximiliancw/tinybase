@@ -15,7 +15,7 @@ from tests.utils import create_collection, create_record, get_admin_token, get_u
 @pytest.fixture(autouse=True)
 def clear_settings_cache():
     """Clear settings cache and reset config before and after each test.
-    
+
     This prevents state leakage between tests, especially when one test
     uses the `client` fixture (which sets a temp DB path) and another test
     uses its own `session` fixture.
@@ -31,9 +31,9 @@ def clear_settings_cache():
     reset_db_engine()
     reset_rate_limit_backend()
     _reset_config()
-    
+
     yield
-    
+
     # Reset everything after the test
     settings._cache = {}
     settings._loaded = False

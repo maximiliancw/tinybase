@@ -12,7 +12,6 @@ from datetime import timedelta
 from sqlalchemy import func
 from sqlmodel import Session, select
 
-from tinybase.settings import config
 from tinybase.db.models import Collection, FunctionCall, Metrics, Record
 from tinybase.utils import FunctionCallStatus, utcnow
 
