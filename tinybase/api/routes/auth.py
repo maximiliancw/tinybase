@@ -38,6 +38,7 @@ from tinybase.extensions.hooks import (
     run_user_login_hooks,
     run_user_register_hooks,
 )
+from tinybase.activity import Actions, log_activity
 from tinybase.utils import utcnow
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -247,6 +248,15 @@ def register(
     event = UserRegisterEvent(user_id=user.id, email=user.email)
     background_tasks.add_task(asyncio.run, run_user_register_hooks(event))
 
+    # Log activity
+    log_activity(
+        action=Actions.USER_REGISTER,
+        resource_type="user",
+        resource_id=str(user.id),
+        user_id=user.id,
+        ip_address=request.client.host if request.client else None,
+    )
+
     return RegisterResponse(
         id=str(user.id),
         email=user.email,
@@ -321,6 +331,16 @@ def login(
     # Run user login hooks in background
     login_event = UserLoginEvent(user_id=user.id, email=user.email, is_admin=user.is_admin)
     background_tasks.add_task(asyncio.run, run_user_login_hooks(login_event))
+
+    # Log activity
+    log_activity(
+        action=Actions.USER_LOGIN,
+        resource_type="user",
+        resource_id=str(user.id),
+        user_id=user.id,
+        ip_address=request.client.host if request.client else None,
+        metadata={"admin_created": admin_created} if admin_created else None,
+    )
 
     return LoginResponse(
         access_token=access_token_str,

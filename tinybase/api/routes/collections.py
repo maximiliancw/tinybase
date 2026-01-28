@@ -23,6 +23,7 @@ from tinybase.extensions.hooks import (
     run_record_delete_hooks,
     run_record_update_hooks,
 )
+from tinybase.activity import Actions, log_activity
 
 router = APIRouter(prefix="/collections", tags=["collections"])
 
@@ -392,6 +393,15 @@ def create_record(
     )
     background_tasks.add_task(asyncio.run, run_record_create_hooks(event))
 
+    # Log activity
+    log_activity(
+        action=Actions.RECORD_CREATE,
+        resource_type="record",
+        resource_id=str(record.id),
+        user_id=user.id,
+        metadata={"collection": collection_name},
+    )
+
     return record_to_response(record)
 
 
@@ -517,6 +527,15 @@ def update_record(
     )
     background_tasks.add_task(asyncio.run, run_record_update_hooks(event))
 
+    # Log activity
+    log_activity(
+        action=Actions.RECORD_UPDATE,
+        resource_type="record",
+        resource_id=str(updated.id),
+        user_id=user.id,
+        metadata={"collection": collection_name},
+    )
+
     return record_to_response(updated)
 
 
@@ -578,3 +597,12 @@ def delete_record(
         owner_id=record_owner_id,
     )
     background_tasks.add_task(asyncio.run, run_record_delete_hooks(event))
+
+    # Log activity
+    log_activity(
+        action=Actions.RECORD_DELETE,
+        resource_type="record",
+        resource_id=str(record_id),
+        user_id=user.id,
+        metadata={"collection": collection_name},
+    )

@@ -18,6 +18,7 @@ from sqlmodel import select
 from tinybase.auth import CurrentAdminUser, DBSession, hash_password
 from tinybase.settings import settings
 from tinybase.db.models import (
+    ActivityLog,
     ApplicationToken,
     FunctionCall,
     FunctionVersion,
@@ -133,6 +134,29 @@ class BatchUploadRequest(BaseModel):
     functions: list[FunctionUploadRequest] = Field(description="List of functions to upload")
 
 
+class ActivityLogInfo(BaseModel):
+    """Activity log entry information."""
+
+    id: str = Field(description="Activity ID")
+    action: str = Field(description="Action performed")
+    resource_type: str | None = Field(default=None, description="Resource type")
+    resource_id: str | None = Field(default=None, description="Resource ID")
+    user_id: str | None = Field(default=None, description="User who performed the action")
+    user_email: str | None = Field(default=None, description="Email of user who performed action")
+    metadata: dict = Field(default_factory=dict, description="Additional context")
+    ip_address: str | None = Field(default=None, description="Client IP address")
+    created_at: str = Field(description="When the action occurred")
+
+
+class ActivityLogListResponse(BaseModel):
+    """Paginated activity log list."""
+
+    activities: list[ActivityLogInfo] = Field(description="Activity log entries")
+    total: int = Field(description="Total count")
+    limit: int = Field(description="Page size")
+    offset: int = Field(description="Page offset")
+
+
 # =============================================================================
 # Helper Functions
 # =============================================================================
@@ -164,6 +188,21 @@ def user_to_response(user: User) -> UserInfo:
         is_admin=user.is_admin,
         created_at=user.created_at.isoformat(),
         updated_at=user.updated_at.isoformat(),
+    )
+
+
+def activity_to_response(activity: ActivityLog, user: User | None = None) -> ActivityLogInfo:
+    """Convert an ActivityLog model to response schema."""
+    return ActivityLogInfo(
+        id=str(activity.id),
+        action=activity.action,
+        resource_type=activity.resource_type,
+        resource_id=activity.resource_id,
+        user_id=str(activity.user_id) if activity.user_id else None,
+        user_email=user.email if user else None,
+        metadata=activity.metadata,
+        ip_address=activity.ip_address,
+        created_at=activity.created_at.isoformat(),
     )
 
 
@@ -1481,3 +1520,98 @@ def get_collection_status(
         last_updated=collection.updated_at.isoformat(),
         health_status=health_status,
     )
+
+
+# =============================================================================
+# Activity Log Routes
+# =============================================================================
+
+
+@router.get(
+    "/activity",
+    response_model=ActivityLogListResponse,
+    summary="List activity log",
+    description="Get a paginated list of activity log entries.",
+)
+def list_activity_logs(
+    session: DBSession,
+    _admin: CurrentAdminUser,
+    action: str | None = Query(default=None, description="Filter by action type"),
+    resource_type: str | None = Query(default=None, description="Filter by resource type"),
+    user_id: UUID | None = Query(default=None, description="Filter by user ID"),
+    limit: int = Query(default=50, ge=1, le=500, description="Page size"),
+    offset: int = Query(default=0, ge=0, description="Page offset"),
+) -> ActivityLogListResponse:
+    """List activity log entries with filtering and pagination."""
+    # Build count query with filters
+    count_stmt = select(func.count(ActivityLog.id))
+
+    if action:
+        count_stmt = count_stmt.where(ActivityLog.action == action)
+    if resource_type:
+        count_stmt = count_stmt.where(ActivityLog.resource_type == resource_type)
+    if user_id:
+        count_stmt = count_stmt.where(ActivityLog.user_id == user_id)
+
+    total = session.exec(count_stmt).one()
+
+    # Build data query with filters
+    query = select(ActivityLog)
+
+    if action:
+        query = query.where(ActivityLog.action == action)
+    if resource_type:
+        query = query.where(ActivityLog.resource_type == resource_type)
+    if user_id:
+        query = query.where(ActivityLog.user_id == user_id)
+
+    # Apply pagination and ordering
+    query = query.order_by(ActivityLog.created_at.desc())  # type: ignore
+    query = query.offset(offset).limit(limit)
+
+    activities = list(session.exec(query).all())
+
+    # Fetch users for email lookup
+    user_ids = {a.user_id for a in activities if a.user_id}
+    users_map: dict[UUID, User] = {}
+    if user_ids:
+        users = session.exec(select(User).where(User.id.in_(user_ids))).all()  # type: ignore
+        users_map = {u.id: u for u in users}
+
+    return ActivityLogListResponse(
+        activities=[
+            activity_to_response(a, users_map.get(a.user_id) if a.user_id else None)
+            for a in activities
+        ],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get(
+    "/activity/recent",
+    response_model=list[ActivityLogInfo],
+    summary="Get recent activity",
+    description="Get the most recent activity log entries (for dashboard).",
+)
+def get_recent_activity(
+    session: DBSession,
+    _admin: CurrentAdminUser,
+    limit: int = Query(default=10, ge=1, le=50, description="Number of entries to return"),
+) -> list[ActivityLogInfo]:
+    """Get recent activity log entries for dashboard display."""
+    query = select(ActivityLog).order_by(ActivityLog.created_at.desc()).limit(limit)  # type: ignore
+    activities = list(session.exec(query).all())
+
+    # Fetch users for email lookup
+    user_ids = {a.user_id for a in activities if a.user_id}
+    users_map: dict[UUID, User] = {}
+    if user_ids:
+        users = session.exec(select(User).where(User.id.in_(user_ids))).all()  # type: ignore
+        users_map = {u.id: u for u in users}
+
+    return [
+        activity_to_response(a, users_map.get(a.user_id) if a.user_id else None)
+        for a in activities
+    ]

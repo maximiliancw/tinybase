@@ -453,6 +453,49 @@ class Metrics(SQLModel, table=True):
 
 
 # =============================================================================
+# Activity Log Model
+# =============================================================================
+
+
+class ActivityLog(SQLModel, table=True):
+    """
+    Activity log for tracking system events.
+
+    Provides an audit trail of user actions and system events including:
+    - User authentication (login, logout, registration)
+    - Record operations (create, update, delete)
+    - Admin actions (user management, settings changes)
+
+    This is separate from FunctionCall which tracks function execution specifics.
+    """
+
+    __tablename__ = "activity_log"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+
+    # Action performed (e.g., "user.login", "record.create", "settings.update")
+    action: str = Field(index=True, max_length=50)
+
+    # Resource type being acted upon (e.g., "user", "record", "collection", "settings")
+    resource_type: str | None = Field(default=None, max_length=50)
+
+    # Resource identifier (user ID, record ID, collection name, etc.)
+    resource_id: str | None = Field(default=None, max_length=255)
+
+    # User who performed the action (None for system actions)
+    user_id: UUID | None = Field(default=None, foreign_key="user.id", index=True)
+
+    # Additional context as JSON (e.g., old/new values, request details)
+    metadata: dict = Field(default_factory=dict, sa_column=Column(JSON))
+
+    # Client IP address (for security auditing)
+    ip_address: str | None = Field(default=None, max_length=45)
+
+    # When the action occurred
+    created_at: datetime = Field(default_factory=utcnow, index=True)
+
+
+# =============================================================================
 # Extension Model
 # =============================================================================
 
