@@ -123,3 +123,48 @@ def log_activity_background(
         meta_data=meta_data,
         ip_address=ip_address,
     )
+
+
+def log_extension_activity(
+    extension_name: str,
+    action_name: str,
+    resource_type: str | None = None,
+    resource_id: str | None = None,
+    user_id: UUID | None = None,
+    meta_data: dict | None = None,
+    ip_address: str | None = None,
+) -> None:
+    """
+    Log an activity from an extension with a standardized action format.
+
+    This wrapper ensures extension activities follow the naming convention:
+    `ext.<extension_name>.<action_name>`
+
+    Args:
+        extension_name: Name of the extension (e.g., "my_extension")
+        action_name: Name of the action (e.g., "sync_completed")
+        resource_type: Type of resource being acted upon
+        resource_id: Identifier of the resource
+        user_id: User who performed the action
+        meta_data: Additional context as a dictionary
+        ip_address: Client IP address
+
+    Example:
+        log_extension_activity(
+            extension_name="stripe_sync",
+            action_name="payment_received",
+            resource_type="payment",
+            resource_id="pay_123",
+            meta_data={"amount": 99.99},
+        )
+        # Logs as action: "ext.stripe_sync.payment_received"
+    """
+    action = f"ext.{extension_name}.{action_name}"
+    log_activity(
+        action=action,
+        resource_type=resource_type,
+        resource_id=resource_id,
+        user_id=user_id,
+        meta_data=meta_data,
+        ip_address=ip_address,
+    )
