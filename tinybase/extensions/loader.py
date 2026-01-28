@@ -25,9 +25,9 @@ def get_extensions_directory() -> Path:
     """
     from tinybase.settings import config
 
-    extensions_path = Path(config.extensions_path).expanduser()
-    extensions_path.mkdir(parents=True, exist_ok=True)
-    return extensions_path
+    extensions_dir = Path(config.extensions_dir).expanduser()
+    extensions_dir.mkdir(parents=True, exist_ok=True)
+    return extensions_dir
 
 
 def load_extension_module(extension_path: Path, entry_point: str) -> bool:

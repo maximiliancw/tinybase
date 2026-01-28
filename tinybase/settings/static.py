@@ -191,9 +191,9 @@ class Config(BaseSettings):
     extensions_enabled: bool = Field(
         default=True, description="Enable the extension system"
     )
-    extensions_path: str = Field(
+    extensions_dir: str = Field(
         default="./.tinybase/extensions",
-        description="Directory path for installed extensions (workspace-local)",
+        description="Directory for installed extensions (workspace-local)",
     )
 
     # -------------------------------------------------------------------------
