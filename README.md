@@ -1,289 +1,127 @@
-# TinyBase
+<h1 align="center">TinyBase</h1>
 
-![GitHub License](https://img.shields.io/github/license/maximiliancw/tinybase)
-![Codecov](https://img.shields.io/codecov/c/github/maximiliancw/tinybase)
+<p align="center">
+  <strong><i>Deploy Python-based backends in minutes</i></strong>
+</p>
 
-**TinyBase is a lightweight, self-hosted Backend-as-a-Service (BaaS) framework designed for Python developers who want simplicity and ease-of-use.**
+<p align="center">
+  <a href="https://github.com/maximiliancw/tinybase/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/maximiliancw/tinybase/ci.yml?branch=staging&label=CI" alt="CI"></a>
+  <a href="https://codecov.io/gh/maximiliancw/tinybase"><img src="https://img.shields.io/codecov/c/github/maximiliancw/tinybase" alt="Codecov"></a>
+  <a href="https://github.com/maximiliancw/tinybase/blob/main/LICENSE"><img src="https://img.shields.io/github/license/maximiliancw/tinybase" alt="License"></a>
+</p>
 
-Build and deploy production-ready APIs in minutes with:
+<p align="center">
+  TinyBase is a Python-based Backend-as-a-Service (BaaS) framework with typed functions, built-in scheduling, and a modern admin UI.
+</p>
 
-- 🚀 **Zero configuration** – Get started with a single command
-- 🐍 **Python-first** – Write server-side functions in pure Python with full type safety
-- 📦 **Easy deployment** – SQLite database + FastAPI backend in one package
-- 🔒 **Built-in authentication** – JWT-based auth with access and refresh tokens
-- ⚡ **Auto-scaling functions** – Isolated execution with automatic dependency management
-- 🎨 **Modern Admin UI** – Beautiful Vue 3 interface for managing everything
-- 📅 **Native scheduling** – Cron and interval-based task automation
-- 🔌 **Extensible** – Hook into any part of the system with Python extensions
+<p align="center">
+  <a href="https://maximiliancw.github.io/TinyBase/">Documentation</a> •
+  <a href="https://maximiliancw.github.io/TinyBase/getting-started/quickstart/">Quickstart</a> •
+  <a href="https://github.com/maximiliancw/TinyBase/issues">Issues</a> •
+  <a href="https://github.com/maximiliancw/TinyBase/discussions">Discussions</a>
+</p>
 
-> 👉 **[Read the full documentation](https://maximiliancw.github.io/TinyBase/)**
+______________________________________________________________________
 
-## ✨ Features
-
-### 🗄️ Data & Collections
-
-- **Dynamic Collections** – Create schema-driven collections with JSON schemas, no migrations needed
-- **Pydantic Validation** – Automatic validation for all records with detailed error messages
-- **Unique Constraints** – Enforce unique values with automatic index management
-- **Collection References** – Foreign key-like relationships between collections
-- **Collection Health Monitoring** – Built-in status endpoints for constraint and index health
-- **SQLite Backend** – Simple, reliable, and portable – your entire database in a single file
-- **REST API** – Auto-generated CRUD endpoints for all collections
-
-### 🔐 Authentication & Security
-
-- **JWT Authentication** – Secure token-based auth with access and refresh tokens
-- **User Management** – Built-in registration, login, and password reset flows
-- **Role-Based Access** – Admin and user roles with fine-grained permissions
-- **Token Revocation** – Logout endpoint that invalidates all user tokens
-- **Rate Limiting** – Configurable concurrent execution limits per user
-
-### ⚡ Serverless Functions
-
-- **Type-Safe Functions** – Define functions with Pydantic models for inputs and outputs
-- **Isolated Execution** – Each function runs in its own subprocess with dependency isolation
-- **Automatic Dependencies** – Use `uv`'s inline script dependencies for zero-config package management
-- **OpenAPI Integration** – All functions automatically documented and exposed as REST endpoints
-- **Execution Tracking** – Full metadata for every function call (status, duration, errors)
-- **Client API** – Built-in authenticated client for calling back into TinyBase
-- **Cold Start Pool** – Pre-warmed function processes for faster execution
-
-### 📅 Task Scheduling
-
-- **Cron Expressions** – Standard cron syntax for complex scheduling patterns
-- **Interval Scheduling** – Run functions every N seconds, minutes, hours, or days
-- **One-Time Tasks** – Schedule functions to run once at a specific date and time
-- **Timezone Support** – Full timezone awareness for all scheduled tasks
-- **No External Dependencies** – Built-in scheduler, no Redis or Celery required
-
-### 🎨 Admin UI
-
-- **Modern Interface** – Beautiful SPA built with Vue 3, Pinia, Tailwind CSS, and shadcn/vue
-- **Complete Management** – Manage collections, records, users, functions, and schedules
-- **Activity Feed** – Real-time dashboard with recent activity across your instance
-- **Function Monitoring** – View execution history, errors, and performance metrics
-- **Visual Schema Editor** – Create and edit collection schemas with a visual interface
-- **Extension Settings** – Configure extension settings through the UI
-- **Settings Management** – Configure all instance settings through the UI
-- **Responsive Design** – Works perfectly on desktop and mobile
-
-### 🔧 Developer Experience
-
-- **One Command Setup** – `tinybase init && tinybase serve` and you're running
-- **Hot Reload** – Automatic server restart on code changes with `--reload` flag
-- **Full OpenAPI Docs** – Interactive API documentation at `/docs`
-- **OpenAPI Export** – Export your API spec for client generation
-- **CLI Tools** – Generate function boilerplate, manage users, run migrations
-- **Docker Ready** – Multi-stage Dockerfile included for production deployments
-- **Environment-Based Config** – Configure via `tinybase.toml` or environment variables
-- **Static File Serving** – Optionally serve static files at the root path
-- **Email Templates** – Jinja2-based customizable email templates
-
-### 📊 Activity Logging
-
-- **Automatic Tracking** – User actions and system events are logged automatically
-- **Extension Integration** – Extensions can log custom activities
-- **Dashboard Feed** – View recent activity directly in the Admin UI
-- **Audit Trail** – Track who did what and when
-
-## 📦 Installation
-
-**Using uv (recommended):**
+## Installation
 
 ```bash
+# Using uv (recommended)
 uv add tinybase
-```
 
-**Using pip:**
-
-```bash
+# Using pip
 pip install tinybase
 ```
 
-**Requirements:**
+**Requirements:** Python 3.11+
 
-- Python 3.11 or higher
-- No additional dependencies required for basic usage
-
-## 🚀 Quickstart
-
-**1. Initialize your project:**
+## Quickstart
 
 ```bash
+# Initialize your project
 tinybase init --admin-email admin@example.com --admin-password admin123
-```
 
-This creates:
-
-- `tinybase.toml` configuration file
-- SQLite database with initial schema
-- Admin user account
-- `functions/` directory for your server-side functions
-
-**2. Start the development server:**
-
-```bash
+# Start the server
 tinybase serve --reload
 ```
 
-**3. Access your instance:**
+That's it! Your backend is running:
 
-| Service         | URL                           |
-| --------------- | ----------------------------- |
-| 🎨 **Admin UI** | <http://localhost:8000/admin> |
-| 📚 **API Docs** | <http://localhost:8000/docs>  |
-| 🔌 **REST API** | <http://localhost:8000/api>   |
+| Service  | URL                           |
+| -------- | ----------------------------- |
+| Admin UI | <http://localhost:8000/admin> |
+| API Docs | <http://localhost:8000/docs>  |
+| REST API | <http://localhost:8000/api>   |
 
-**4. Create your first function:**
+> **[Follow the complete tutorial](https://maximiliancw.github.io/TinyBase/getting-started/quickstart/)**
 
-```bash
-tinybase functions new hello -d "Say hello"
-```
+## Why TinyBase?
 
-That's it! You now have a fully functional backend with authentication, database, API, and admin interface.
+| Feature               | TinyBase       | PocketBase | Supabase         | Appwrite       |
+| --------------------- | -------------- | ---------- | ---------------- | -------------- |
+| Language              | Python         | Go         | PostgreSQL/Deno  | MariaDB/Multi  |
+| Self-hosted           | Yes            | Yes        | Yes              | Yes            |
+| Single File Deploy    | Yes (SQLite)   | Yes        | No               | No             |
+| Typed Functions       | Yes (Pydantic) | No         | Yes (TypeScript) | Yes            |
+| Python SDK            | Native         | Community  | Official         | Official       |
+| Built-in Scheduling   | Yes            | No         | Limited          | Yes            |
+| Zero Config Start     | Yes            | Yes        | No               | No             |
+| External Dependencies | None           | None       | PostgreSQL, etc. | Redis, MariaDB |
 
-> 📖 **[Follow the complete tutorial](https://maximiliancw.github.io/TinyBase/getting-started/quickstart/)**
+**TinyBase is ideal for:**
 
-## Configuration
+- **Python developers** who want a backend without learning Go or managing PostgreSQL
+- **Small to medium projects** that don't need cloud-scale complexity
+- **Prototypes and MVPs** where development speed matters
+- **Self-hosted apps** where you need full control over your data
 
-TinyBase uses a **two-layer configuration system**:
+## Key Features
 
-### Static Config (`config`)
+### Python-First Development
 
-File-based configuration loaded once at startup. Changes require a server restart.
-
-**Sources** (in order of precedence):
-
-1. Environment variables (`TINYBASE_*`)
-1. `tinybase.toml` in the current directory
-1. Internal defaults
-
-```toml
-[server]
-host = "0.0.0.0"
-port = 8000
-debug = false
-log_level = "info"
-
-[database]
-url = "sqlite:///./tinybase.db"
-
-[auth]
-token_ttl_hours = 24
-
-[jwt]
-algorithm = "HS256"
-access_token_expire_minutes = 1440  # 24 hours
-refresh_token_expire_days = 30
-
-[functions]
-dir = "./functions"
-logging_enabled = true
-logging_level = "INFO"
-logging_format = "json"
-cold_start_pool_size = 3
-cold_start_ttl_seconds = 300
-
-[scheduler]
-enabled = true
-interval_seconds = 5
-
-[rate_limit]
-backend = "diskcache"  # or "redis"
-cache_dir = "./.tinybase/rate_limit_cache"
-# redis_url = "redis://localhost:6379/0"  # required when backend=redis
-
-[cors]
-allow_origins = ["*"]
-
-[admin]
-static_dir = "builtin"
-
-[extensions]
-enabled = true
-dir = "./.tinybase/extensions"
-
-[public]
-static_dir = ""  # Set to serve static files at root path (e.g., "./public")
-
-[email]
-enabled = false
-# smtp_host = "smtp.example.com"
-# smtp_port = 587
-# smtp_user = "user"
-# smtp_password = "password"
-# from_address = "noreply@example.com"
-# from_name = "TinyBase"
-```
-
-**Environment variables** (override TOML values):
-
-| Variable                      | Description                                    |
-| ----------------------------- | ---------------------------------------------- |
-| `TINYBASE_SERVER_HOST`        | Server bind host                               |
-| `TINYBASE_SERVER_PORT`        | Server bind port                               |
-| `TINYBASE_DEBUG`              | Enable debug mode                              |
-| `TINYBASE_LOG_LEVEL`          | Logging level                                  |
-| `TINYBASE_DB_URL`             | Database connection URL                        |
-| `TINYBASE_JWT_SECRET_KEY`     | JWT signing secret (auto-generated if not set) |
-| `TINYBASE_FUNCTIONS_DIR`      | Path to functions directory                    |
-| `TINYBASE_SCHEDULER_ENABLED`  | Enable/disable scheduler                       |
-| `TINYBASE_RATE_LIMIT_BACKEND` | Rate limit backend (`diskcache` or `redis`)    |
-| `TINYBASE_CORS_ALLOW_ORIGINS` | Comma-separated list of allowed origins        |
-| `TINYBASE_EXTENSIONS_DIR`     | Path to extensions directory                   |
-| `TINYBASE_PUBLIC_STATIC_DIR`  | Path to public static files directory          |
-| `TINYBASE_ADMIN_EMAIL`        | Admin email for bootstrap                      |
-| `TINYBASE_ADMIN_PASSWORD`     | Admin password for bootstrap                   |
-
-### Runtime Settings (`settings`)
-
-Database-backed settings that can be changed at runtime via the Admin UI or API. No restart required.
-
-**Access in code:**
+Write server-side functions with Pydantic models for full type safety and IDE support. No new language to learn.
 
 ```python
-from tinybase.settings import settings
-
-# Core settings (typed properties)
-settings.instance_name              # "TinyBase"
-settings.auth.allow_public_registration  # True
-settings.auth.portal.enabled        # False
-settings.storage.enabled            # False
-settings.scheduler.function_timeout_seconds  # 1800
-settings.limits.max_concurrent_functions_per_user  # 10
-
-# Extension settings (via get/set)
-settings.get("ext.my_extension.api_key")  # Returns AppSetting | None
-settings.set("ext.my_extension.api_key", "xxx")
+@register(name="greet", auth="public")
+def greet(client, payload: GreetInput) -> GreetOutput:
+    return GreetOutput(message=f"Hello, {payload.name}!")
 ```
 
-**Core runtime settings:**
+### Zero Infrastructure
 
-| Setting                                         | Default      | Description                                         |
-| ----------------------------------------------- | ------------ | --------------------------------------------------- |
-| `core.instance_name`                            | `"TinyBase"` | Instance display name                               |
-| `core.auth.allow_public_registration`           | `true`       | Allow public user registration                      |
-| `core.auth.portal.*`                            | —            | Auth portal customization (logo, colors, redirects) |
-| `core.storage.*`                                | —            | S3-compatible storage configuration                 |
-| `core.scheduler.function_timeout_seconds`       | `1800`       | Max function execution time                         |
-| `core.limits.max_concurrent_functions_per_user` | `10`         | Concurrent function limit per user                  |
-| `core.jobs.admin_report.enabled`                | `true`       | Enable periodic admin report emails                 |
+SQLite database + single Python process. No Redis, PostgreSQL, or Docker required for development. Your entire backend in one command.
 
-Extensions can register their own settings under the `ext.*` namespace.
+### Isolated Function Execution
 
-## Defining Functions
+Each function runs in its own subprocess with automatic dependency management via `uv`. Add any PyPI package with inline script metadata.
 
-Functions are regular Python callables registered with the TinyBase SDK decorator and (automatically) exposed as HTTP endpoints and schedulable tasks. Each function should live in its own file within the `functions/` package directory generated by `tinybase init`.
+### Built-in Task Scheduling
 
-Functions run in isolated subprocess environments with automatic dependency management using `uv`'s single-file script feature.
+Cron expressions, intervals, and one-time tasks — no external job queue needed. Full timezone support.
 
-Example (`functions/add_numbers.py`):
+### Modern Admin UI
+
+Vue 3 dashboard with visual schema editor, function monitoring, user management, and real-time activity feed.
+
+## Documentation
+
+| Topic                                                                           | Description                    |
+| ------------------------------------------------------------------------------- | ------------------------------ |
+| [Getting Started](https://maximiliancw.github.io/TinyBase/getting-started/)     | Installation and first steps   |
+| [Collections](https://maximiliancw.github.io/TinyBase/guide/collections/)       | Schema-driven data modeling    |
+| [Functions](https://maximiliancw.github.io/TinyBase/guide/functions/)           | Type-safe serverless functions |
+| [Scheduling](https://maximiliancw.github.io/TinyBase/guide/scheduling/)         | Cron and interval tasks        |
+| [Authentication](https://maximiliancw.github.io/TinyBase/guide/authentication/) | JWT auth and user management   |
+| [Extensions](https://maximiliancw.github.io/TinyBase/guide/extensions/)         | Extend TinyBase with plugins   |
+| [Deployment](https://maximiliancw.github.io/TinyBase/deployment/)               | Docker and production setup    |
+| [API Reference](https://maximiliancw.github.io/TinyBase/reference/)             | CLI, REST API, Python API      |
+
+## Example Function
 
 ```python
+# functions/add_numbers.py
 # /// script
-# dependencies = [
-#   "tinybase-sdk",
-# ]
+# dependencies = ["tinybase-sdk"]
 # ///
 
 from pydantic import BaseModel
@@ -300,14 +138,8 @@ class AddOutput(BaseModel):
     sum: int
 
 
-@register(
-    name="add_numbers",
-    description="Add two numbers",
-    auth="auth",  # "public" | "auth" | "admin"
-    tags=["math"],
-)
+@register(name="add_numbers", description="Add two numbers", auth="auth")
 def add_numbers(client, payload: AddInput) -> AddOutput:
-    # Use client to make API calls back to TinyBase
     return AddOutput(sum=payload.x + payload.y)
 
 
@@ -315,324 +147,135 @@ if __name__ == "__main__":
     run()
 ```
 
-This function is automatically exposed at:
-
-- `POST /api/functions/add_numbers`
-
-Request body:
-
-```json
-{
-  "x": 1,
-  "y": 2
-}
-```
-
-Response:
-
-```json
-{
-  "call_id": "<uuid>",
-  "status": "succeeded",
-  "result": {
-    "sum": 3
-  }
-}
-```
-
-Function calls are also recorded as `FunctionCall` records for diagnostics (status, duration, errors).
-
-### Generating boilerplate
-
-Use the CLI to generate boilerplate for a new function:
+Call via REST API:
 
 ```bash
-tinybase functions new my_function -d "My example function"
+curl -X POST http://localhost:8000/api/functions/add_numbers \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"x": 1, "y": 2}'
 ```
 
-This creates a new file `functions/my_function.py` with a typed function template using the SDK format.
+<details>
+<summary><strong>All Features</strong></summary>
 
-## Scheduling
+### Data & Collections
 
-TinyBase supports scheduling functions using three methods:
+- **Dynamic Collections** – Create schema-driven collections with JSON schemas, no migrations needed
+- **Pydantic Validation** – Automatic validation for all records with detailed error messages
+- **Unique Constraints** – Enforce unique values with automatic index management
+- **Collection References** – Foreign key-like relationships between collections
+- **SQLite Backend** – Simple, reliable, and portable – your entire database in a single file
+- **REST API** – Auto-generated CRUD endpoints for all collections
 
-- `once` (single run at a particular date/time).
-- `interval` (every N seconds/minutes/hours/days).
-- `cron` (cron expressions, via `croniter`).
+### Authentication & Security
 
-Schedules are defined as JSON objects stored in the `schedule` field of `FunctionSchedule` and validated with Pydantic.
+- **JWT Authentication** – Secure token-based auth with access and refresh tokens
+- **User Management** – Built-in registration, login, and password reset flows
+- **Role-Based Access** – Admin and user roles with fine-grained permissions
+- **Rate Limiting** – Configurable concurrent execution limits per user
 
-Examples:
+### Serverless Functions
 
-Once:
+- **Type-Safe Functions** – Define functions with Pydantic models for inputs and outputs
+- **Isolated Execution** – Each function runs in its own subprocess with dependency isolation
+- **Automatic Dependencies** – Use `uv`'s inline script dependencies for zero-config package management
+- **OpenAPI Integration** – All functions automatically documented and exposed as REST endpoints
+- **Execution Tracking** – Full metadata for every function call (status, duration, errors)
+- **Cold Start Pool** – Pre-warmed function processes for faster execution
 
-```json
-{
-  "method": "once",
-  "timezone": "Europe/Berlin",
-  "date": "2025-11-25",
-  "time": "08:00:00"
-}
-```
+### Task Scheduling
 
-Interval:
+- **Cron Expressions** – Standard cron syntax for complex scheduling patterns
+- **Interval Scheduling** – Run functions every N seconds, minutes, hours, or days
+- **One-Time Tasks** – Schedule functions to run once at a specific date and time
+- **Timezone Support** – Full timezone awareness for all scheduled tasks
+- **No External Dependencies** – Built-in scheduler, no Redis or Celery required
 
-```json
-{
-  "method": "interval",
-  "timezone": "UTC",
-  "unit": "hours",
-  "value": 1
-}
-```
+### Admin UI
 
-Cron:
+- **Modern Interface** – Beautiful SPA built with Vue 3, Pinia, Tailwind CSS, and shadcn/vue
+- **Visual Schema Editor** – Create and edit collection schemas with a visual interface
+- **Function Monitoring** – View execution history, errors, and performance metrics
+- **Activity Feed** – Real-time dashboard with recent activity across your instance
+- **Responsive Design** – Works perfectly on desktop and mobile
 
-```json
-{
-  "method": "cron",
-  "timezone": "Europe/Berlin",
-  "cron": "0 8 * * *",
-  "description": "every day at 8am"
-}
-```
+### Developer Experience
 
-Admin endpoints for schedules:
+- **Hot Reload** – Automatic server restart on code changes with `--reload` flag
+- **Full OpenAPI Docs** – Interactive API documentation at `/docs`
+- **CLI Tools** – Generate function boilerplate, manage users, run migrations
+- **Docker Ready** – Multi-stage Dockerfile included for production deployments
+- **Environment-Based Config** – Configure via `tinybase.toml` or environment variables
 
-- `GET /api/admin/schedules`
-- `POST /api/admin/schedules`
-- `GET /api/admin/schedules/{id}`
-- `PATCH /api/admin/schedules/{id}`
-- `DELETE /api/admin/schedules/{id}`
+</details>
 
-> **Note:** The scheduler runs as a background loop in TinyBase and triggers functions according to their schedule, creating `FunctionCall` records for each invocation.
+## Configuration
 
-## Collections and Records
+TinyBase uses a two-layer configuration system:
 
-TinyBase collections are **dynamic, schema-driven tables** stored in SQLite.
-
-- Collections are defined with a JSON schema describing their fields and constraints.
-- Pydantic models are generated at startup to validate records.
-- CRUD endpoints are provided for each collection.
-- Unique constraints are enforced with automatic index management.
-- Foreign key-like references between collections are supported.
-
-**Supported field types:** `string`, `number`, `integer`, `boolean`, `array`, `object`, `date`, `reference`
-
-**Field options:** `required`, `unique`, `default`, `min`, `max`, `min_length`, `max_length`, `pattern`, `collection`
-
-Example schema (`Collection.schema`):
-
-```json
-{
-  "fields": [
-    {
-      "name": "email",
-      "type": "string",
-      "required": true,
-      "unique": true,
-      "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
-    },
-    {
-      "name": "score",
-      "type": "number",
-      "min": 0,
-      "max": 100
-    },
-    {
-      "name": "tags",
-      "type": "array",
-      "default": []
-    },
-    {
-      "name": "author_id",
-      "type": "reference",
-      "collection": "users"
-    }
-  ]
-}
-```
-
-Associated endpoints:
-
-- `GET /api/collections`
-- `POST /api/collections` (admin)
-- `GET /api/collections/{collection_name}`
-- `GET /api/collections/{collection_name}/records`
-- `POST /api/collections/{collection_name}/records`
-- `GET /api/collections/{collection_name}/records/{id}`
-- `PATCH /api/collections/{collection_name}/records/{id}`
-- `DELETE /api/collections/{collection_name}/records/{id}`
-- `GET /api/admin/collections/status` (admin - health monitoring)
-- `GET /api/admin/collections/{collection_name}/status` (admin - detailed status)
-
-## Admin UI
-
-The admin UI is a single-page application built with:
-
-- Vue 3
-- Pinia
-- Vite
-- Tailwind CSS
-- shadcn/vue (via reka-ui)
-
-Source:
-
-- Located in the repository under `/apps/admin`.
-
-Build:
+1. **Static Config** – File-based (`tinybase.toml`) or environment variables (`TINYBASE_*`), loaded at startup
+1. **Runtime Settings** – Database-backed, changeable via Admin UI without restart
 
 ```bash
-cd apps/admin
-yarn install
-yarn build
+# Key environment variables
+TINYBASE_SERVER_HOST=0.0.0.0
+TINYBASE_SERVER_PORT=8000
+TINYBASE_DB_URL=sqlite:///./tinybase.db
+TINYBASE_JWT_SECRET_KEY=your-secret-key
 ```
 
-Or using Make:
+> **[Full configuration reference](https://maximiliancw.github.io/TinyBase/getting-started/configuration/)**
+
+## Development
 
 ```bash
-make build-admin
-```
-
-This produces an `/apps/admin/dist` directory, which is copied into the Python package (`packages/tinybase/tinybase/static/app`) during the build process.
-
-> Note: Per default, this is done automatically during the Docker build process.
-
-At runtime, FastAPI serves the admin UI at:
-
-- `GET /admin`
-
-The admin UI allows administrators to:
-
-- Log in
-- View activity feed on the dashboard
-- Manage collections and schemas with visual editor
-- Inspect and edit records
-- View and manage users
-- View and manage functions
-- Configure schedules
-- Inspect function call metadata
-- Configure extension settings
-- Manage instance settings
-
-## 🛠️ Development
-
-### Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](docs/contributing/index.md) for details.
-
-### Setup
-
-**Backend development:**
-
-```bash
-# Install uv (if not already installed)
+# Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install workspace dependencies
+# Clone and setup
+git clone https://github.com/maximiliancw/tinybase.git
+cd tinybase
 uv sync --group dev
 
-# Initialize TinyBase
+# Initialize and run
 uv run tinybase init --admin-email admin@example.com --admin-password admin123
-
-# Start both backend and frontend dev servers
 make dev
-
-# Or start backend only
-make dev-backend
-```
-
-**Admin UI development:**
-
-```bash
-cd apps/admin
-yarn install
-yarn dev  # Start Vite dev server with hot reload
 ```
 
 ### Project Structure
 
-This is a monorepo with the following structure:
-
 ```text
 tinybase/
 ├── packages/
-│   ├── tinybase/           # Core Python package (API server + CLI)
-│   └── tinybase-sdk/       # Python SDK for writing functions
+│   ├── tinybase/           # Core Python package
+│   └── tinybase-sdk/       # SDK for writing functions
 ├── apps/
 │   └── admin/              # Vue 3 Admin UI
 ├── clients/
 │   └── typescript/         # Auto-generated TypeScript client
-├── openapi/                # OpenAPI specification
-├── scripts/                # Repo management scripts
 ├── docs/                   # Documentation (MkDocs)
-├── Makefile                # Common commands
-└── pyproject.toml          # Workspace configuration
+└── Makefile                # Common commands
 ```
 
-### Common Commands
+### Commands
 
 ```bash
 make dev              # Start backend + frontend dev servers
-make dev-backend      # Start backend only
-make dev-frontend     # Start frontend only
 make test             # Run all tests in parallel
 make lint             # Lint Python and Markdown files
-make format           # Format all files
 make build-admin      # Build admin UI
-make export-openapi   # Export OpenAPI spec
-make pre-commit       # Run all pre-commit hooks
 ```
 
-### Testing
+> **[Contributing guide](https://maximiliancw.github.io/TinyBase/contributing/)**
+
+## Deployment
 
 ```bash
-# Run all tests in parallel (recommended, ~1-2 min)
-make test
-# Or: uv run pytest -n auto
-
-# Run with coverage
-uv run pytest -n auto --cov=packages/tinybase/tinybase --cov-report=html
-
-# Fast dev loop - only last failed tests
-uv run pytest --lf
-
-# Run specific test file
-uv run pytest packages/tinybase/tests/test_function_execution.py
-
-# Skip slow tests during development
-uv run pytest -m "not slow"
-
-# Run linting
-make lint
-```
-
-Test coverage includes:
-
-- ✅ Function execution and isolation
-- ✅ Authentication and JWT flows
-- ✅ Collection CRUD operations
-- ✅ Scheduling and cron parsing
-- ✅ Rate limiting and resource management
-- ✅ SDK decorator and CLI
-- ✅ Activity logging
-- ✅ Extension settings
-
-## 🐳 Deployment
-
-### Docker
-
-The included `Dockerfile` provides a production-ready build:
-
-**Build:**
-
-```bash
+# Build Docker image
 docker build -t tinybase .
-```
 
-**Run:**
-
-```bash
+# Run container
 docker run -p 8000:8000 \
   -e TINYBASE_ADMIN_EMAIL=admin@example.com \
   -e TINYBASE_ADMIN_PASSWORD=admin123 \
@@ -640,59 +283,29 @@ docker run -p 8000:8000 \
   tinybase
 ```
 
-The multi-stage build:
+> **[Deployment guides](https://maximiliancw.github.io/TinyBase/deployment/)**
 
-1. Builds the Vue admin UI with yarn
-1. Creates a minimal Python runtime using uv
-1. Bundles everything into a single optimized image
+## Roadmap
 
-> 📖 **[View deployment guides](https://maximiliancw.github.io/TinyBase/deployment/)**
+- **Advanced Querying** – GraphQL support and complex filtering
+- **WebSocket Support** – Real-time updates and subscriptions
+- **Enhanced Monitoring** – Built-in metrics and performance dashboards
+- **Plugin Library** – Discover and install community extensions
+- **Multi-tenancy** – Built-in support for multi-tenant applications
+- **Mobile SDKs** – Native SDKs for iOS and Android
 
-### Production Considerations
+[Open an issue](https://github.com/maximiliancw/TinyBase/issues) or start a [discussion](https://github.com/maximiliancw/TinyBase/discussions)!
 
-- Use environment variables for secrets (don't commit `tinybase.toml` with credentials)
-- Mount a volume for persistent SQLite database storage
-- Use a reverse proxy (nginx/Caddy) with HTTPS in production
-- Consider Redis for rate limiting in multi-instance deployments
-- Enable CORS only for trusted origins
-
-## 🗺️ Roadmap
-
-Planned improvements **may** include:
-
-- 🔍 **Advanced Querying** – GraphQL support and complex filtering for collections
-- 🔌 **WebSocket Support** – Real-time updates and subscriptions
-- 📊 **Enhanced Monitoring** – Built-in metrics, logs, and performance dashboards
-- 🧩 **Plugin Library** – Discover and install community extensions
-- 🌍 **Multi-tenancy** – Built-in support for multi-tenant applications
-- 🔄 **Database Replication** – SQLite replication for high availability
-- 📱 **Mobile SDKs** – Native SDKs for iOS and Android
-- 🤖 **AI Integration** – Built-in support for LLM function calling
-
-Have a feature request? [Open an issue](https://github.com/maximiliancw/TinyBase/issues) or start a [discussion](https://github.com/maximiliancw/TinyBase/discussions)!
-
-## 📄 License
+## License
 
 TinyBase is released under the **MIT License**. See [LICENSE](LICENSE) for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-TinyBase is built on the shoulders of giants:
+Built with [FastAPI](https://fastapi.tiangolo.com/), [SQLModel](https://sqlmodel.tiangolo.com/), [Pydantic](https://pydantic.dev/), [Vue 3](https://vuejs.org/), [Tailwind CSS](https://tailwindcss.com/), [shadcn/vue](https://www.shadcn-vue.com/), and [uv](https://github.com/astral-sh/uv).
 
-- [FastAPI](https://fastapi.tiangolo.com/) – Modern Python web framework
-- [SQLModel](https://sqlmodel.tiangolo.com/) – SQL databases with Python type hints
-- [Pydantic](https://pydantic.dev/) – Data validation and settings management
-- [Vue 3](https://vuejs.org/) – Progressive JavaScript framework
-- [Tailwind CSS](https://tailwindcss.com/) – Utility-first CSS framework
-- [shadcn/vue](https://www.shadcn-vue.com/) – Re-usable UI components
-- [uv](https://github.com/astral-sh/uv) – Fast Python package installer
+______________________________________________________________________
 
-## ⭐ Support
-
-If you find TinyBase useful, please consider:
-
-- ⭐ Starring the repository
-- 🐛 Reporting bugs and issues
-- 💡 Suggesting new features
-- 📖 Improving documentation
-- 🔀 Contributing code
+<p align="center">
+  <strong>If you find TinyBase useful, please consider <a href="https://github.com/maximiliancw/tinybase">starring the repository</a>!</strong>
+</p>
