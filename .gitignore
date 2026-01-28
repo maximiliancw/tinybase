@@ -58,21 +58,25 @@ htmlcov/
 .env.*.local
 
 # Node.js (Admin UI)
-app/node_modules/
-app/dist/
-app/.yarn/
-app/.pnp.*
-!app/.yarnrc.yml
-!app/.env.development
-!app/.env.production
-app/.env.local
-app/.env.*.local
+apps/admin/node_modules/
+apps/admin/dist/
+apps/admin/.yarn/
+apps/admin/.pnp.*
+!apps/admin/.yarnrc.yml
+!apps/admin/.env.development
+!apps/admin/.env.production
+apps/admin/.env.local
+apps/admin/.env.*.local
 
-# Auto-generated client code (OpenAPI/TypeScript/Python clients)
-app/src/client/
-tinybase-sdk/src/tinybase_sdk/client/client/
-tinybase-sdk/src/tinybase_sdk/client/README.md
-tinybase-sdk/src/tinybase_sdk/client/pyproject.toml
+# TypeScript client (auto-generated)
+clients/typescript/node_modules/
+clients/typescript/src/
+
+# Auto-generated client code (OpenAPI/Python clients)
+apps/admin/src/client/
+packages/tinybase-sdk/tinybase_sdk/client/client/
+packages/tinybase-sdk/tinybase_sdk/client/README.md
+packages/tinybase-sdk/tinybase_sdk/client/pyproject.toml
 
 # TinyBase runtime (auto-generated during local testing)
 tinybase.db
@@ -80,6 +84,7 @@ tinybase.toml
 alembic.ini
 /functions/
 *cache.db*
+.tinybase/
 
 
 # OS
@@ -87,8 +92,8 @@ alembic.ini
 Thumbs.db
 
 # Built app static (populated at build time)
-tinybase/static/app/*
-!tinybase/static/app/.gitkeep
+packages/tinybase/tinybase/static/app/*
+!packages/tinybase/tinybase/static/app/.gitkeep
 
 # MkDocs documentation site
 site/
