@@ -40,6 +40,7 @@ ENV/
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+.testmondata
 
 # Linting
 .ruff_cache/

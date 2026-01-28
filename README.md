@@ -519,14 +519,20 @@ yarn dev  # Start Vite dev server with hot reload
 ### Testing
 
 ```bash
-# Run all tests
-pytest
+# Run all tests in parallel (recommended, ~1-2 min)
+uv run pytest -n auto
 
 # Run with coverage
-pytest --cov=tinybase --cov-report=html
+uv run pytest -n auto --cov=tinybase --cov-report=html
+
+# Fast dev loop - only last failed tests
+uv run pytest --lf
 
 # Run specific test file
-pytest tests/test_function_execution.py
+uv run pytest tests/test_function_execution.py
+
+# Skip slow tests during development
+uv run pytest -m "not slow"
 
 # Run linting
 ruff check .

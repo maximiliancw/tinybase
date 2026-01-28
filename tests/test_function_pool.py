@@ -8,6 +8,8 @@ import time
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from tinybase.functions.pool import FunctionProcessPool, WarmProcess, get_pool, utcnow
 
 
@@ -179,6 +181,7 @@ class TestFunctionProcessPool:
         # Pool should be removed
         assert str(file_path) not in pool._pools
 
+    @pytest.mark.slow
     def test_pool_start_stop(self):
         """Test starting and stopping the pool."""
         pool = FunctionProcessPool(max_pool_size=3, ttl_seconds=60)

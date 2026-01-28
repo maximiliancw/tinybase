@@ -573,6 +573,105 @@ class TestPagination:
     def test_page_beyond_results(self): ...
 ```
 
+## Test Performance
+
+TinyBase includes optimizations for fast test execution. The test suite of ~265 tests can run in approximately **1-2 minutes** with parallel execution.
+
+### Quick Commands
+
+```bash
+# Full parallel suite (recommended)
+uv run pytest -n auto
+
+# Fast dev loop - only last failed tests
+uv run pytest --lf
+
+# Failed first, then rest
+uv run pytest --ff
+
+# Stop on first failure (quick sanity check)
+uv run pytest -x -n auto
+
+# Skip slow tests during development
+uv run pytest -m "not slow"
+
+# Change-based testing (runs only tests affected by changes)
+uv run pytest --testmon
+```
+
+### Performance Comparison
+
+| Command | Description | Typical Time |
+|---------|-------------|--------------|
+| `pytest` | Serial execution | ~15-19 min |
+| `pytest -n auto` | Parallel execution | ~1-2 min |
+| `pytest --lf` | Last failed only | seconds |
+| `pytest --testmon` | Change-based | seconds |
+
+### Test Markers
+
+Tests can be categorized with markers:
+
+```python
+@pytest.mark.slow
+def test_long_running_operation():
+    """Tests marked slow can be skipped during rapid iteration."""
+    ...
+
+@pytest.mark.integration
+def test_external_service():
+    """Integration tests that may require external services."""
+    ...
+```
+
+Run or skip by marker:
+
+```bash
+# Skip slow tests
+pytest -m "not slow"
+
+# Run only integration tests
+pytest -m integration
+
+# Run everything except slow and integration
+pytest -m "not slow and not integration"
+```
+
+### Parallel Execution
+
+The test suite uses `pytest-xdist` for parallel execution:
+
+```bash
+# Auto-detect CPU cores
+pytest -n auto
+
+# Specific number of workers
+pytest -n 4
+
+# With coverage
+pytest -n auto --cov=tinybase
+```
+
+**Note**: All tests are isolated and safe for parallel execution. Each test gets:
+
+- Unique temporary workspace directory
+- Isolated database instance
+- Reset global state (settings, registries, pools)
+
+### Change-Based Testing with testmon
+
+`pytest-testmon` tracks which tests depend on which source files:
+
+```bash
+# First run - builds dependency database
+uv run pytest --testmon
+
+# Subsequent runs - only runs affected tests
+uv run pytest --testmon
+```
+
+The `.testmondata` file stores the dependency information and should be added to `.gitignore`.
+
 ## See Also
 
 - [Development Setup](development.md)

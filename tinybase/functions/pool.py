@@ -8,7 +8,6 @@ import atexit
 import logging
 import subprocess
 import threading
-import time
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
@@ -52,6 +51,7 @@ class FunctionProcessPool:
         self._cleanup_thread: threading.Thread | None = None
         self._running = False
         self._shutdown_registered = False
+        self._stop_event = threading.Event()  # For instant shutdown signaling
 
     def start(self) -> None:
         """Start the cleanup thread."""
@@ -59,6 +59,7 @@ class FunctionProcessPool:
             return  # Pool disabled
 
         self._running = True
+        self._stop_event.clear()  # Reset stop event for fresh start
         self._cleanup_thread = threading.Thread(target=self._cleanup_loop, daemon=True)
         self._cleanup_thread.start()
 
@@ -76,9 +77,10 @@ class FunctionProcessPool:
 
         logger.info("Stopping function process pool...")
         self._running = False
+        self._stop_event.set()  # Signal cleanup thread to wake up immediately
 
         if self._cleanup_thread:
-            self._cleanup_thread.join(timeout=5)
+            self._cleanup_thread.join(timeout=1)  # Should complete quickly now
 
         with self._lock:
             # Kill any remaining processes
@@ -174,7 +176,11 @@ class FunctionProcessPool:
         """Background thread to clean up expired warm processes."""
         while self._running:
             try:
-                time.sleep(60)  # Check every minute
+                # Wait for 60 seconds or until stop event is signaled
+                self._stop_event.wait(timeout=60)
+                if not self._running:
+                    break  # Exit immediately when stop is requested
+                self._stop_event.clear()  # Reset for next iteration
                 self._cleanup_expired()
             except Exception as e:
                 logger.error(f"Error in process pool cleanup: {e}")

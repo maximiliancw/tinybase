@@ -19,7 +19,10 @@ def clear_settings_cache():
     This prevents state leakage between tests, especially when one test
     uses the `client` fixture (which sets a temp DB path) and another test
     uses its own `session` fixture.
+
+    Also resets the function process pool singleton for pytest-xdist worker isolation.
     """
+    import tinybase.functions.pool
     from tinybase.db.core import reset_db_engine
     from tinybase.rate_limit import reset_rate_limit_backend
     from tinybase.settings import settings
@@ -31,6 +34,7 @@ def clear_settings_cache():
     reset_db_engine()
     reset_rate_limit_backend()
     _reset_config()
+    tinybase.functions.pool._pool = None  # Reset pool singleton for worker isolation
 
     yield
 
@@ -40,6 +44,7 @@ def clear_settings_cache():
     reset_db_engine()
     reset_rate_limit_backend()
     _reset_config()
+    tinybase.functions.pool._pool = None  # Reset pool singleton for worker isolation
 
 
 @pytest.fixture(scope="function")
