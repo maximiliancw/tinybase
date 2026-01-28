@@ -55,28 +55,23 @@ Usage for extension developers:
     # Logs as: ext.my_extension.sync_completed
 """
 
-from tinybase.extensions.hooks import (
+from tinybase.activity import create_activity_logger, log_extension_activity
+from tinybase.extensions.hooks import (  # Event data classes; Utilities; Function hooks; Data hooks; Lifecycle hooks; Authentication hooks
     FunctionCallEvent,
     FunctionCompleteEvent,
     RecordCreateEvent,
     RecordDeleteEvent,
     RecordUpdateEvent,
-    # Event data classes
     UserLoginEvent,
     UserRegisterEvent,
-    # Utilities
     clear_hooks,
-    # Function hooks
     on_function_call,
     on_function_complete,
-    # Data hooks
     on_record_create,
     on_record_delete,
     on_record_update,
     on_shutdown,
-    # Lifecycle hooks
     on_startup,
-    # Authentication hooks
     on_user_login,
     on_user_register,
     run_function_call_hooks,
@@ -104,7 +99,6 @@ from tinybase.extensions.loader import (
     load_extension_module,
     unload_extension,
 )
-from tinybase.activity import create_activity_logger, log_extension_activity
 
 __all__ = [
     # Lifecycle hooks (for extension developers)
