@@ -24,7 +24,7 @@ url = "sqlite:///./tinybase.db"
 token_ttl_hours = 24
 
 [functions]
-path = "./functions"
+dir = "./functions"
 
 [scheduler]
 enabled = true
@@ -37,10 +37,10 @@ allow_origins = ["*"]
 static_dir = "builtin"
 
 # Serve your own frontend/SPA at the root path
-# Uncomment and set the path to your static files directory
+# Uncomment and set the directory for your static files
 # The directory must contain an index.html file
-# [static_files]
-# serve = "./dist"
+# [public]
+# static_dir = "./dist"
 
 # Environment-specific settings for deployment
 # [environments.production]

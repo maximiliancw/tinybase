@@ -36,7 +36,7 @@ refresh_token_expire_days = 30
 # secret_key = "your-secret-key"  # Auto-generated if not set
 
 [functions]
-path = "./functions"
+dir = "./functions"
 logging_enabled = true
 logging_level = "INFO"
 cold_start_pool_size = 3
@@ -58,7 +58,7 @@ static_dir = "builtin"
 
 [extensions]
 enabled = true
-path = "~/.tinybase/extensions"
+dir = "./.tinybase/extensions"
 
 [email]
 enabled = false
@@ -135,7 +135,7 @@ api_key = settings.get("ext.my_extension.api_key")
 | `core.auth.portal.login_redirect_url` | — | Post-login redirect URL |
 | `core.auth.portal.register_redirect_url` | — | Post-registration redirect URL |
 | `core.storage.enabled` | `false` | Enable S3-compatible file storage |
-| `core.storage.endpoint` | — | S3 endpoint URL |
+| `core.storage.url` | — | S3 endpoint URL |
 | `core.storage.bucket` | — | S3 bucket name |
 | `core.storage.access_key` | — | S3 access key |
 | `core.storage.secret_key` | — | S3 secret key |
