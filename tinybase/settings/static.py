@@ -197,6 +197,15 @@ class Config(BaseSettings):
     )
 
     # -------------------------------------------------------------------------
+    # Static Files
+    # -------------------------------------------------------------------------
+    serve_static_files: str | None = Field(
+        default=None,
+        description="Path to user static files directory (must contain index.html). "
+        "When set, files will be served at the root path /",
+    )
+
+    # -------------------------------------------------------------------------
     # Email
     # -------------------------------------------------------------------------
     email_enabled: bool = Field(default=False, description="Enable email sending")

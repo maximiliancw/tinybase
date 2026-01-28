@@ -18,6 +18,7 @@ from slowapi.util import get_remote_address
 from tinybase.api.routes import admin, auth, collections, extensions, files, functions, schedules
 from tinybase.api.routes.static_admin import mount_admin_ui
 from tinybase.api.routes.static_auth import mount_auth_portal
+from tinybase.api.routes.static_user import mount_user_static_files
 from tinybase.collections.service import load_collections_into_registry
 from tinybase.db.core import get_db_engine, init_db
 from tinybase.extensions import load_enabled_extensions, run_shutdown_hooks, run_startup_hooks
@@ -176,18 +177,26 @@ def create_app() -> FastAPI:
     if not auth_mounted:
         logger.warning("Auth portal static files not found - /auth will not be available")
 
-    # Root endpoint
-    @app.get("/", tags=["system"])
-    def get_root() -> dict:
-        """Root endpoint returning API information."""
-        return {
-            "name": "TinyBase",
-            "version": __version__,
-            "docs": "/docs",
-            "openapi": "/openapi.json",
-            "admin": "/admin" if admin_mounted else None,
-            "auth": "/auth" if auth_mounted else None,
-        }
+    # Mount user static files (must be LAST to not override API routes)
+    # Only mount if no user static files are configured - otherwise the root endpoint would conflict
+    static_files_mounted = mount_user_static_files(app)
+    if static_files_mounted:
+        logger.info(f"User static files mounted at / from {config.serve_static_files}")
+
+    # Root endpoint (only if user static files are not mounted)
+    if not static_files_mounted:
+
+        @app.get("/", tags=["system"])
+        def get_root() -> dict:
+            """Root endpoint returning API information."""
+            return {
+                "name": "TinyBase",
+                "version": __version__,
+                "docs": "/docs",
+                "openapi": "/openapi.json",
+                "admin": "/admin" if admin_mounted else None,
+                "auth": "/auth" if auth_mounted else None,
+            }
 
     # Basic health check endpoints (no auth required)
     @app.get("/health", tags=["system"])

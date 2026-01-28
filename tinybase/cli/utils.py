@@ -36,6 +36,12 @@ allow_origins = ["*"]
 [admin]
 static_dir = "builtin"
 
+# Serve your own frontend/SPA at the root path
+# Uncomment and set the path to your static files directory
+# The directory must contain an index.html file
+# [static_files]
+# serve = "./dist"
+
 # Environment-specific settings for deployment
 # [environments.production]
 # url = "https://tinybase.example.com"
