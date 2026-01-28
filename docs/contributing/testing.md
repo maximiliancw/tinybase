@@ -50,7 +50,7 @@ ptw -- tests/
 ## Test Structure
 
 ```
-tests/
+packages/tinybase/tests/           # Core package tests
 ├── __init__.py
 ├── conftest.py                    # Shared fixtures
 ├── test_access_control.py
@@ -64,7 +64,7 @@ tests/
 ├── test_internal_tokens.py        # Internal token generation
 └── test_settings.py
 
-tinybase-sdk/tests/                # SDK package tests
+packages/tinybase-sdk/tests/       # SDK package tests
 ├── __init__.py
 ├── test_cli.py                    # CLI runner tests
 ├── test_context.py                # Context dataclass tests

@@ -456,17 +456,23 @@ The admin UI is a single-page application built with:
 
 Source:
 
-- Located in the repository root under `/app`.
+- Located in the repository under `/apps/admin`.
 
 Build:
 
 ```bash
-cd app
+cd apps/admin
 yarn install
 yarn build
 ```
 
-This produces a `/app/dist` directory, which should be copied into the Python package (e.g. `tinybase/static/app`) during the build process.
+Or using Make:
+
+```bash
+make build-admin
+```
+
+This produces an `/apps/admin/dist` directory, which is copied into the Python package (`packages/tinybase/tinybase/static/app`) during the build process.
 
 > Note: Per default, this is done automatically during the Docker build process.
 
@@ -498,20 +504,21 @@ Contributions are welcome! Please see [CONTRIBUTING.md](docs/contributing/index.
 # Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Create virtual environment and install dependencies
-uv venv
-source .venv/bin/activate  # or `.venv\Scripts\activate` on Windows
-uv pip install -e ".[dev]"
+# Install workspace dependencies
+uv sync --group dev
 
 # Initialize and run
-tinybase init --admin-email admin@example.com --admin-password admin123
-tinybase serve --reload
+uv run tinybase init --admin-email admin@example.com --admin-password admin123
+uv run tinybase serve --reload
+
+# Or use Make
+make dev
 ```
 
 **Admin UI development:**
 
 ```bash
-cd app
+cd apps/admin
 yarn install
 yarn dev  # Start Vite dev server with hot reload
 ```
@@ -520,22 +527,23 @@ yarn dev  # Start Vite dev server with hot reload
 
 ```bash
 # Run all tests in parallel (recommended, ~1-2 min)
-uv run pytest -n auto
+make test
+# Or: uv run pytest -n auto
 
 # Run with coverage
-uv run pytest -n auto --cov=tinybase --cov-report=html
+uv run pytest -n auto --cov=packages/tinybase/tinybase --cov-report=html
 
 # Fast dev loop - only last failed tests
 uv run pytest --lf
 
 # Run specific test file
-uv run pytest tests/test_function_execution.py
+uv run pytest packages/tinybase/tests/test_function_execution.py
 
 # Skip slow tests during development
 uv run pytest -m "not slow"
 
 # Run linting
-ruff check .
+uv run ruff check .
 ```
 
 Test coverage includes:

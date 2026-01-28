@@ -258,7 +258,7 @@ static_dir = "/path/to/custom/admin"
 ### Building Custom Admin
 
 1. Clone the TinyBase repository
-2. Navigate to `/app`
+2. Navigate to `/apps/admin`
 3. Install dependencies: `yarn install`
 4. Make modifications
 5. Build: `yarn build`

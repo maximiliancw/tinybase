@@ -53,10 +53,10 @@ pip install -e ".[dev]"
 
 ## Admin UI Setup
 
-The Admin UI is in the `/app` directory:
+The Admin UI is in the `/apps/admin` directory:
 
 ```bash
-cd app
+cd apps/admin
 
 # Install dependencies
 yarn install
@@ -92,42 +92,39 @@ tinybase serve --reload
 
 ```
 tinybase/
-├── tinybase/              # Main Python package
-│   ├── __init__.py
-│   ├── api/               # FastAPI routes
-│   │   ├── app.py         # Application factory
-│   │   └── routes/        # Route handlers
-│   ├── auth.py            # Authentication logic
-│   ├── cli/                # CLI commands (subpackage)
-│   │   ├── __init__.py
-│   │   ├── main.py
-│   │   ├── functions.py
-│   │   ├── db.py
-│   │   ├── admin.py
-│   │   ├── extensions.py
-│   │   └── utils.py
-│   ├── collections/       # Collections service
-│   ├── config.py          # Configuration management
-│   ├── db/                # Database models
-│   ├── extensions/        # Extension system
-│   ├── functions/         # Function registration
-│   ├── migrations/        # Alembic migrations
-│   ├── schedule/          # Schedule management (subpackage)
-│   │   ├── __init__.py
-│   │   ├── scheduler.py
-│   │   └── utils.py
-│   └── utils.py           # Utilities
-├── app/                   # Admin UI (Vue)
-│   ├── src/
-│   │   ├── views/         # Page components
-│   │   ├── stores/        # Pinia stores
-│   │   ├── api/           # API client
-│   │   └── router/        # Vue Router
-│   └── package.json
-├── tests/                 # Test suite
-├── docs/                  # Documentation
-├── pyproject.toml         # Python project config
-└── mkdocs.yml            # Docs config
+├── packages/
+│   ├── tinybase/              # Main Python package
+│   │   ├── pyproject.toml     # Package config
+│   │   ├── tests/             # Test suite
+│   │   └── tinybase/          # Package source
+│   │       ├── __init__.py
+│   │       ├── api/           # FastAPI routes
+│   │       ├── cli/           # CLI commands
+│   │       ├── collections/   # Collections service
+│   │       ├── db/            # Database models
+│   │       ├── extensions/    # Extension system
+│   │       ├── functions/     # Function registration
+│   │       ├── migrations/    # Alembic migrations
+│   │       └── schedule/      # Schedule management
+│   └── tinybase-sdk/          # Python SDK package
+│       ├── pyproject.toml
+│       ├── tests/
+│       └── tinybase_sdk/
+├── apps/
+│   └── admin/                 # Admin UI (Vue)
+│       ├── src/
+│       │   ├── views/         # Page components
+│       │   ├── stores/        # Pinia stores
+│       │   └── router/        # Vue Router
+│       └── package.json
+├── clients/
+│   └── typescript/            # Auto-generated TS client
+├── openapi/                   # OpenAPI contract
+├── scripts/                   # Repo management scripts
+├── docs/                      # Documentation
+├── Makefile                   # Common commands
+├── pyproject.toml             # Workspace config
+└── mkdocs.yml                 # Docs config
 ```
 
 ## Development Workflow
@@ -235,11 +232,15 @@ tinybase db upgrade
 ### Building the Admin UI
 
 ```bash
-cd app
+# Using Make (recommended)
+make build-admin
+
+# Or manually
+cd apps/admin
 yarn build
 ```
 
-Built files go to `app/dist/`. For the Python package, copy to `tinybase/static/app/`. If using Docker, this will be done automatically per default.
+Built files go to `apps/admin/dist/`. The `make build-admin` command also copies them to `packages/tinybase/tinybase/static/app/`. If using Docker, this is done automatically.
 
 ## Debugging
 
@@ -349,7 +350,7 @@ kill -9 PID
 
 ```bash
 # Clear and reinstall
-cd app
+cd apps/admin
 rm -rf node_modules
 yarn install
 ```
