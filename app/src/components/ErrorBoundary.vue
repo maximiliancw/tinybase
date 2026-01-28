@@ -34,18 +34,12 @@ function reset() {
         <AlertTitle>Something went wrong</AlertTitle>
         <AlertDescription class="mt-2">
           <p class="text-sm">{{ error.message }}</p>
-          <p v-if="errorInfo" class="text-xs mt-2 opacity-75">
-            Error occurred in: {{ errorInfo }}
-          </p>
+          <p v-if="errorInfo" class="text-xs mt-2 opacity-75">Error occurred in: {{ errorInfo }}</p>
         </AlertDescription>
       </Alert>
       <div class="flex gap-2">
-        <Button variant="outline" size="sm" @click="reset">
-          Try again
-        </Button>
-        <Button variant="ghost" size="sm" @click="$router.go(0)">
-          Reload page
-        </Button>
+        <Button variant="outline" size="sm" @click="reset"> Try again </Button>
+        <Button variant="ghost" size="sm" @click="$router.go(0)"> Reload page </Button>
       </div>
     </div>
   </div>

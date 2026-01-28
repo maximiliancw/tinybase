@@ -120,16 +120,13 @@ watch(
 );
 
 // Watch for modal opening/closing
-watch(
-  showCreateModal,
-  async (isOpen) => {
-    if (isOpen && values.function_name) {
-      await fetchSchemaAndGenerateTemplate(values.function_name);
-    } else if (!isOpen) {
-      functionSchema.value = null;
-    }
+watch(showCreateModal, async (isOpen) => {
+  if (isOpen && values.function_name) {
+    await fetchSchemaAndGenerateTemplate(values.function_name);
+  } else if (!isOpen) {
+    functionSchema.value = null;
   }
-);
+});
 
 onMounted(async () => {
   await functionsStore.fetchSchedules();

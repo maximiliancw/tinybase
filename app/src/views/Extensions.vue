@@ -222,7 +222,7 @@ async function openSettingsSheet(ext: Extension) {
       path: { extension_name: ext.name },
     });
     extensionSettings.value = response.data.settings as ExtensionSetting[];
-    
+
     // Initialize form data
     settingsFormData.value = {};
     for (const setting of extensionSettings.value) {
@@ -441,9 +441,7 @@ function getInputType(valueType: string): string {
       <SheetContent class="sm:max-w-md">
         <SheetHeader>
           <SheetTitle>{{ selectedExtension?.name }} Settings</SheetTitle>
-          <SheetDescription>
-            Configure settings for this extension.
-          </SheetDescription>
+          <SheetDescription> Configure settings for this extension. </SheetDescription>
         </SheetHeader>
 
         <div v-if="settingsLoading" class="flex items-center justify-center py-8">
@@ -451,9 +449,7 @@ function getInputType(valueType: string): string {
         </div>
 
         <div v-else-if="extensionSettings.length === 0" class="py-8 text-center">
-          <p class="text-sm text-muted-foreground">
-            This extension has no configurable settings.
-          </p>
+          <p class="text-sm text-muted-foreground">This extension has no configurable settings.</p>
         </div>
 
         <div v-else class="space-y-4 py-4">
@@ -461,7 +457,7 @@ function getInputType(valueType: string): string {
             <Label :for="`setting-${setting.key}`">
               {{ setting.key }}
             </Label>
-            
+
             <!-- Boolean toggle -->
             <div v-if="setting.value_type === 'bool'" class="flex items-center gap-2">
               <Switch

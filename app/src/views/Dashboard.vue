@@ -25,7 +25,16 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Database, Zap, Activity, LogIn, UserPlus, FileEdit, Trash2, FilePlus } from 'lucide-vue-next';
+import {
+  Database,
+  Zap,
+  Activity,
+  LogIn,
+  UserPlus,
+  FileEdit,
+  Trash2,
+  FilePlus,
+} from 'lucide-vue-next';
 
 const toast = useToast();
 const collectionsStore = useCollectionsStore();
@@ -373,9 +382,7 @@ async function fetchMetrics() {
             :key="activity.id"
             class="flex items-start gap-3"
           >
-            <div
-              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted"
-            >
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
               <component
                 :is="getActivityIcon(activity.action)"
                 class="h-4 w-4 text-muted-foreground"
