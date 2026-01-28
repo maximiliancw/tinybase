@@ -4,11 +4,10 @@
  *
  * Manage user accounts (admin only).
  */
-import { onMounted, ref, computed, h, watch } from 'vue';
+import { onMounted, computed, h } from 'vue';
 import { useToast } from '../composables/useToast';
-import { useRoute } from 'vue-router';
-import { useUrlSearchParams } from '@vueuse/core';
-import { useForm, useField, Field } from 'vee-validate';
+import { useModal } from '../composables/useModal';
+import { useForm, useField } from 'vee-validate';
 import { useUsersStore } from '../stores/users';
 import { validationSchemas } from '../composables/useFormValidation';
 import DataTable from '../components/DataTable.vue';
@@ -28,14 +27,10 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 
 const toast = useToast();
-const route = useRoute();
 const usersStore = useUsersStore();
 
-// URL search params for action=create
-const params = useUrlSearchParams('history');
-const action = computed(() => params.action as string | null);
-
-const showCreateModal = ref(false);
+// Modal state with URL param support (opens on ?action=create)
+const { isOpen: showCreateModal, close: closeCreateModal } = useModal();
 
 const { handleSubmit, resetForm } = useForm({
   validationSchema: validationSchemas.createUser,
@@ -54,25 +49,12 @@ const onSubmit = handleSubmit(async (values) => {
   const result = await usersStore.createUser(values);
   if (result) {
     toast.success(`User "${values.email}" created successfully`);
-    showCreateModal.value = false;
+    closeCreateModal();
     resetForm();
   } else {
     toast.error(usersStore.error || 'Failed to create user');
   }
 });
-
-// Watch for action=create in URL
-watch(
-  action,
-  (newAction) => {
-    if (newAction === 'create') {
-      showCreateModal.value = true;
-      // Clear the action param after opening modal
-      params.action = undefined;
-    }
-  },
-  { immediate: true }
-);
 
 onMounted(async () => {
   await usersStore.fetchUsers();
@@ -219,7 +201,7 @@ const userColumns = computed(() => [
         </form>
 
         <DialogFooter>
-          <Button type="button" variant="ghost" @click="showCreateModal = false"> Cancel </Button>
+          <Button type="button" variant="ghost" @click="closeCreateModal"> Cancel </Button>
           <Button type="submit" form="user-form" :disabled="usersStore.loading">
             {{ usersStore.loading ? 'Creating...' : 'Create User' }}
           </Button>

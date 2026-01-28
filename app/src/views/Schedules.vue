@@ -6,13 +6,12 @@
  */
 import { onMounted, ref, watch, computed, h } from 'vue';
 import { useToast } from '../composables/useToast';
-import { useRoute } from 'vue-router';
-import { useUrlSearchParams } from '@vueuse/core';
+import { useModal } from '../composables/useModal';
 import { useForm, Field, useField } from 'vee-validate';
 import { useFunctionsStore, generateTemplateFromSchema } from '../stores/functions';
 import { validationSchemas } from '../composables/useFormValidation';
 import DataTable from '../components/DataTable.vue';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -43,14 +42,11 @@ import {
 import { Clock } from 'lucide-vue-next';
 
 const toast = useToast();
-const route = useRoute();
 const functionsStore = useFunctionsStore();
 
-// URL search params for action=create
-const params = useUrlSearchParams('history');
-const action = computed(() => params.action as string | null);
+// Modal state with URL param support (opens on ?action=create)
+const { isOpen: showCreateModal, open: openCreateModal, close: closeCreateModal } = useModal();
 
-const showCreateModal = ref(false);
 const loadingSchema = ref(false);
 const functionSchema = ref<any>(null);
 
@@ -124,7 +120,7 @@ watch(
 
 // Watch for modal opening/closing
 watch(
-  () => showCreateModal.value,
+  showCreateModal,
   async (isOpen) => {
     if (isOpen && values.function_name) {
       await fetchSchemaAndGenerateTemplate(values.function_name);
@@ -132,18 +128,6 @@ watch(
       functionSchema.value = null;
     }
   }
-);
-
-// Watch for action=create in URL
-watch(
-  action,
-  (newAction) => {
-    if (newAction === 'create') {
-      showCreateModal.value = true;
-      params.action = undefined;
-    }
-  },
-  { immediate: true }
 );
 
 onMounted(async () => {
@@ -198,7 +182,7 @@ const onSubmit = handleSubmit(async (values) => {
 
   if (result) {
     toast.success(`Schedule "${values.name}" created successfully`);
-    showCreateModal.value = false;
+    closeCreateModal();
     resetForm({
       values: {
         name: '',
@@ -328,7 +312,7 @@ const scheduleColumns = computed(() => [
         <EmptyDescription> Create schedules to run functions automatically. </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button size="sm" @click="showCreateModal = true"> Create Schedule </Button>
+        <Button size="sm" @click="openCreateModal"> Create Schedule </Button>
       </EmptyContent>
     </Empty>
 
@@ -341,9 +325,7 @@ const scheduleColumns = computed(() => [
         search-placeholder="Search schedules..."
         :header-action="{
           label: 'New Schedule',
-          action: () => {
-            showCreateModal = true;
-          },
+          action: openCreateModal,
           variant: 'default',
           icon: 'Plus',
         }"
@@ -492,7 +474,7 @@ const scheduleColumns = computed(() => [
         </form>
 
         <DialogFooter>
-          <Button type="button" variant="ghost" @click="showCreateModal = false"> Cancel </Button>
+          <Button type="button" variant="ghost" @click="closeCreateModal"> Cancel </Button>
           <Button type="submit" form="schedule-form" :disabled="functionsStore.loading">
             {{ functionsStore.loading ? 'Creating...' : 'Create Schedule' }}
           </Button>

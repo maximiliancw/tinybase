@@ -4,10 +4,10 @@
  *
  * List and manage data collections.
  */
-import { onMounted, ref, computed, h, watch } from 'vue';
+import { onMounted, computed, h } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useToast } from '../composables/useToast';
-import { useUrlSearchParams } from '@vueuse/core';
+import { useModal } from '../composables/useModal';
 import { useField, useForm } from 'vee-validate';
 import { useCollectionsStore } from '../stores/collections';
 import { useAuthStore } from '../stores/auth';
@@ -42,11 +42,9 @@ const toast = useToast();
 const collectionsStore = useCollectionsStore();
 const authStore = useAuthStore();
 
-// URL search params for action=create
-const params = useUrlSearchParams('history');
-const action = computed(() => params.action as string | null);
+// Modal state with URL param support (opens on ?action=create)
+const { isOpen: showCreateModal, open: openCreateModal, close: closeCreateModal } = useModal();
 
-const showCreateModal = ref(false);
 const defaultSchemaText =
   '{\n  "fields": [\n    {\n      "name": "title",\n      "type": "string",\n      "required": true\n    }\n  ]\n}';
 
@@ -86,7 +84,7 @@ const onSubmit = handleSubmit(async (values) => {
     });
     if (result) {
       toast.success(`Collection "${values.name}" created successfully`);
-      showCreateModal.value = false;
+      closeCreateModal();
       resetForm({
         values: {
           name: '',
@@ -102,18 +100,6 @@ const onSubmit = handleSubmit(async (values) => {
     toast.error('Invalid schema JSON');
   }
 });
-
-// Watch for action=create in URL
-watch(
-  action,
-  (newAction) => {
-    if (newAction === 'create' && authStore.isAdmin) {
-      showCreateModal.value = true;
-      params.action = undefined;
-    }
-  },
-  { immediate: true }
-);
 
 onMounted(async () => {
   await collectionsStore.fetchCollections();
@@ -206,7 +192,7 @@ const collectionColumns = computed(() => {
         <EmptyDescription> Create your first collection to start storing data. </EmptyDescription>
       </EmptyHeader>
       <EmptyContent v-if="authStore.isAdmin">
-        <Button @click="showCreateModal = true"> Create Collection </Button>
+        <Button @click="openCreateModal"> Create Collection </Button>
       </EmptyContent>
     </Empty>
 
@@ -221,9 +207,7 @@ const collectionColumns = computed(() => {
           authStore.isAdmin
             ? {
                 label: 'New Collection',
-                action: () => {
-                  showCreateModal = true;
-                },
+                action: openCreateModal,
                 variant: 'default',
                 icon: 'Plus',
               }
@@ -300,7 +284,7 @@ const collectionColumns = computed(() => {
         </form>
 
         <DialogFooter>
-          <Button type="button" variant="ghost" @click="showCreateModal = false"> Cancel </Button>
+          <Button type="button" variant="ghost" @click="closeCreateModal"> Cancel </Button>
           <Button type="submit" form="collection-form" :disabled="collectionsStore.loading">
             {{ collectionsStore.loading ? 'Creating...' : 'Create Collection' }}
           </Button>
