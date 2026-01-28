@@ -15,10 +15,10 @@ RUN corepack enable
 WORKDIR /app
 
 # Copy frontend source
-COPY app/package.json app/yarn.lock ./
+COPY apps/admin/package.json apps/admin/yarn.lock ./
 RUN yarn install --immutable
 
-COPY app/ ./
+COPY apps/admin/ ./
 RUN yarn build
 
 # =============================================================================
@@ -37,8 +37,9 @@ WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy Python package files
-COPY pyproject.toml README.md LICENSE ./
-COPY tinybase/ ./tinybase/
+COPY packages/tinybase/pyproject.toml ./
+COPY README.md LICENSE ./
+COPY packages/tinybase/tinybase/ ./tinybase/
 
 # Copy built admin UI (includes auth portal) from frontend builder stage
 COPY --from=frontend-builder /app/dist ./tinybase/static/app/
