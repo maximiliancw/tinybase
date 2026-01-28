@@ -44,6 +44,16 @@ Usage for extension developers:
     @register(name="my_function", description="My extension function", auth="auth")
     def my_function(ctx: Context, payload: MyInput) -> MyOutput:
         return MyOutput(...)
+
+    # Activity logging (for audit trails)
+    from tinybase.extensions import log_extension_activity
+
+    log_extension_activity(
+        extension_name="my_extension",
+        action_name="sync_completed",
+        meta_data={"records": 150},
+    )
+    # Logs as action: "ext.my_extension.sync_completed"
 """
 
 from tinybase.extensions.hooks import (
@@ -95,6 +105,7 @@ from tinybase.extensions.loader import (
     load_extension_module,
     unload_extension,
 )
+from tinybase.activity import log_extension_activity
 
 __all__ = [
     # Lifecycle hooks (for extension developers)
@@ -142,4 +153,6 @@ __all__ = [
     "parse_github_url",
     "InstallError",
     "ExtensionManifest",
+    # Activity logging
+    "log_extension_activity",
 ]
