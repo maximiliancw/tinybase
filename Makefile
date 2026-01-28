@@ -1,4 +1,4 @@
-.PHONY: build build-admin export-openapi test dev clean repo lint format
+.PHONY: build build-admin export-openapi test dev dev-backend dev-frontend clean repo lint format
 
 # Build admin UI and copy to backend static folder
 build-admin:
@@ -14,9 +14,21 @@ export-openapi:
 test:
 	uv run pytest -n auto
 
-# Start development server (backend)
+# Start both backend and frontend development servers
 dev:
+	@echo "Starting backend (port 8000) and frontend (port 5173) dev servers..."
+	@trap 'kill 0' INT TERM; \
+		uv run tinybase serve --reload & \
+		cd apps/admin && yarn dev & \
+		wait
+
+# Start backend development server only
+dev-backend:
 	uv run tinybase serve --reload
+
+# Start frontend development server only
+dev-frontend:
+	cd apps/admin && yarn dev
 
 # Full build pipeline
 build: build-admin
