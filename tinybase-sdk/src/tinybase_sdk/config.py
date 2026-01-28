@@ -95,7 +95,7 @@ def load_deployment_config(env: str = "production") -> DeploymentConfig:
                 )
 
             # Get functions directory from general config or use default
-            functions_dir = Path(config_data.get("functions_path", "./functions"))
+            functions_dir = Path(config_data.get("functions_dir", "./functions"))
             timeout = float(env_config.get("timeout", 30.0))
 
             return DeploymentConfig(
@@ -137,8 +137,8 @@ def get_functions_dir() -> Path:
         try:
             with open(config_path, "rb") as f:
                 config_data = tomllib.load(f)
-            if functions_path := config_data.get("functions_path"):
-                return Path(functions_path)
+            if functions_dir := config_data.get("functions_dir"):
+                return Path(functions_dir)
         except Exception:
             pass
 

@@ -216,7 +216,7 @@ def load_functions_from_settings() -> int:
     """
     Load functions from the functions package directory.
 
-    The functions_path setting specifies the directory containing function files.
+    The functions_dir setting specifies the directory containing function files.
     Each function should be in its own file within this package.
 
     Returns:
@@ -225,5 +225,5 @@ def load_functions_from_settings() -> int:
     from tinybase.settings import config
 
     # Load from functions package directory only
-    functions_path = Path(config.functions_path)
-    return load_functions_from_directory(functions_path)
+    functions_dir = Path(config.functions_dir)
+    return load_functions_from_directory(functions_dir)

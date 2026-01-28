@@ -1146,7 +1146,7 @@ def upload_function(
         )
 
     # Step 4: Write file to functions directory
-    functions_dir = Path(config.functions_path)
+    functions_dir = Path(config.functions_dir)
 
     try:
         file_path = write_function_file(functions_dir, request.filename, request.content)

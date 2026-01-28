@@ -41,9 +41,9 @@ def functions_new(
         typer.echo("Error: Function name must be lowercase with underscores (snake_case)", err=True)
         raise typer.Exit(1)
 
-    # Use config functions_path if available, otherwise use provided dir
+    # Use config functions_dir if available, otherwise use provided dir
     try:
-        functions_dir = Path(config.functions_path)
+        functions_dir = Path(config.functions_dir)
     except Exception:
         # If config can't be loaded, use provided dir or default
         functions_dir = functions_dir.resolve()

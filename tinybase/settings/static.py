@@ -98,9 +98,9 @@ class Config(BaseSettings):
     # -------------------------------------------------------------------------
     # Functions
     # -------------------------------------------------------------------------
-    functions_path: str = Field(
+    functions_dir: str = Field(
         default="./functions",
-        description="Directory path for function modules",
+        description="Directory for function modules",
     )
     function_logging_enabled: bool = Field(
         default=True, description="Enable structured logging for functions"

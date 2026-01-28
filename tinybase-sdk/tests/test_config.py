@@ -36,7 +36,7 @@ def test_load_from_toml_file():
         config_path = Path(tmpdir) / "tinybase.toml"
         config_path.write_text(
             """
-functions_path = "./my_functions"
+functions_dir = "./my_functions"
 
 [environments.production]
 api_url = "https://prod.api.com"
@@ -165,7 +165,7 @@ def test_get_functions_dir_from_toml():
     """Test getting functions directory from tinybase.toml."""
     with tempfile.TemporaryDirectory() as tmpdir:
         config_path = Path(tmpdir) / "tinybase.toml"
-        config_path.write_text('functions_path = "./my_funcs"')
+        config_path.write_text('functions_dir = "./my_funcs"')
 
         original_cwd = os.getcwd()
         os.chdir(tmpdir)

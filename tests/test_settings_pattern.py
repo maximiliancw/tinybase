@@ -134,7 +134,7 @@ class TestConfigDefaults:
         _reset_config()
         from tinybase.settings.static import config
 
-        assert config.functions_path == "./functions"
+        assert config.functions_dir == "./functions"
         assert config.function_logging_enabled is True
         assert config.function_cold_start_pool_size == 3
         assert config.function_cold_start_ttl_seconds == 300

@@ -152,7 +152,7 @@ def serve(
 
     # Validate workspace is initialized
     toml_path = Path.cwd() / "tinybase.toml"
-    functions_path = Path(config.functions_path)
+    functions_dir = Path(config.functions_dir)
 
     if not toml_path.exists():
         typer.secho("Error: Workspace not initialized!", fg=typer.colors.RED, bold=True)
@@ -164,10 +164,10 @@ def serve(
         typer.echo("")
         raise typer.Exit(1)
 
-    if not functions_path.exists():
+    if not functions_dir.exists():
         typer.secho("Error: Functions directory not found!", fg=typer.colors.RED, bold=True)
         typer.echo("")
-        typer.echo(f"Expected functions directory at: {functions_path.absolute()}")
+        typer.echo(f"Expected functions directory at: {functions_dir.absolute()}")
         typer.echo("Please initialize your workspace first:")
         typer.echo("")
         typer.secho("  tinybase init", fg=typer.colors.GREEN, bold=True)
