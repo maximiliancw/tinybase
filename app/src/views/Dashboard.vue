@@ -11,6 +11,7 @@ import { useCollectionsStore } from '../stores/collections';
 import { useFunctionsStore } from '../stores/functions';
 import { useUsersStore } from '../stores/users';
 import { useAuthStore } from '../stores/auth';
+import { useActivityStore, type ActivityLogInfo } from '../stores/activity';
 import { api } from '@/api';
 import CollectionSizesChart from '../components/CollectionSizesChart.vue';
 import FunctionStatsChart from '../components/FunctionStatsChart.vue';
@@ -23,13 +24,14 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { Database, Zap } from 'lucide-vue-next';
+import { Database, Zap, Activity, LogIn, UserPlus, FileEdit, Trash2, FilePlus } from 'lucide-vue-next';
 
 const toast = useToast();
 const collectionsStore = useCollectionsStore();
 const functionsStore = useFunctionsStore();
 const usersStore = useUsersStore();
 const authStore = useAuthStore();
+const activityStore = useActivityStore();
 
 const stats = ref({
   users: 0,
@@ -87,8 +89,47 @@ onMounted(async () => {
 
     // Fetch metrics for charts
     await fetchMetrics();
+
+    // Fetch recent activity
+    await activityStore.fetchRecentActivity(10);
   }
 });
+
+// Get icon component for activity action
+function getActivityIcon(action: string) {
+  if (action.startsWith('user.login')) return LogIn;
+  if (action.startsWith('user.register')) return UserPlus;
+  if (action.includes('.create')) return FilePlus;
+  if (action.includes('.update')) return FileEdit;
+  if (action.includes('.delete')) return Trash2;
+  return Activity;
+}
+
+// Format activity action for display
+function formatAction(action: string): string {
+  const parts = action.split('.');
+  if (parts.length >= 2) {
+    const [resource, verb] = parts;
+    return `${verb.charAt(0).toUpperCase() + verb.slice(1)} ${resource}`;
+  }
+  return action;
+}
+
+// Format relative time for activity
+function formatActivityTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
 
 async function fetchMetrics() {
   if (!authStore.isAdmin) return;
@@ -288,5 +329,60 @@ async function fetchMetrics() {
         </CardContent>
       </Card>
     </div>
+
+    <!-- Recent Activity -->
+    <Card v-if="authStore.isAdmin">
+      <CardHeader>
+        <CardTitle>Recent Activity</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div v-if="activityStore.loading" class="flex items-center justify-center py-8">
+          <p class="text-sm text-muted-foreground">Loading activity...</p>
+        </div>
+
+        <Empty v-else-if="activityStore.recentActivity.length === 0" class="py-8">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Activity />
+            </EmptyMedia>
+            <EmptyTitle>No activity yet</EmptyTitle>
+            <EmptyDescription>
+              Activity will appear here as users interact with your TinyBase instance.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+
+        <div v-else class="space-y-4">
+          <div
+            v-for="activity in activityStore.recentActivity"
+            :key="activity.id"
+            class="flex items-start gap-3"
+          >
+            <div
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted"
+            >
+              <component
+                :is="getActivityIcon(activity.action)"
+                class="h-4 w-4 text-muted-foreground"
+              />
+            </div>
+            <div class="flex-1 space-y-1">
+              <p class="text-sm font-medium leading-none">
+                {{ formatAction(activity.action) }}
+                <span v-if="activity.resource_type" class="text-muted-foreground">
+                  ({{ activity.resource_type }})
+                </span>
+              </p>
+              <p class="text-xs text-muted-foreground">
+                <span v-if="activity.user_email">{{ activity.user_email }}</span>
+                <span v-else>System</span>
+                <span class="mx-1">·</span>
+                <span>{{ formatActivityTime(activity.created_at) }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   </section>
 </template>
